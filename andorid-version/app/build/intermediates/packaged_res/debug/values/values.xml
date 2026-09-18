@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="accent">#3B82F6</color>
+    <color name="background_dark">#0B1120</color>
+    <color name="background_light">#F8F8FF</color>
+    <color name="primary">#2563EB</color>
+    <color name="primary_dark">#1D4ED8</color>
+    <color name="surface_dark">#1E293B</color>
+    <color name="surface_light">#FFFFFF</color>
+    <string name="app_name">opeNotas</string>
+    <string name="file_chooser_title">Seleccionar imagen o documento</string>
+    <string name="loading">Cargando cuaderno...</string>
+    <string name="storage_permission_msg">Se requiere permiso de almacenamiento para guardar tus apuntes en PDF.</string>
+    <style name="Theme.PizarraDigital" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryDark">@color/primary_dark</item>
+        <item name="colorAccent">@color/accent</item>
+        <item name="android:windowBackground">@color/background_light</item>
+        <item name="android:statusBarColor">@color/surface_light</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">@color/surface_light</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+    <style name="Theme.PizarraDigital.Fullscreen" parent="Theme.PizarraDigital">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+</resources>
