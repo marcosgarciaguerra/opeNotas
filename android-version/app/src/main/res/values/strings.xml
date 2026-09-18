@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">opeNotas</string>
+    <string name="loading">Cargando cuaderno...</string>
+    <string name="file_chooser_title">Seleccionar imagen o documento</string>
+    <string name="storage_permission_msg">Se requiere permiso de almacenamiento para guardar tus apuntes en PDF.</string>
+</resources>
+
