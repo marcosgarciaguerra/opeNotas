@@ -1,3 +1,0 @@
-com.whiteboard.digital.test
-style WhiteBackgroundDialogTheme
-style WhiteBackgroundTheme

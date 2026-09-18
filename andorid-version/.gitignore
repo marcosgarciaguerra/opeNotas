@@ -1,7 +1,0 @@
-android-version
-android-version/.gradle/
-android-version/build/
-android-version/app/build/
-android-version/local.properties
-*.apk
-*.aab
