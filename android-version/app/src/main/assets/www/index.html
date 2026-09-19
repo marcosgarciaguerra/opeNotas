@@ -2,22 +2,21 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>opeNotas</title>
   
   <!-- Favicon y Logo del Sitio -->
   <link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
   <link rel="alternate icon" type="image/png" href="assets/favicon.png" />
   <link rel="apple-touch-icon" href="assets/logo.png" />
-
-  <!-- jsPDF offline local para Android -->
-  <script src="js/lib/jspdf.umd.min.js"></script>
+  
+  <!-- jsPDF para exportación vectorial a PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- PDF.js para importación y renderizado de documentos PDF como cuadernos -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   
   <!-- Estilos del Sistema -->
   <link rel="stylesheet" href="styles.css" />
-
-  <!-- Puente Nativo Android -->
-  <script src="js/android-bridge.js"></script>
 </head>
 <body>
 
@@ -45,4 +44,3 @@
   <script src="js/bundle.js"></script>
 </body>
 </html>
-

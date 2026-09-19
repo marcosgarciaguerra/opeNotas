@@ -369,7 +369,8 @@ export class ViewportController {
         this.fitWidth(isMobile ? 12 : 32);
       } else {
         this.zoom = 1.0;
-        this.panX = (wsWidth - 794) / 2;
+        // Centrar con ligero desplazamiento óptico a la derecha (+24px)
+        this.panX = Math.round((wsWidth - 794) / 2) + 24;
         this.panY = 24;
         this.applyTransform();
       }
@@ -383,7 +384,7 @@ export class ViewportController {
       this.fitToScreen();
     } else {
       this.zoom = 1.0;
-      this.panX = (wsWidth - canvasWidth) / 2;
+      this.panX = Math.round((wsWidth - canvasWidth) / 2);
       this.panY = Math.max(24, (wsHeight - canvasHeight) / 2);
       this.applyTransform();
     }
@@ -420,8 +421,8 @@ export class ViewportController {
     const contentWidth = totalWidth * this.zoom;
     const contentHeight = totalHeight * this.zoom;
 
-    const minX = Math.min(-contentWidth + 100, (wsWidth - contentWidth) / 2);
-    const maxX = Math.max(wsWidth - 100, (wsWidth - contentWidth) / 2);
+    const minX = Math.min(-contentWidth + 100, (wsWidth - contentWidth) / 2 - 250);
+    const maxX = Math.max(wsWidth - 100, (wsWidth - contentWidth) / 2 + 250);
 
     // Permite bajar libremente por todo el documento hasta el final
     const maxY = 80;

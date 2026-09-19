@@ -20,9 +20,13 @@ function cleanCode(code) {
 
 const files = [
   'js/icons.js',
+  'js/paletteManager.js',
   'js/settings.js',
   'js/db.js',
   'js/editor/coverDesigner.js',
+  'js/editor/laserPointer.js',
+  'js/editor/ruler.js',
+  'js/editor/HandwritingPredictor.js',
   'js/editor/canvasEngine.js',
   'js/editor/shapeTool.js',
   'js/editor/textTool.js',
@@ -50,43 +54,53 @@ execSync('node --check js/bundle.js');
 console.log('Verificación sintáctica de js/bundle.js: CORRECTO.');
 
 // Sincronización automática con assets de Android si el directorio existe
-const androidWww = path.join(__dirname, 'andorid-version/app/src/main/assets/www');
-const androidRes = path.join(__dirname, 'andorid-version/app/src/main/res');
+const androidDirs = [
+  path.join(__dirname, 'android-version'),
+  path.join(__dirname, 'andorid-version')
+];
 
-if (fs.existsSync(androidWww)) {
-  fs.mkdirSync(path.join(androidWww, 'js'), { recursive: true });
-  fs.mkdirSync(path.join(androidWww, 'assets'), { recursive: true });
+for (const androidRoot of androidDirs) {
+  const androidWww = path.join(androidRoot, 'app/src/main/assets/www');
+  const androidRes = path.join(androidRoot, 'app/src/main/res');
+  if (fs.existsSync(androidWww)) {
+    fs.mkdirSync(path.join(androidWww, 'js/editor'), { recursive: true });
+    fs.mkdirSync(path.join(androidWww, 'assets'), { recursive: true });
 
-  fs.copyFileSync(path.join(__dirname, 'js/bundle.js'), path.join(androidWww, 'js/bundle.js'));
-  fs.copyFileSync(path.join(__dirname, 'styles.css'), path.join(androidWww, 'styles.css'));
+    fs.copyFileSync(path.join(__dirname, 'index.html'), path.join(androidWww, 'index.html'));
+    fs.copyFileSync(path.join(__dirname, 'js/bundle.js'), path.join(androidWww, 'js/bundle.js'));
+    fs.copyFileSync(path.join(__dirname, 'styles.css'), path.join(androidWww, 'styles.css'));
+    if (fs.existsSync(path.join(__dirname, 'js/editor/htr-worker.js'))) {
+      fs.copyFileSync(path.join(__dirname, 'js/editor/htr-worker.js'), path.join(androidWww, 'js/editor/htr-worker.js'));
+    }
 
-  const assetsDir = path.join(__dirname, 'assets');
-  if (fs.existsSync(assetsDir)) {
-    const assetFiles = fs.readdirSync(assetsDir);
-    for (const af of assetFiles) {
-      const src = path.join(assetsDir, af);
-      if (fs.statSync(src).isFile()) {
-        fs.copyFileSync(src, path.join(androidWww, 'assets', af));
+    const assetsDir = path.join(__dirname, 'assets');
+    if (fs.existsSync(assetsDir)) {
+      const assetFiles = fs.readdirSync(assetsDir);
+      for (const af of assetFiles) {
+        const src = path.join(assetsDir, af);
+        if (fs.statSync(src).isFile()) {
+          fs.copyFileSync(src, path.join(androidWww, 'assets', af));
+        }
       }
     }
-  }
 
-  // Sincronizar logos con res/drawable para Android nativo
-  if (fs.existsSync(androidRes)) {
-    const drawableDir = path.join(androidRes, 'drawable');
-    fs.mkdirSync(drawableDir, { recursive: true });
-    if (fs.existsSync(path.join(assetsDir, 'logo.png'))) {
-      fs.copyFileSync(path.join(assetsDir, 'logo.png'), path.join(drawableDir, 'logo.png'));
-      fs.copyFileSync(path.join(assetsDir, 'logo.png'), path.join(drawableDir, 'app_logo.png'));
-      
-      const psScript = path.join(__dirname, 'generate_android_icons.ps1');
-      if (fs.existsSync(psScript) && process.platform === 'win32') {
-        try {
-          execSync(`powershell -ExecutionPolicy Bypass -File "${psScript}"`, { stdio: 'pipe' });
-        } catch (err) {}
+    // Sincronizar logos con res/drawable para Android nativo
+    if (fs.existsSync(androidRes)) {
+      const drawableDir = path.join(androidRes, 'drawable');
+      fs.mkdirSync(drawableDir, { recursive: true });
+      if (fs.existsSync(path.join(assetsDir, 'logo.png'))) {
+        fs.copyFileSync(path.join(assetsDir, 'logo.png'), path.join(drawableDir, 'logo.png'));
+        fs.copyFileSync(path.join(assetsDir, 'logo.png'), path.join(drawableDir, 'app_logo.png'));
+        
+        const psScript = path.join(__dirname, 'generate_android_icons.ps1');
+        if (fs.existsSync(psScript) && process.platform === 'win32') {
+          try {
+            execSync(`powershell -ExecutionPolicy Bypass -File "${psScript}"`, { stdio: 'pipe' });
+          } catch (err) {}
+        }
       }
     }
-  }
 
-  console.log('Sincronización con andorid-version (assets/www, res/drawable y mipmaps): COMPLETADA.');
+    console.log(`Sincronización con ${path.basename(androidRoot)} (assets/www, res/drawable y mipmaps): COMPLETADA.`);
+  }
 }

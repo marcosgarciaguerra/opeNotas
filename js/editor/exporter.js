@@ -173,6 +173,14 @@ export class Exporter {
         isFirstPage = false;
       }
 
+      // Pre-cargar imagen de fondo PDF si procede
+      if (page.backgroundImage && !page._bgImgElement) {
+        const bgImg = new Image();
+        bgImg.src = page.backgroundImage;
+        await new Promise(r => { bgImg.onload = r; bgImg.onerror = r; });
+        page._bgImgElement = bgImg;
+      }
+
       // Pre-cargar imágenes de la página
       if (page.images && page.images.length > 0) {
         for (const imgItem of page.images) {
@@ -395,41 +403,53 @@ export class Exporter {
       ctx.fillStyle = bgColor;
       ctx.fillRect(0, 0, width, height);
 
-      // Patrón de fondo
-      const pattern = page.backgroundPattern || 'grid';
-      if (pattern === 'ruled') {
-        ctx.strokeStyle = '#e2e8f0';
-        ctx.lineWidth = 1;
-        const lineGap = 28;
-        const topMargin = 70;
-        for (let y = topMargin; y < height; y += lineGap) {
+      if (page.backgroundImage) {
+        let bgImg = page._bgImgElement;
+        if (!bgImg) {
+          bgImg = new Image();
+          bgImg.src = page.backgroundImage;
+          page._bgImgElement = bgImg;
+        }
+        if (bgImg.complete && bgImg.naturalWidth > 0) {
+          ctx.drawImage(bgImg, 0, 0, width, height);
+        }
+      } else {
+        // Patrón de fondo
+        const pattern = page.backgroundPattern || 'grid';
+        if (pattern === 'ruled') {
+          ctx.strokeStyle = '#e2e8f0';
+          ctx.lineWidth = 1;
+          const lineGap = 28;
+          const topMargin = 70;
+          for (let y = topMargin; y < height; y += lineGap) {
+            ctx.beginPath();
+            ctx.moveTo(30, y);
+            ctx.lineTo(width - 30, y);
+            ctx.stroke();
+          }
+          ctx.strokeStyle = '#fecaca';
+          ctx.lineWidth = 1.5;
           ctx.beginPath();
-          ctx.moveTo(30, y);
-          ctx.lineTo(width - 30, y);
+          ctx.moveTo(76, 0);
+          ctx.lineTo(76, height);
           ctx.stroke();
-        }
-        ctx.strokeStyle = '#fecaca';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(76, 0);
-        ctx.lineTo(76, height);
-        ctx.stroke();
-      } else if (pattern === 'grid') {
-        ctx.strokeStyle = '#f1f5f9';
-        ctx.lineWidth = 1;
-        const gap = 20;
-        for (let x = gap; x < width; x += gap) {
-          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
-        }
-        for (let y = gap; y < height; y += gap) {
-          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
-        }
-      } else if (pattern === 'dots') {
-        ctx.fillStyle = '#cbd5e1';
-        const gap = 24;
-        for (let x = gap; x < width; x += gap) {
+        } else if (pattern === 'grid') {
+          ctx.strokeStyle = '#f1f5f9';
+          ctx.lineWidth = 1;
+          const gap = 20;
+          for (let x = gap; x < width; x += gap) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+          }
           for (let y = gap; y < height; y += gap) {
-            ctx.beginPath(); ctx.arc(x, y, 1.25, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+          }
+        } else if (pattern === 'dots') {
+          ctx.fillStyle = '#cbd5e1';
+          const gap = 24;
+          for (let x = gap; x < width; x += gap) {
+            for (let y = gap; y < height; y += gap) {
+              ctx.beginPath(); ctx.arc(x, y, 1.25, 0, Math.PI * 2); ctx.fill();
+            }
           }
         }
       }

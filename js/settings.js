@@ -7,8 +7,7 @@ const DEFAULT_SETTINGS = {
   theme: 'light', // 'light' | 'dark' | 'system'
   inputMode: 'stylus-first', // 'stylus-first' (Modo Stylus / Rechazo de palma) | 'finger-drawing'
   darkPaper: false, // Invertir papel a tonos oscuros en modo noche
-  defaultPattern: 'grid', // 'grid' | 'ruled' | 'dots' | 'blank'
-  autoStraighten: true // Auto-enderezado inteligente de trazos
+  defaultPattern: 'grid' // 'grid' | 'ruled' | 'dots' | 'blank'
 };
 
 export class SettingsManager {
@@ -186,14 +185,6 @@ export class SettingsManager {
               </div>
               <input type="checkbox" id="chkStylusMode" class="settings-switch" ${current.inputMode === 'stylus-first' ? 'checked' : ''} />
             </label>
-
-            <label class="settings-toggle-row mt-2">
-              <div class="toggle-text">
-                <strong>Auto-enderezado inteligente</strong>
-                <small>Mantén pulsado 450ms al final del trazo para convertirlo automáticamente en una línea recta perfecta (regla virtual).</small>
-              </div>
-              <input type="checkbox" id="chkAutoStraighten" class="settings-switch" ${current.autoStraighten ? 'checked' : ''} />
-            </label>
           </div>
 
           <div class="settings-divider"></div>
@@ -291,12 +282,6 @@ export class SettingsManager {
     chkStylusMode.addEventListener('change', (e) => {
       const mode = e.target.checked ? 'stylus-first' : 'finger-drawing';
       this.saveSettings({ inputMode: mode });
-    });
-
-    // Auto straighten toggle
-    const chkAutoStraighten = this.modalEl.querySelector('#chkAutoStraighten');
-    chkAutoStraighten.addEventListener('change', (e) => {
-      this.saveSettings({ autoStraighten: e.target.checked });
     });
 
     // Restablecer

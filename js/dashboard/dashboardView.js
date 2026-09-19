@@ -3,6 +3,7 @@ import { Icons } from '../icons.js';
 import { db } from '../db.js';
 import { ContextMenu } from './contextMenu.js';
 import { CoverDesigner } from '../editor/coverDesigner.js';
+import { PaletteManager } from '../paletteManager.js';
 
 export class DashboardView {
   constructor(options = {}) {
@@ -101,6 +102,13 @@ export class DashboardView {
                     <small>Lienzo amplio para bocetos e ideas</small>
                   </div>
                 </button>
+                <button class="create-menu-item" id="btnImportPdf">
+                  <span class="menu-icon pdf-color">${Icons.pdf}</span>
+                  <div class="menu-text">
+                    <strong>Importar PDF como Cuaderno</strong>
+                    <small>Escribe y dibuja sobre páginas PDF</small>
+                  </div>
+                </button>
                 <div class="menu-divider"></div>
                 <button class="create-menu-item" id="btnCreateFolder">
                   <span class="menu-icon folder-color">${Icons.folder}</span>
@@ -130,6 +138,11 @@ export class DashboardView {
               <span class="nav-label">Favoritos</span>
               <span class="nav-count" id="countFav">0</span>
             </button>
+            <button class="nav-item" id="btnSidebarImportPdf" title="Importar un archivo PDF y convertirlo en un cuaderno editable">
+              <span class="nav-icon" style="color: #ef4444;">${Icons.pdf}</span>
+              <span class="nav-label">Importar PDF</span>
+            </button>
+            <input type="file" id="pdfFileInput" accept="application/pdf,.pdf" style="display:none;" />
 
             <div class="nav-section-header">
               <span class="nav-section-title">Carpetas</span>
@@ -276,6 +289,56 @@ export class DashboardView {
       this.closeMobileSidebar();
       const activeFolderId = this.currentNav.startsWith('folder_') ? this.currentNav.replace('folder_', '') : null;
       this.promptCreateDocument('whiteboard', activeFolderId);
+    });
+
+    const btnImportPdf = this.container.querySelector('#btnImportPdf');
+    if (btnImportPdf) {
+      btnImportPdf.addEventListener('click', () => {
+        createMenu.classList.add('hidden');
+        this.closeMobileSidebar();
+        const activeFolderId = this.currentNav.startsWith('folder_') ? this.currentNav.replace('folder_', '') : null;
+        this.triggerPdfImport(activeFolderId);
+      });
+    }
+
+    const btnSidebarImportPdf = this.container.querySelector('#btnSidebarImportPdf');
+    if (btnSidebarImportPdf) {
+      btnSidebarImportPdf.addEventListener('click', () => {
+        this.closeMobileSidebar();
+        const activeFolderId = this.currentNav.startsWith('folder_') ? this.currentNav.replace('folder_', '') : null;
+        this.triggerPdfImport(activeFolderId);
+      });
+    }
+
+    const pdfFileInput = this.container.querySelector('#pdfFileInput');
+    if (pdfFileInput) {
+      pdfFileInput.addEventListener('change', async (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) {
+          const targetFolderId = pdfFileInput._targetFolderId || null;
+          pdfFileInput.value = '';
+          await this.importPdfFile(file, targetFolderId);
+        }
+      });
+    }
+
+    // Drag & drop de archivos PDF en el Dashboard
+    this.container.addEventListener('dragover', (e) => {
+      if (e.dataTransfer && e.dataTransfer.types && Array.from(e.dataTransfer.types).includes('Files')) {
+        e.preventDefault();
+      }
+    });
+
+    this.container.addEventListener('drop', async (e) => {
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const file = e.dataTransfer.files[0];
+        if (file.type.includes('pdf') || file.name.toLowerCase().endsWith('.pdf')) {
+          e.preventDefault();
+          e.stopPropagation();
+          const activeFolderId = this.currentNav.startsWith('folder_') ? this.currentNav.replace('folder_', '') : null;
+          await this.importPdfFile(file, activeFolderId);
+        }
+      }
     });
 
     this.container.querySelector('#btnCreateFolder').addEventListener('click', () => {
@@ -540,8 +603,11 @@ export class DashboardView {
             <span class="folder-icon" style="color: ${folderColor};">${Icons.folder}</span>
             <span class="folder-name" title="${this.escapeHtml(folder.name)}">${this.escapeHtml(folder.name)}</span>
             <span class="folder-badge">${docCount}</span>
-            <button type="button" class="btn-icon-mini btn-add-subfolder" data-parent-id="${folder.id}" title="Añadir subcarpeta">
+            <button type="button" class="btn-icon-mini btn-add-subfolder" data-parent-id="${folder.id}" title="Añadir subcarpeta dentro de ${this.escapeHtml(folder.name)}" aria-label="Añadir subcarpeta">
               ${Icons.plus}
+            </button>
+            <button type="button" class="btn-icon-mini btn-delete-folder" data-delete-folder="${folder.id}" title="Eliminar carpeta ${this.escapeHtml(folder.name)}" aria-label="Eliminar carpeta">
+              ${Icons.trash}
             </button>
           </div>
         </div>
@@ -593,10 +659,26 @@ export class DashboardView {
       });
     });
 
+    // Botón rápido para eliminar carpeta desde el sidebar
+    treeEl.querySelectorAll('.btn-delete-folder').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const fId = btn.dataset.deleteFolder;
+        const targetFolder = this.folders.find(f => f.id === fId);
+        if (confirm(`¿Estás seguro de que deseas eliminar la carpeta "${targetFolder?.name || ''}" y sus subcarpetas? Los documentos contenidos se reubicarán en la biblioteca principal.`)) {
+          await db.deleteFolder(fId);
+          if (this.currentNav === `folder_${fId}`) {
+            this.currentNav = targetFolder?.parentId ? `folder_${targetFolder.parentId}` : 'all';
+          }
+          await this.loadAndRender();
+        }
+      });
+    });
+
     // Clic para seleccionar carpeta
     treeEl.querySelectorAll('.folder-item').forEach(item => {
       item.addEventListener('click', (e) => {
-        if (e.target.closest('.folder-expand-btn') || e.target.closest('.btn-add-subfolder')) return;
+        if (e.target.closest('.folder-expand-btn') || e.target.closest('.btn-add-subfolder') || e.target.closest('.btn-delete-folder')) return;
         this.selectNav(item.dataset.nav);
       });
 
@@ -691,13 +773,34 @@ export class DashboardView {
         });
 
         actionContainer.innerHTML = `
-          <button class="btn-secondary" id="btnAddSubfolderHere">
-            ${Icons.plus} Nueva Subcarpeta
+          <button class="btn-primary" id="btnNewNotebookInFolder" title="Crear Cuaderno dentro de esta carpeta">
+            ${Icons.notebook} + Cuaderno
+          </button>
+          <button class="btn-secondary" id="btnNewBoardInFolder" title="Crear Pizarra dentro de esta carpeta">
+            ${Icons.whiteboard} + Pizarra
+          </button>
+          <button class="btn-secondary" id="btnImportPdfInFolder" title="Importar PDF como cuaderno dentro de esta carpeta">
+            ${Icons.pdf} + Importar PDF
+          </button>
+          <button class="btn-secondary" id="btnAddSubfolderHere" title="Nueva Subcarpeta">
+            ${Icons.plus} Subcarpeta
           </button>
           <button class="btn-icon-ghost danger-text" id="btnDeleteFolder" title="Eliminar carpeta">
             ${Icons.trash}
           </button>
         `;
+
+        actionContainer.querySelector('#btnNewNotebookInFolder')?.addEventListener('click', () => {
+          this.promptCreateDocument('notebook', folder.id);
+        });
+
+        actionContainer.querySelector('#btnNewBoardInFolder')?.addEventListener('click', () => {
+          this.promptCreateDocument('whiteboard', folder.id);
+        });
+
+        actionContainer.querySelector('#btnImportPdfInFolder')?.addEventListener('click', () => {
+          this.triggerPdfImport(folder.id);
+        });
 
         actionContainer.querySelector('#btnAddSubfolderHere')?.addEventListener('click', () => {
           this.promptCreateFolder(folder.id);
@@ -997,10 +1100,10 @@ export class DashboardView {
   openNotebookCreationModal(folderId) {
     const existingCount = this.documents.filter(d => d.type === 'notebook' && !d.isTrash).length;
     const defaultTitle = `Cuaderno ${existingCount + 1}`;
-    const defaultSubtitle = 'Notas y Reflexiones';
 
     let selectedTemplate = 'moleskine';
-    let selectedColor = '#0f172a';
+    const palette = PaletteManager.getPalette();
+    let selectedColor = palette[0] || '#0f172a';
     let selectedPattern = 'grid'; // Cuadrícula por defecto
     let selectedPaperColor = '#ffffff';
     let activePreviewTab = 'cover'; // 'cover' | 'paper'
@@ -1014,17 +1117,6 @@ export class DashboardView {
     const actionsEl = modalEl.querySelector('.modal-actions');
 
     titleEl.textContent = 'Crear Nuevo Cuaderno';
-
-    const colors = [
-      { hex: '#0f172a', name: 'Azul Noche' },
-      { hex: '#1e40af', name: 'Azul Real' },
-      { hex: '#065f46', name: 'Verde Bosque' },
-      { hex: '#881337', name: 'Borgoña' },
-      { hex: '#78350f', name: 'Cuero / Ámbar' },
-      { hex: '#334155', name: 'Gris Pizarra' },
-      { hex: '#581c87', name: 'Púrpura Noble' },
-      { hex: '#9a3412', name: 'Terracota' }
-    ];
 
     const patterns = [
       { id: 'grid', name: 'Cuadrícula 5mm', desc: 'Pauta cuadriculada para dibujo y notas' },
@@ -1046,12 +1138,12 @@ export class DashboardView {
           <!-- Datos básicos -->
           <div class="form-group-row">
             <div class="form-group" style="flex: 2;">
-              <label class="form-label">Título del Cuaderno</label>
-              <input type="text" id="nbInputTitle" class="modal-input" value="${this.escapeHtml(defaultTitle)}" />
+              <label class="form-label">Título del Cuaderno (opcional)</label>
+              <input type="text" id="nbInputTitle" class="modal-input" placeholder="Título (opcional, p.ej. ${defaultTitle})" value="" />
             </div>
             <div class="form-group" style="flex: 2;">
-              <label class="form-label">Subtítulo / Tema</label>
-              <input type="text" id="nbInputSubtitle" class="modal-input" value="${this.escapeHtml(defaultSubtitle)}" />
+              <label class="form-label">Subtítulo / Tema (opcional)</label>
+              <input type="text" id="nbInputSubtitle" class="modal-input" placeholder="Subtítulo (opcional)" value="" />
             </div>
           </div>
 
@@ -1076,13 +1168,13 @@ export class DashboardView {
             </button>
           </div>
 
-          <!-- Color de Portada -->
-          <div class="color-palette-label">Color de Portada:</div>
-          <div class="nb-color-palette">
-            ${colors.map((c, i) => `
-              <button type="button" class="nb-color-btn ${i === 0 ? 'active' : ''}" data-color="${c.hex}" style="background-color: ${c.hex};" title="${c.name}"></button>
+          <!-- Color de Portada (Paleta de 10 colores persistente) -->
+          <div class="color-palette-label">Color de Portada (Paleta de 10 colores):</div>
+          <div class="nb-color-palette" id="nbCoverPaletteGroup">
+            ${palette.map((c, i) => `
+              <button type="button" class="nb-color-btn ${i === 0 ? 'active' : ''}" data-color="${c}" style="background-color: ${c};" title="${c}"></button>
             `).join('')}
-            <label class="nb-custom-color-label" title="Color personalizado">
+            <label class="nb-custom-color-label" title="Guardar color personalizado en la paleta">
               <input type="color" id="nbCustomColor" value="${selectedColor}" />
               <span>+</span>
             </label>
@@ -1140,15 +1232,15 @@ export class DashboardView {
     const previewCaption = bodyEl.querySelector('#previewCaption');
 
     const updatePreview = () => {
-      const curTitle = titleInput.value.trim() || defaultTitle;
-      const curSubtitle = subtitleInput.value.trim() || defaultSubtitle;
+      const curTitle = titleInput.value.trim();
+      const curSubtitle = subtitleInput.value.trim();
 
       if (activePreviewTab === 'cover') {
         CoverDesigner.renderCover(previewCtx, 280, 390, {
           template: selectedTemplate,
           title: curTitle,
           subtitle: curSubtitle,
-          date: new Date().getFullYear().toString(),
+          date: '', // No poner el año por defecto
           color: selectedColor
         });
         previewCaption.textContent = `Portada: ${selectedTemplate.toUpperCase()} (${selectedColor})`;
@@ -1179,24 +1271,49 @@ export class DashboardView {
       });
     });
 
-    // Eventos de colores de portada
-    bodyEl.querySelectorAll('.nb-color-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        bodyEl.querySelectorAll('.nb-color-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        selectedColor = btn.dataset.color;
+    const bindColorPalette = () => {
+      bodyEl.querySelectorAll('.nb-color-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          bodyEl.querySelectorAll('.nb-color-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedColor = btn.dataset.color;
+          activePreviewTab = 'cover';
+          bodyEl.querySelector('#btnTabCover').classList.add('active');
+          bodyEl.querySelector('#btnTabPaper').classList.remove('active');
+          updatePreview();
+        });
+      });
+    };
+
+    bindColorPalette();
+
+    const customColorInput = bodyEl.querySelector('#nbCustomColor');
+    if (customColorInput) {
+      customColorInput.addEventListener('change', (e) => {
+        selectedColor = e.target.value;
+        PaletteManager.addColor(selectedColor);
+        const newPal = PaletteManager.getPalette();
+        const paletteContainer = bodyEl.querySelector('#nbCoverPaletteGroup');
+        if (paletteContainer) {
+          paletteContainer.innerHTML = `
+            ${newPal.map((c) => `
+              <button type="button" class="nb-color-btn ${c.toLowerCase() === selectedColor.toLowerCase() ? 'active' : ''}" data-color="${c}" style="background-color: ${c};" title="${c}"></button>
+            `).join('')}
+            <label class="nb-custom-color-label" title="Guardar color personalizado en la paleta">
+              <input type="color" id="nbCustomColor" value="${selectedColor}" />
+              <span>+</span>
+            </label>
+          `;
+          bindColorPalette();
+        }
         activePreviewTab = 'cover';
         bodyEl.querySelector('#btnTabCover').classList.add('active');
         bodyEl.querySelector('#btnTabPaper').classList.remove('active');
         updatePreview();
       });
-    });
 
-    const customColorInput = bodyEl.querySelector('#nbCustomColor');
-    if (customColorInput) {
       customColorInput.addEventListener('input', (e) => {
         selectedColor = e.target.value;
-        bodyEl.querySelectorAll('.nb-color-btn').forEach(b => b.classList.remove('active'));
         activePreviewTab = 'cover';
         bodyEl.querySelector('#btnTabCover').classList.add('active');
         bodyEl.querySelector('#btnTabPaper').classList.remove('active');
@@ -1258,13 +1375,14 @@ export class DashboardView {
     };
 
     const handleCreate = async (openImmediately) => {
-      const title = titleInput.value.trim() || defaultTitle;
-      const subtitle = subtitleInput.value.trim() || defaultSubtitle;
+      const title = titleInput.value.trim(); // Se puede dejar en blanco
+      const subtitle = subtitleInput.value.trim();
+      const docName = title || defaultTitle;
       const coverConfig = {
         template: selectedTemplate,
         title: title,
         subtitle: subtitle,
-        date: new Date().getFullYear().toString(),
+        date: '', // No poner el año por defecto
         color: selectedColor
       };
       const initialPageConfig = {
@@ -1275,9 +1393,9 @@ export class DashboardView {
       cleanup();
 
       if (openImmediately) {
-        await this.onCreateNotebook(folderId, title, coverConfig, initialPageConfig, true);
+        await this.onCreateNotebook(folderId, docName, coverConfig, initialPageConfig, true);
       } else {
-        await this.onCreateNotebook(folderId, title, coverConfig, initialPageConfig, false);
+        await this.onCreateNotebook(folderId, docName, coverConfig, initialPageConfig, false);
         await this.loadAndRender();
       }
     };
@@ -1563,6 +1681,201 @@ export class DashboardView {
     input.addEventListener('keydown', handleKey);
   }
 
+  // --- Importación y Renderizado de Documentos PDF como Cuadernos ---
+
+  triggerPdfImport(targetFolderId = null) {
+    const fileInput = this.container.querySelector('#pdfFileInput');
+    if (fileInput) {
+      fileInput._targetFolderId = targetFolderId;
+      fileInput.click();
+    }
+  }
+
+  async ensurePdfJsLoaded() {
+    if (window.pdfjsLib) {
+      if (!window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      }
+      return window.pdfjsLib;
+    }
+
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      script.onload = () => {
+        if (window.pdfjsLib) {
+          window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+          resolve(window.pdfjsLib);
+        } else {
+          reject(new Error('No se pudo inicializar PDF.js'));
+        }
+      };
+      script.onerror = () => reject(new Error('No se pudo cargar la librería PDF.js desde CDN'));
+      document.head.appendChild(script);
+    });
+  }
+
+  async importPdfFile(file, targetFolderId = null) {
+    if (!file || (!file.type.includes('pdf') && !file.name.toLowerCase().endsWith('.pdf'))) {
+      alert('Por favor selecciona un archivo PDF válido.');
+      return;
+    }
+
+    const folderId = targetFolderId !== undefined ? targetFolderId : (this.currentNav.startsWith('folder_') ? this.currentNav.replace('folder_', '') : null);
+
+    this.showPdfImportProgress(file.name, 0, 1, 'Iniciando importación del documento...');
+
+    try {
+      // 1. Cargar biblioteca PDF.js
+      const pdfjs = await this.ensurePdfJsLoaded();
+
+      // 2. Leer archivo a ArrayBuffer
+      const arrayBuffer = await file.arrayBuffer();
+
+      // 3. Cargar documento PDF
+      this.updatePdfImportProgress('Analizando páginas del PDF...', 0, 1);
+      const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+      const pdfDoc = await loadingTask.promise;
+      const totalPages = pdfDoc.numPages;
+
+      if (totalPages === 0) {
+        throw new Error('El documento PDF no contiene páginas válidas.');
+      }
+
+      const pages = [];
+      const targetWidth = 794;
+      const targetHeight = 1123;
+
+      // 4. Renderizar cada página en formato A4 estándar de alta nitidez
+      for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+        this.updatePdfImportProgress(`Procesando página ${pageNum} de ${totalPages}...`, pageNum, totalPages);
+
+        const page = await pdfDoc.getPage(pageNum);
+        const unscaledViewport = page.getViewport({ scale: 1 });
+
+        // Ajuste proporcional para caber en A4
+        const scaleW = targetWidth / unscaledViewport.width;
+        const scaleH = targetHeight / unscaledViewport.height;
+        const uniformScale = Math.min(scaleW, scaleH);
+        const renderScale = uniformScale * 1.5; // Nitidez 1.5x
+
+        const renderViewport = page.getViewport({ scale: renderScale });
+
+        const offscreenCanvas = document.createElement('canvas');
+        offscreenCanvas.width = Math.round(renderViewport.width);
+        offscreenCanvas.height = Math.round(renderViewport.height);
+        const offCtx = offscreenCanvas.getContext('2d');
+
+        await page.render({
+          canvasContext: offCtx,
+          viewport: renderViewport
+        }).promise;
+
+        // Canvas final estándar A4 (794 x 1123 px)
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = targetWidth;
+        pageCanvas.height = targetHeight;
+        const pCtx = pageCanvas.getContext('2d');
+
+        // Fondo blanco de base
+        pCtx.fillStyle = '#ffffff';
+        pCtx.fillRect(0, 0, targetWidth, targetHeight);
+
+        // Centrar imagen en el lienzo A4
+        const drawW = unscaledViewport.width * uniformScale;
+        const drawH = unscaledViewport.height * uniformScale;
+        const offsetX = (targetWidth - drawW) / 2;
+        const offsetY = (targetHeight - drawH) / 2;
+
+        pCtx.drawImage(offscreenCanvas, offsetX, offsetY, drawW, drawH);
+        const pageDataUrl = pageCanvas.toDataURL('image/jpeg', 0.90);
+
+        pages.push({
+          id: 'page_' + Date.now() + '_' + pageNum,
+          backgroundPattern: 'blank',
+          paperColor: '#ffffff',
+          backgroundImage: pageDataUrl,
+          strokes: [],
+          shapes: [],
+          texts: [],
+          images: []
+        });
+      }
+
+      // 5. Crear documento cuaderno en la base de datos
+      const docTitle = file.name.replace(/\.[^/.]+$/, '').trim() || 'Cuaderno PDF';
+      const newDoc = {
+        id: 'doc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+        title: docTitle,
+        type: 'notebook',
+        pageFormat: 'a4',
+        folderId: folderId,
+        isFavorite: false,
+        isTrash: false,
+        isPdfImport: true,
+        defaultPattern: 'blank',
+        defaultPaperColor: '#ffffff',
+        thumbnail: pages[0]?.backgroundImage || null,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        pages: pages
+      };
+
+      await db.saveDocument(newDoc);
+      this.hidePdfImportProgress();
+
+      // Abrir inmediatamente el cuaderno en el editor
+      this.onOpenDoc(newDoc);
+    } catch (err) {
+      console.error('Error al importar PDF:', err);
+      this.hidePdfImportProgress();
+      alert('Error al importar el archivo PDF: ' + (err.message || 'El archivo puede estar corrupto o protegido con contraseña.'));
+    }
+  }
+
+  showPdfImportProgress(fileName, current, total, message) {
+    let progressModal = document.getElementById('pdfImportModal');
+    if (!progressModal) {
+      progressModal = document.createElement('div');
+      progressModal.id = 'pdfImportModal';
+      progressModal.className = 'modal-backdrop';
+      document.body.appendChild(progressModal);
+    }
+
+    const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+
+    progressModal.innerHTML = `
+      <div class="modal-box pdf-import-modal-box">
+        <div class="pdf-modal-header">
+          <span class="pdf-modal-icon">${Icons.pdf}</span>
+          <h3 class="modal-title" style="margin:0;">Importando PDF como Cuaderno</h3>
+        </div>
+        <p class="pdf-import-filename" title="${this.escapeHtml(fileName)}">${this.escapeHtml(fileName)}</p>
+        <div class="pdf-progress-bar-track">
+          <div class="pdf-progress-bar-fill" id="pdfProgressFill" style="width: ${pct}%;"></div>
+        </div>
+        <p class="pdf-progress-status" id="pdfProgressStatus">${message}</p>
+      </div>
+    `;
+    progressModal.classList.remove('hidden');
+  }
+
+  updatePdfImportProgress(message, current, total) {
+    const statusEl = document.getElementById('pdfProgressStatus');
+    const fillEl = document.getElementById('pdfProgressFill');
+    if (statusEl) statusEl.textContent = message;
+    if (fillEl && total > 0) {
+      fillEl.style.width = `${Math.round((current / total) * 100)}%`;
+    }
+  }
+
+  hidePdfImportProgress() {
+    const progressModal = document.getElementById('pdfImportModal');
+    if (progressModal) {
+      progressModal.remove();
+    }
+  }
+
   escapeHtml(str) {
     if (!str) return '';
     return String(str)
@@ -1573,4 +1886,5 @@ export class DashboardView {
       .replace(/'/g, '&#039;');
   }
 }
+
 

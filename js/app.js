@@ -10,6 +10,10 @@ import { ShapeTool } from './editor/shapeTool.js';
 import { TextTool } from './editor/textTool.js';
 import { ImageTool } from './editor/imageTool.js';
 import { CoverDesigner } from './editor/coverDesigner.js';
+import { LaserPointer } from './editor/laserPointer.js';
+import { Ruler } from './editor/ruler.js';
+import { HandwritingPredictor } from './editor/HandwritingPredictor.js';
+import { PaletteManager } from './paletteManager.js';
 import { SettingsManager } from './settings.js';
 
 class App {
@@ -34,7 +38,13 @@ class App {
     this.canvasEngine = new CanvasEngine(this.paintCanvas, {
       format: 'a4',
       inputMode: settings.inputMode || 'stylus-first',
-      onStrokeEnd: () => this.scheduleAutoSave()
+      onStrokeEnd: () => {
+        this.scheduleAutoSave();
+        if (this.htrPredictor && this.canvasEngine.strokes.length > 0) {
+          const lastStroke = this.canvasEngine.strokes[this.canvasEngine.strokes.length - 1];
+          this.htrPredictor.onStrokeFinished(lastStroke);
+        }
+      }
     });
 
     // 2. Inicializar Controlador de Zoom y Paneo del Viewport
@@ -46,11 +56,23 @@ class App {
     this.textTool = new TextTool(this.canvasEngine, this.canvasWrapper);
     this.imageTool = new ImageTool(this.canvasEngine, this.canvasWrapper);
 
-    // 4. Inicializar Barra de Herramientas Híbrida
+    // 4. Inicializar Puntero Láser y Regla Interactiva
+    this.laserPointer = new LaserPointer(this.canvasWrapper, this.paintCanvas);
+    this.ruler = new Ruler(this.canvasWrapper, this.canvasEngine);
+    this.canvasEngine.setRuler(this.ruler);
+    this.canvasEngine.setLaserPointer(this.laserPointer);
+
+    // 5. Inicializar Reconocedor y Predictor HTR
+    this.htrPredictor = new HandwritingPredictor(this.canvasEngine);
+
+    // 6. Inicializar Barra de Herramientas Modular
     this.toolbar = new Toolbar(this.canvasEngine, this.selectionTool, {
       shapeTool: this.shapeTool,
       textTool: this.textTool,
       imageTool: this.imageTool,
+      laserPointer: this.laserPointer,
+      ruler: this.ruler,
+      htrPredictor: this.htrPredictor,
       onBack: () => this.showDashboard(),
       onTitleChange: (newTitle) => {
         if (this.currentDoc) {
@@ -162,10 +184,12 @@ class App {
         }
       ];
     } else if (isNotebook) {
-      // Unificar la pauta en todas las hojas existentes del cuaderno (excepto portada)
+      // Unificar la pauta en todas las hojas existentes del cuaderno (excepto portada y páginas con fondo PDF)
       this.currentDoc.pages.forEach(p => {
-        p.backgroundPattern = this.currentDoc.defaultPattern;
-        p.paperColor = this.currentDoc.defaultPaperColor;
+        if (!p.backgroundImage) {
+          p.backgroundPattern = this.currentDoc.defaultPattern;
+          p.paperColor = this.currentDoc.defaultPaperColor;
+        }
       });
     }
 
@@ -191,7 +215,9 @@ class App {
     }
 
     await this.showEditor();
-    this.viewport.centerContent();
+    requestAnimationFrame(() => {
+      this.viewport.centerContent();
+    });
   }
 
   renderWhiteboardCanvas() {
@@ -205,6 +231,7 @@ class App {
     this.shapeTool.setHost(this.paintCanvas, this.canvasWrapper);
     this.textTool.setHost(this.paintCanvas, this.canvasWrapper);
     this.imageTool.setHost(this.paintCanvas, this.canvasWrapper);
+    if (this.laserPointer) this.laserPointer.setHost(this.paintCanvas, this.canvasWrapper);
   }
 
   renderNotebookStream() {
@@ -278,8 +305,10 @@ class App {
 
     // Renderizar contenidos de cada página en su canvas con la pauta unificada
     this.currentDoc.pages.forEach((pageData, idx) => {
-      pageData.backgroundPattern = this.currentDoc.defaultPattern || pageData.backgroundPattern || 'grid';
-      pageData.paperColor = this.currentDoc.defaultPaperColor || pageData.paperColor || '#ffffff';
+      if (!pageData.backgroundImage) {
+        pageData.backgroundPattern = this.currentDoc.defaultPattern || pageData.backgroundPattern || 'grid';
+        pageData.paperColor = this.currentDoc.defaultPaperColor || pageData.paperColor || '#ffffff';
+      }
       const cEl = this.canvasWrapper.querySelector(`#pageCanvas_${idx}`);
       if (cEl) {
         this.canvasEngine.renderPageToCanvas(cEl, pageData);
@@ -354,6 +383,7 @@ class App {
         this.shapeTool.setHost(coverCanvas, coverHost);
         this.textTool.setHost(coverCanvas, coverHost);
         this.imageTool.setHost(coverCanvas, coverHost);
+        if (this.laserPointer) this.laserPointer.setHost(coverCanvas, coverHost);
       }
       return;
     }
@@ -378,6 +408,7 @@ class App {
     this.shapeTool.setHost(activeCanvas, activeHost);
     this.textTool.setHost(activeCanvas, activeHost);
     this.imageTool.setHost(activeCanvas, activeHost);
+    if (this.laserPointer) this.laserPointer.setHost(activeCanvas, activeHost);
   }
 
   getPatternLabel(pat) {

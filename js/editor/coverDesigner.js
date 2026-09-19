@@ -41,9 +41,9 @@ export class CoverDesigner {
   static renderCover(ctx, width, height, coverData = {}) {
     const templateKey = coverData.template || 'moleskine';
     const tmpl = this.TEMPLATES[templateKey] || this.TEMPLATES.moleskine;
-    const title = coverData.title || 'Mi Cuaderno';
-    const subtitle = coverData.subtitle || 'Notas y Apuntes';
-    const date = coverData.date || new Date().getFullYear().toString();
+    const title = (coverData.title !== undefined && coverData.title !== null) ? coverData.title : '';
+    const subtitle = (coverData.subtitle !== undefined && coverData.subtitle !== null) ? coverData.subtitle : '';
+    const date = (coverData.date !== undefined && coverData.date !== null) ? coverData.date : '';
     const bgColor = coverData.color || tmpl.bg;
 
     ctx.save();
@@ -76,36 +76,45 @@ export class CoverDesigner {
       ctx.lineTo(36, height);
       ctx.stroke();
 
-      // Etiqueta centrada clásica
-      const labelW = Math.min(width * 0.72, 480);
-      const labelH = 220;
-      const labelX = (width - labelW) / 2 + 10;
-      const labelY = height * 0.32;
+      // Etiqueta centrada clásica (solo si hay título o subtítulo o fecha)
+      const hasText = title.trim() || subtitle.trim() || date.trim();
+      if (hasText) {
+        const labelW = Math.min(width * 0.72, 480);
+        const labelH = 220;
+        const labelX = (width - labelW) / 2 + 10;
+        const labelY = height * 0.32;
 
-      ctx.fillStyle = '#f8fafc';
-      ctx.fillRect(labelX, labelY, labelW, labelH);
-      ctx.strokeStyle = '#cbd5e1';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(labelX, labelY, labelW, labelH);
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(labelX, labelY, labelW, labelH);
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(labelX, labelY, labelW, labelH);
 
-      // Marco interior
-      ctx.strokeStyle = '#94a3b8';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(labelX + 8, labelY + 8, labelW - 16, labelH - 16);
+        // Marco interior
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(labelX + 8, labelY + 8, labelW - 16, labelH - 16);
 
-      // Textos de la etiqueta
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#0f172a';
-      ctx.font = 'bold 28px "Georgia", serif';
-      ctx.fillText(title, labelX + labelW / 2, labelY + 70);
+        // Textos de la etiqueta
+        ctx.textAlign = 'center';
+        if (title.trim()) {
+          ctx.fillStyle = '#0f172a';
+          ctx.font = 'bold 28px "Georgia", serif';
+          ctx.fillText(title, labelX + labelW / 2, labelY + 70);
+        }
 
-      ctx.font = '16px "Georgia", serif';
-      ctx.fillStyle = '#475569';
-      ctx.fillText(subtitle, labelX + labelW / 2, labelY + 120);
+        if (subtitle.trim()) {
+          ctx.font = '16px "Georgia", serif';
+          ctx.fillStyle = '#475569';
+          ctx.fillText(subtitle, labelX + labelW / 2, labelY + (title.trim() ? 120 : 90));
+        }
 
-      ctx.font = 'italic 14px "Georgia", serif';
-      ctx.fillStyle = '#94a3b8';
-      ctx.fillText(date, labelX + labelW / 2, labelY + 165);
+        if (date.trim()) {
+          ctx.font = 'italic 14px "Georgia", serif';
+          ctx.fillStyle = '#94a3b8';
+          ctx.fillText(date, labelX + labelW / 2, labelY + (subtitle.trim() ? 165 : 135));
+        }
+      }
 
     } else if (templateKey === 'leather') {
       // Pespunte / costura en los bordes
@@ -115,28 +124,37 @@ export class CoverDesigner {
       ctx.strokeRect(20, 20, width - 40, height - 40);
       ctx.setLineDash([]);
 
-      // Marco dorado central
-      const boxW = Math.min(width * 0.75, 520);
-      const boxH = 240;
-      const boxX = (width - boxW) / 2;
-      const boxY = height * 0.3;
+      const hasText = title.trim() || subtitle.trim() || date.trim();
+      if (hasText) {
+        // Marco dorado central
+        const boxW = Math.min(width * 0.75, 520);
+        const boxH = 240;
+        const boxX = (width - boxW) / 2;
+        const boxY = height * 0.3;
 
-      ctx.strokeStyle = '#f59e0b';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(boxX, boxY, boxW, boxH);
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(boxX, boxY, boxW, boxH);
 
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#fef3c7';
-      ctx.font = 'bold 32px "Times New Roman", serif';
-      ctx.fillText(title.toUpperCase(), width / 2, boxY + 80);
+        ctx.textAlign = 'center';
+        if (title.trim()) {
+          ctx.fillStyle = '#fef3c7';
+          ctx.font = 'bold 32px "Times New Roman", serif';
+          ctx.fillText(title.toUpperCase(), width / 2, boxY + 80);
+        }
 
-      ctx.font = '18px "Times New Roman", serif';
-      ctx.fillStyle = '#fde68a';
-      ctx.fillText(subtitle, width / 2, boxY + 135);
+        if (subtitle.trim()) {
+          ctx.font = '18px "Times New Roman", serif';
+          ctx.fillStyle = '#fde68a';
+          ctx.fillText(subtitle, width / 2, boxY + (title.trim() ? 135 : 100));
+        }
 
-      ctx.font = 'italic 15px "Times New Roman", serif';
-      ctx.fillStyle = '#d97706';
-      ctx.fillText(date, width / 2, boxY + 185);
+        if (date.trim()) {
+          ctx.font = 'italic 15px "Times New Roman", serif';
+          ctx.fillStyle = '#d97706';
+          ctx.fillText(date, width / 2, boxY + (subtitle.trim() ? 185 : 150));
+        }
+      }
 
     } else if (templateKey === 'minimal' || templateKey === 'pastel') {
       // Franja de acento superior
@@ -147,32 +165,44 @@ export class CoverDesigner {
       ctx.fillRect(50, height * 0.28, 6, 120);
 
       ctx.textAlign = 'left';
-      ctx.fillStyle = tmpl.textColor;
-      ctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-      ctx.fillText(title, 72, height * 0.33);
+      if (title.trim()) {
+        ctx.fillStyle = tmpl.textColor;
+        ctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillText(title, 72, height * 0.33);
+      }
 
-      ctx.fillStyle = tmpl.subtextColor;
-      ctx.font = '500 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-      ctx.fillText(subtitle, 72, height * 0.38);
+      if (subtitle.trim()) {
+        ctx.fillStyle = tmpl.subtextColor;
+        ctx.font = '500 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillText(subtitle, 72, height * (title.trim() ? 0.38 : 0.33));
+      }
 
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-      ctx.fillText(date, 72, height * 0.44);
+      if (date.trim()) {
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillText(date, 72, height * (subtitle.trim() ? 0.44 : 0.38));
+      }
 
     } else {
       // Personalizada / Foto
       ctx.textAlign = 'center';
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-      ctx.fillText(title, width / 2, height * 0.4);
+      if (title.trim()) {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillText(title, width / 2, height * 0.4);
+      }
 
-      ctx.fillStyle = '#e2e8f0';
-      ctx.font = '20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-      ctx.fillText(subtitle, width / 2, height * 0.46);
+      if (subtitle.trim()) {
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = '20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillText(subtitle, width / 2, height * (title.trim() ? 0.46 : 0.4));
+      }
 
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-      ctx.fillText(date, width / 2, height * 0.52);
+      if (date.trim()) {
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillText(date, width / 2, height * (subtitle.trim() ? 0.52 : 0.46));
+      }
     }
 
     ctx.restore();

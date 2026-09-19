@@ -44,10 +44,13 @@ const Icons = {
   marker: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l4 4-9 9-4-1 1-4 8-8z"/><path d="m14 16 2 2"/><path d="M3 21l3-1-2-2-1 3z"/></svg>`,
   brush: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"/><path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z"/></svg>`,
   highlighter: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11-6 6v3h3l6-6"/><path d="m22 7-4.5-4.5a2.12 2.12 0 0 0-3 0l-4.5 4.5 7.5 7.5 4.5-4.5a2.12 2.12 0 0 0 0-3z"/></svg>`,
+  laser: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14 2 8 8-4 4-8-8 4-4Z"/><circle cx="4" cy="20" r="2" fill="#ef4444" stroke="#ef4444"/><line x1="6" y1="18" x2="10" y2="14"/></svg>`,
+  ruler: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 8.7 15.3 2.7a2 2 0 0 0-2.8 0L2.7 12.5a2 2 0 0 0 0 2.8l6 6a2 2 0 0 0 2.8 0l9.8-9.8a2 2 0 0 0 0-2.8Z"/><line x1="7.5" y1="7.5" x2="9.5" y2="9.5"/><line x1="10.5" y1="10.5" x2="13.5" y2="13.5"/><line x1="14.5" y1="14.5" x2="16.5" y2="16.5"/></svg>`,
   eraser: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>`,
   text: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>`,
   shape: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="4"/><rect width="8" height="8" x="13" y="13" rx="1"/><path d="m14 4 6 6-6 6"/></svg>`,
   image: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>`,
+  video: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/></svg>`,
   
   // Figuras específicas
   rectangle: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="1"/></svg>`,
@@ -80,8 +83,165 @@ const Icons = {
   hand: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>`,
   zoomIn: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>`,
   zoomOut: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>`,
-  fitScreen: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>`
+  fitScreen: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>`,
+
+  // HTR (Handwriting to Text) y Pines
+  htr: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10.5-10.5a2.12 2.12 0 0 0-3-3L5 17v3Z"/><path d="m13.5 6.5 3 3"/><path d="M19 19h2"/><path d="M17 15h4"/><path d="M19 11h2"/></svg>`,
+  sparkles: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/></svg>`,
+  pin: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-2l-2-3V5a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7l-2 3v2Z"/></svg>`,
+  pinFilled: `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22" stroke="currentColor" stroke-width="2"/><path d="M5 17h14v-2l-2-3V5a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7l-2 3v2Z"/></svg>`,
+
+  // PDF
+  pdf: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`
 };
+
+
+// === File: js/paletteManager.js ===
+// js/paletteManager.js - Gestor centralizado y persistente de la paleta de 10 colores y accesos rápidos
+class PaletteManager {
+  static STORAGE_KEY = 'opeNotas_palette_v1';
+  static QUICK_KEY = 'opeNotas_quick_colors_v1';
+  static PRESETS_KEY = 'opeNotas_pinned_presets_v1';
+
+  static DEFAULT_PALETTE = [
+    '#1e293b', // Pizarra oscuro
+    '#2563eb', // Azul real
+    '#06b6d4', // Cian vibrante
+    '#10b981', // Verde esmeralda
+    '#84cc16', // Lima brillante
+    '#eab308', // Amarillo ámbar
+    '#f97316', // Naranja cálido
+    '#ef4444', // Rojo rubí
+    '#ec4899', // Rosa magenta
+    '#8b5cf6'  // Violeta púrpura
+  ];
+
+  static DEFAULT_QUICK = ['#1e293b', '#2563eb', '#ef4444'];
+
+  static _listeners = new Set();
+
+  static getPalette() {
+    try {
+      const stored = localStorage.getItem(this.STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Asegurar que siempre contenga exactamente 10 colores
+          const sanitized = parsed.filter(c => typeof c === 'string' && /^#[0-9a-fA-F]{6}$/.test(c));
+          for (let i = sanitized.length; i < 10; i++) {
+            sanitized.push(this.DEFAULT_PALETTE[i % this.DEFAULT_PALETTE.length]);
+          }
+          return sanitized.slice(0, 10);
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading palette from localStorage:', e);
+    }
+    return [...this.DEFAULT_PALETTE];
+  }
+
+  static savePalette(colors) {
+    try {
+      const sanitized = colors.slice(0, 10);
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(sanitized));
+      this.notify();
+    } catch (e) {
+      console.warn('Error saving palette to localStorage:', e);
+    }
+  }
+
+  static addColor(hexColor) {
+    if (!hexColor || typeof hexColor !== 'string') return;
+    const normalized = hexColor.trim().toLowerCase();
+    if (!/^#[0-9a-fA-F]{6}$/.test(normalized)) return;
+
+    let palette = this.getPalette();
+    // Eliminar si ya existía para ponerlo en primera posición
+    palette = palette.filter(c => c.toLowerCase() !== normalized);
+    palette.unshift(normalized);
+    // Mantener exactamente 10 colores
+    palette = palette.slice(0, 10);
+
+    this.savePalette(palette);
+    return palette;
+  }
+
+  static getQuickColors() {
+    try {
+      const stored = localStorage.getItem(this.QUICK_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length >= 3) {
+          return parsed.slice(0, 3);
+        }
+      }
+    } catch (e) {}
+    const pal = this.getPalette();
+    return [pal[0] || '#1e293b', pal[1] || '#2563eb', pal[7] || '#ef4444'];
+  }
+
+  static setQuickColors(colors) {
+    try {
+      localStorage.setItem(this.QUICK_KEY, JSON.stringify(colors.slice(0, 3)));
+      this.notify();
+    } catch (e) {}
+  }
+
+  static setQuickColorSlot(index, color) {
+    const current = this.getQuickColors();
+    if (index >= 0 && index < 3) {
+      current[index] = color;
+      this.setQuickColors(current);
+    }
+  }
+
+  static getPinnedPresets() {
+    try {
+      const stored = localStorage.getItem(this.PRESETS_KEY);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (e) {}
+    return [
+      { id: 'preset_1', name: 'Notas Azul', tool: 'pen', color: '#2563eb', width: 3, opacity: 1, stabilization: 0.5, concentration: 1.0 },
+      { id: 'preset_2', name: 'Subrayado Amarillo', tool: 'highlighter', color: '#eab308', width: 18, opacity: 0.45, stabilization: 0.7, concentration: 0.8 },
+      { id: 'preset_3', name: 'Corrección Rojo', tool: 'pen', color: '#ef4444', width: 2, opacity: 1, stabilization: 0.4, concentration: 1.0 }
+    ];
+  }
+
+  static addPinnedPreset(preset) {
+    try {
+      const presets = this.getPinnedPresets();
+      presets.unshift(preset);
+      localStorage.setItem(this.PRESETS_KEY, JSON.stringify(presets.slice(0, 8)));
+      this.notify();
+    } catch (e) {}
+  }
+
+  static removePinnedPreset(id) {
+    try {
+      const presets = this.getPinnedPresets().filter(p => p.id !== id);
+      localStorage.setItem(this.PRESETS_KEY, JSON.stringify(presets));
+      this.notify();
+    } catch (e) {}
+  }
+
+  static subscribe(fn) {
+    this._listeners.add(fn);
+    return () => this._listeners.delete(fn);
+  }
+
+  static notify() {
+    for (const fn of this._listeners) {
+      try {
+        fn();
+      } catch (e) {
+        console.error('Error in PaletteManager listener:', e);
+      }
+    }
+  }
+}
+
 
 
 // === File: js/settings.js ===
@@ -93,8 +253,7 @@ const DEFAULT_SETTINGS = {
   theme: 'light', // 'light' | 'dark' | 'system'
   inputMode: 'stylus-first', // 'stylus-first' (Modo Stylus / Rechazo de palma) | 'finger-drawing'
   darkPaper: false, // Invertir papel a tonos oscuros en modo noche
-  defaultPattern: 'grid', // 'grid' | 'ruled' | 'dots' | 'blank'
-  autoStraighten: true // Auto-enderezado inteligente de trazos
+  defaultPattern: 'grid' // 'grid' | 'ruled' | 'dots' | 'blank'
 };
 class SettingsManager {
   static settings = null;
@@ -271,14 +430,6 @@ class SettingsManager {
               </div>
               <input type="checkbox" id="chkStylusMode" class="settings-switch" ${current.inputMode === 'stylus-first' ? 'checked' : ''} />
             </label>
-
-            <label class="settings-toggle-row mt-2">
-              <div class="toggle-text">
-                <strong>Auto-enderezado inteligente</strong>
-                <small>Mantén pulsado 450ms al final del trazo para convertirlo automáticamente en una línea recta perfecta (regla virtual).</small>
-              </div>
-              <input type="checkbox" id="chkAutoStraighten" class="settings-switch" ${current.autoStraighten ? 'checked' : ''} />
-            </label>
           </div>
 
           <div class="settings-divider"></div>
@@ -376,12 +527,6 @@ class SettingsManager {
     chkStylusMode.addEventListener('change', (e) => {
       const mode = e.target.checked ? 'stylus-first' : 'finger-drawing';
       this.saveSettings({ inputMode: mode });
-    });
-
-    // Auto straighten toggle
-    const chkAutoStraighten = this.modalEl.querySelector('#chkAutoStraighten');
-    chkAutoStraighten.addEventListener('change', (e) => {
-      this.saveSettings({ autoStraighten: e.target.checked });
     });
 
     // Restablecer
@@ -1076,9 +1221,9 @@ class CoverDesigner {
   static renderCover(ctx, width, height, coverData = {}) {
     const templateKey = coverData.template || 'moleskine';
     const tmpl = this.TEMPLATES[templateKey] || this.TEMPLATES.moleskine;
-    const title = coverData.title || 'Mi Cuaderno';
-    const subtitle = coverData.subtitle || 'Notas y Apuntes';
-    const date = coverData.date || new Date().getFullYear().toString();
+    const title = (coverData.title !== undefined && coverData.title !== null) ? coverData.title : '';
+    const subtitle = (coverData.subtitle !== undefined && coverData.subtitle !== null) ? coverData.subtitle : '';
+    const date = (coverData.date !== undefined && coverData.date !== null) ? coverData.date : '';
     const bgColor = coverData.color || tmpl.bg;
 
     ctx.save();
@@ -1111,36 +1256,45 @@ class CoverDesigner {
       ctx.lineTo(36, height);
       ctx.stroke();
 
-      // Etiqueta centrada clásica
-      const labelW = Math.min(width * 0.72, 480);
-      const labelH = 220;
-      const labelX = (width - labelW) / 2 + 10;
-      const labelY = height * 0.32;
+      // Etiqueta centrada clásica (solo si hay título o subtítulo o fecha)
+      const hasText = title.trim() || subtitle.trim() || date.trim();
+      if (hasText) {
+        const labelW = Math.min(width * 0.72, 480);
+        const labelH = 220;
+        const labelX = (width - labelW) / 2 + 10;
+        const labelY = height * 0.32;
 
-      ctx.fillStyle = '#f8fafc';
-      ctx.fillRect(labelX, labelY, labelW, labelH);
-      ctx.strokeStyle = '#cbd5e1';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(labelX, labelY, labelW, labelH);
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(labelX, labelY, labelW, labelH);
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(labelX, labelY, labelW, labelH);
 
-      // Marco interior
-      ctx.strokeStyle = '#94a3b8';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(labelX + 8, labelY + 8, labelW - 16, labelH - 16);
+        // Marco interior
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(labelX + 8, labelY + 8, labelW - 16, labelH - 16);
 
-      // Textos de la etiqueta
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#0f172a';
-      ctx.font = 'bold 28px "Georgia", serif';
-      ctx.fillText(title, labelX + labelW / 2, labelY + 70);
+        // Textos de la etiqueta
+        ctx.textAlign = 'center';
+        if (title.trim()) {
+          ctx.fillStyle = '#0f172a';
+          ctx.font = 'bold 28px "Georgia", serif';
+          ctx.fillText(title, labelX + labelW / 2, labelY + 70);
+        }
 
-      ctx.font = '16px "Georgia", serif';
-      ctx.fillStyle = '#475569';
-      ctx.fillText(subtitle, labelX + labelW / 2, labelY + 120);
+        if (subtitle.trim()) {
+          ctx.font = '16px "Georgia", serif';
+          ctx.fillStyle = '#475569';
+          ctx.fillText(subtitle, labelX + labelW / 2, labelY + (title.trim() ? 120 : 90));
+        }
 
-      ctx.font = 'italic 14px "Georgia", serif';
-      ctx.fillStyle = '#94a3b8';
-      ctx.fillText(date, labelX + labelW / 2, labelY + 165);
+        if (date.trim()) {
+          ctx.font = 'italic 14px "Georgia", serif';
+          ctx.fillStyle = '#94a3b8';
+          ctx.fillText(date, labelX + labelW / 2, labelY + (subtitle.trim() ? 165 : 135));
+        }
+      }
 
     } else if (templateKey === 'leather') {
       // Pespunte / costura en los bordes
@@ -1150,28 +1304,37 @@ class CoverDesigner {
       ctx.strokeRect(20, 20, width - 40, height - 40);
       ctx.setLineDash([]);
 
-      // Marco dorado central
-      const boxW = Math.min(width * 0.75, 520);
-      const boxH = 240;
-      const boxX = (width - boxW) / 2;
-      const boxY = height * 0.3;
+      const hasText = title.trim() || subtitle.trim() || date.trim();
+      if (hasText) {
+        // Marco dorado central
+        const boxW = Math.min(width * 0.75, 520);
+        const boxH = 240;
+        const boxX = (width - boxW) / 2;
+        const boxY = height * 0.3;
 
-      ctx.strokeStyle = '#f59e0b';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(boxX, boxY, boxW, boxH);
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(boxX, boxY, boxW, boxH);
 
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#fef3c7';
-      ctx.font = 'bold 32px "Times New Roman", serif';
-      ctx.fillText(title.toUpperCase(), width / 2, boxY + 80);
+        ctx.textAlign = 'center';
+        if (title.trim()) {
+          ctx.fillStyle = '#fef3c7';
+          ctx.font = 'bold 32px "Times New Roman", serif';
+          ctx.fillText(title.toUpperCase(), width / 2, boxY + 80);
+        }
 
-      ctx.font = '18px "Times New Roman", serif';
-      ctx.fillStyle = '#fde68a';
-      ctx.fillText(subtitle, width / 2, boxY + 135);
+        if (subtitle.trim()) {
+          ctx.font = '18px "Times New Roman", serif';
+          ctx.fillStyle = '#fde68a';
+          ctx.fillText(subtitle, width / 2, boxY + (title.trim() ? 135 : 100));
+        }
 
-      ctx.font = 'italic 15px "Times New Roman", serif';
-      ctx.fillStyle = '#d97706';
-      ctx.fillText(date, width / 2, boxY + 185);
+        if (date.trim()) {
+          ctx.font = 'italic 15px "Times New Roman", serif';
+          ctx.fillStyle = '#d97706';
+          ctx.fillText(date, width / 2, boxY + (subtitle.trim() ? 185 : 150));
+        }
+      }
 
     } else if (templateKey === 'minimal' || templateKey === 'pastel') {
       // Franja de acento superior
@@ -1182,32 +1345,44 @@ class CoverDesigner {
       ctx.fillRect(50, height * 0.28, 6, 120);
 
       ctx.textAlign = 'left';
-      ctx.fillStyle = tmpl.textColor;
-      ctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-      ctx.fillText(title, 72, height * 0.33);
+      if (title.trim()) {
+        ctx.fillStyle = tmpl.textColor;
+        ctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillText(title, 72, height * 0.33);
+      }
 
-      ctx.fillStyle = tmpl.subtextColor;
-      ctx.font = '500 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-      ctx.fillText(subtitle, 72, height * 0.38);
+      if (subtitle.trim()) {
+        ctx.fillStyle = tmpl.subtextColor;
+        ctx.font = '500 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillText(subtitle, 72, height * (title.trim() ? 0.38 : 0.33));
+      }
 
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-      ctx.fillText(date, 72, height * 0.44);
+      if (date.trim()) {
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillText(date, 72, height * (subtitle.trim() ? 0.44 : 0.38));
+      }
 
     } else {
       // Personalizada / Foto
       ctx.textAlign = 'center';
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-      ctx.fillText(title, width / 2, height * 0.4);
+      if (title.trim()) {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillText(title, width / 2, height * 0.4);
+      }
 
-      ctx.fillStyle = '#e2e8f0';
-      ctx.font = '20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-      ctx.fillText(subtitle, width / 2, height * 0.46);
+      if (subtitle.trim()) {
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = '20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillText(subtitle, width / 2, height * (title.trim() ? 0.46 : 0.4));
+      }
 
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-      ctx.fillText(date, width / 2, height * 0.52);
+      if (date.trim()) {
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillText(date, width / 2, height * (subtitle.trim() ? 0.52 : 0.46));
+      }
     }
 
     ctx.restore();
@@ -1287,6 +1462,903 @@ class CoverDesigner {
 
 
 
+// === File: js/editor/laserPointer.js ===
+// js/editor/laserPointer.js - Puntero Láser temporal con efecto neón y desvanecimiento continuo
+class LaserPointer {
+  constructor(canvasWrapper, mainCanvas) {
+    this.wrapper = canvasWrapper;
+    this.mainCanvas = mainCanvas;
+    this.active = false;
+    this.isPointerDown = false;
+
+    this.points = []; // Array de { x, y, time, pressure }
+    this.FADE_DURATION_MS = 1000; // Desvanecimiento en ~1 segundo
+    this.animFrameId = null;
+
+    this.laserColor = '#ef4444'; // Rojo láser
+    this.laserGlow = '#ff0055';
+    this.laserCore = '#ffffff';
+
+    this.currentPointerPos = null;
+
+    this.createCanvas();
+    this.bindEvents();
+  }
+
+  createCanvas() {
+    if (!this.wrapper) return;
+    let existing = this.wrapper.querySelector('#laserCanvas');
+    if (!existing) {
+      this.laserCanvas = document.createElement('canvas');
+      this.laserCanvas.id = 'laserCanvas';
+      this.laserCanvas.className = 'laser-canvas-overlay';
+      this.wrapper.appendChild(this.laserCanvas);
+    } else {
+      this.laserCanvas = existing;
+    }
+
+    this.ctx = this.laserCanvas.getContext('2d');
+    this.syncDimensions();
+  }
+
+  syncDimensions() {
+    if (!this.laserCanvas || !this.mainCanvas) return;
+    if (this.laserCanvas.width !== this.mainCanvas.width || this.laserCanvas.height !== this.mainCanvas.height) {
+      this.laserCanvas.width = this.mainCanvas.width;
+      this.laserCanvas.height = this.mainCanvas.height;
+    }
+  }
+
+  setHost(mainCanvas, hostWrapper) {
+    if (this.mainCanvas && this._onPointerDown) {
+      this.mainCanvas.removeEventListener('pointerdown', this._onPointerDown);
+    }
+    this.mainCanvas = mainCanvas;
+    this.wrapper = hostWrapper;
+
+    if (!this.laserCanvas) {
+      this.createCanvas();
+    } else if (hostWrapper && this.laserCanvas.parentNode !== hostWrapper) {
+      if (this.laserCanvas.parentNode) {
+        this.laserCanvas.parentNode.removeChild(this.laserCanvas);
+      }
+      hostWrapper.appendChild(this.laserCanvas);
+    }
+
+    if (this.laserCanvas) {
+      this.ctx = this.laserCanvas.getContext('2d');
+      this.syncDimensions();
+    }
+
+    if (this.mainCanvas && this._onPointerDown) {
+      this.mainCanvas.addEventListener('pointerdown', this._onPointerDown);
+    }
+  }
+
+  setColor(color) {
+    this.laserColor = color;
+    if (color === '#ef4444') {
+      this.laserGlow = '#ff0055';
+    } else if (color === '#10b981') {
+      this.laserGlow = '#00ff88';
+    } else if (color === '#3b82f6') {
+      this.laserGlow = '#0088ff';
+    } else if (color === '#f59e0b') {
+      this.laserGlow = '#ffaa00';
+    } else if (color === '#8b5cf6') {
+      this.laserGlow = '#c084fc';
+    } else if (color === '#ec4899') {
+      this.laserGlow = '#f472b6';
+    } else {
+      this.laserGlow = color;
+    }
+  }
+
+  setActive(active) {
+    this.active = Boolean(active);
+    if (this.active) {
+      if (this.wrapper && this.laserCanvas && this.laserCanvas.parentNode !== this.wrapper) {
+        this.wrapper.appendChild(this.laserCanvas);
+      }
+      this.syncDimensions();
+    } else {
+      this.isPointerDown = false;
+      this.currentPointerPos = null;
+      this.points = [];
+      this.clearCanvas();
+      if (this.animFrameId) {
+        cancelAnimationFrame(this.animFrameId);
+        this.animFrameId = null;
+      }
+    }
+  }
+
+  bindEvents() {
+    this._onPointerDown = (e) => {
+      if (!this.active) return;
+      if (e.button !== 0 && e.pointerType === 'mouse') return;
+      this.isPointerDown = true;
+      if (this.mainCanvas && e.pointerId) {
+        try { this.mainCanvas.setPointerCapture(e.pointerId); } catch (_) {}
+      }
+      const pt = this.getCoordinates(e);
+      this.currentPointerPos = pt;
+      this.addPoint(pt.x, pt.y, pt.pressure);
+      this.startAnimationLoop();
+    };
+
+    this._onPointerMove = (e) => {
+      if (!this.active || !this.mainCanvas) return;
+      const rect = this.mainCanvas.getBoundingClientRect();
+      const inBounds = e.clientX >= rect.left && e.clientX <= rect.right &&
+                       e.clientY >= rect.top && e.clientY <= rect.bottom;
+      
+      const pt = this.getCoordinates(e);
+
+      if (inBounds || this.isPointerDown) {
+        this.currentPointerPos = pt;
+        if (this.isPointerDown) {
+          this.addPoint(pt.x, pt.y, pt.pressure);
+        }
+        this.startAnimationLoop();
+      } else {
+        this.currentPointerPos = null;
+      }
+    };
+
+    this._onPointerUp = (e) => {
+      if (!this.active) return;
+      this.isPointerDown = false;
+      if (this.mainCanvas && e && e.pointerId) {
+        try { this.mainCanvas.releasePointerCapture(e.pointerId); } catch (_) {}
+      }
+    };
+
+    if (this.mainCanvas) {
+      this.mainCanvas.addEventListener('pointerdown', this._onPointerDown);
+    }
+    window.addEventListener('pointermove', this._onPointerMove);
+    window.addEventListener('pointerup', this._onPointerUp);
+    window.addEventListener('pointercancel', this._onPointerUp);
+  }
+
+  getCoordinates(e) {
+    if (!this.mainCanvas) return { x: 0, y: 0, pressure: 0.5 };
+    const rect = this.mainCanvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return { x: 0, y: 0, pressure: 0.5 };
+    const scaleX = this.mainCanvas.width / rect.width;
+    const scaleY = this.mainCanvas.height / rect.height;
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+      pressure: e.pressure > 0 ? e.pressure : 0.5
+    };
+  }
+
+  addPoint(x, y, pressure) {
+    this.points.push({
+      x,
+      y,
+      pressure: pressure || 0.5,
+      time: performance.now()
+    });
+  }
+
+  startAnimationLoop() {
+    if (!this.animFrameId) {
+      this.animFrameId = requestAnimationFrame(() => this.renderFrame());
+    }
+  }
+
+  clearCanvas() {
+    if (this.ctx && this.laserCanvas) {
+      this.ctx.clearRect(0, 0, this.laserCanvas.width, this.laserCanvas.height);
+    }
+  }
+
+  renderFrame() {
+    this.animFrameId = null;
+    if (!this.active || !this.ctx) {
+      this.clearCanvas();
+      return;
+    }
+
+    const now = performance.now();
+    this.syncDimensions();
+    this.clearCanvas();
+
+    // 1. Filtrar puntos activos que no hayan caducado (> 1000ms)
+    this.points = this.points.filter(p => (now - p.time) < this.FADE_DURATION_MS);
+
+    // 2. Renderizar segmentos de estela láser
+    if (this.points.length > 1) {
+      for (let i = 1; i < this.points.length; i++) {
+        const p0 = this.points[i - 1];
+        const p1 = this.points[i];
+        const age = now - p1.time;
+        const progress = Math.max(0, Math.min(1, age / this.FADE_DURATION_MS));
+        const alpha = 1 - progress;
+
+        if (alpha <= 0.01) continue;
+
+        const baseWidth = 6 * (0.8 + (p1.pressure || 0.5) * 0.4);
+
+        // Capa externa brillante (Glow)
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.moveTo(p0.x, p0.y);
+        this.ctx.lineTo(p1.x, p1.y);
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+
+        this.ctx.globalAlpha = alpha * 0.7;
+        this.ctx.strokeStyle = this.laserColor;
+        this.ctx.lineWidth = baseWidth * 2.2;
+        this.ctx.shadowColor = this.laserGlow;
+        this.ctx.shadowBlur = 16 * alpha;
+        this.ctx.stroke();
+
+        // Capa media intensa
+        this.ctx.globalAlpha = alpha * 0.9;
+        this.ctx.strokeStyle = this.laserGlow;
+        this.ctx.lineWidth = baseWidth * 1.3;
+        this.ctx.stroke();
+
+        // Núcleo blanco brillante central
+        this.ctx.globalAlpha = alpha;
+        this.ctx.strokeStyle = this.laserCore;
+        this.ctx.lineWidth = Math.max(2, baseWidth * 0.5);
+        this.ctx.shadowBlur = 4;
+        this.ctx.shadowColor = '#ffffff';
+        this.ctx.stroke();
+
+        this.ctx.restore();
+      }
+    }
+
+    // 3. Renderizar el punto puntero láser principal si el puntero está sobre el lienzo
+    if (this.currentPointerPos && this.active) {
+      const { x, y } = this.currentPointerPos;
+      this.ctx.save();
+      
+      // Halo exterior
+      this.ctx.beginPath();
+      this.ctx.arc(x, y, 9, 0, Math.PI * 2);
+      this.ctx.fillStyle = this.laserColor;
+      this.ctx.globalAlpha = 0.4;
+      this.ctx.shadowColor = this.laserColor;
+      this.ctx.shadowBlur = 18;
+      this.ctx.fill();
+
+      // Disco intermedio
+      this.ctx.beginPath();
+      this.ctx.arc(x, y, 5, 0, Math.PI * 2);
+      this.ctx.fillStyle = this.laserColor;
+      this.ctx.globalAlpha = 0.9;
+      this.ctx.shadowColor = this.laserGlow;
+      this.ctx.shadowBlur = 10;
+      this.ctx.fill();
+
+      // Punto central blanco
+      this.ctx.beginPath();
+      this.ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+      this.ctx.fillStyle = '#ffffff';
+      this.ctx.globalAlpha = 1.0;
+      this.ctx.fill();
+
+      this.ctx.restore();
+    }
+
+    // Si aún hay puntos o el usuario está dibujando o el láser está activo, continuar el loop
+    if (this.points.length > 0 || this.isPointerDown || (this.active && this.currentPointerPos)) {
+      this.animFrameId = requestAnimationFrame(() => this.renderFrame());
+    }
+  }
+
+  destroy() {
+    this.setActive(false);
+    if (this.laserCanvas && this.laserCanvas.parentNode) {
+      this.laserCanvas.parentNode.removeChild(this.laserCanvas);
+    }
+  }
+}
+
+
+// === File: js/editor/ruler.js ===
+// js/editor/ruler.js - Regla interactiva con marcas métricas (cm/mm), rotación con ángulo y snapping de trazo
+class Ruler {
+  constructor(canvasWrapper, canvasEngine, options = {}) {
+    this.wrapper = canvasWrapper;
+    this.engine = canvasEngine;
+    this.onClose = options.onClose || (() => {});
+
+    this.active = false;
+    this.x = 200; // Posición central en px dentro de wrapper
+    this.y = 300;
+    this.width = 540; // Longitud en px (aprox 20-25 cm)
+    this.height = 76; // Ancho de la regla
+    this.angle = 0; // Ángulo en grados
+
+    this.isDragging = false;
+    this.isRotating = false;
+    this.dragOffset = { x: 0, y: 0 };
+    this.startAngle = 0;
+    this.startPointerAngle = 0;
+
+    this.element = null;
+    this.createElement();
+    this.bindEvents();
+  }
+
+  createElement() {
+    this.element = document.createElement('div');
+    this.element.className = 'interactive-ruler hidden';
+    this.element.id = 'interactiveRuler';
+
+    // Generar marcas métricas (mm y cm)
+    const cmCount = Math.floor(this.width / 24); // ~24px por cm
+    let ticksHtml = '';
+    for (let cm = 0; cm <= cmCount; cm++) {
+      const cmX = cm * 24;
+      ticksHtml += `
+        <div class="ruler-tick cm-tick" style="left: ${cmX}px;">
+          <span class="cm-label">${cm}</span>
+        </div>
+      `;
+      if (cm < cmCount) {
+        for (let mm = 1; mm < 10; mm++) {
+          const mmX = cmX + (mm * 2.4);
+          const isHalf = mm === 5;
+          ticksHtml += `<div class="ruler-tick mm-tick ${isHalf ? 'half-tick' : ''}" style="left: ${mmX}px;"></div>`;
+        }
+      }
+    }
+
+    this.element.innerHTML = `
+      <div class="ruler-scale top-scale">${ticksHtml}</div>
+      <div class="ruler-body">
+        <div class="ruler-drag-handle" title="Arrastrar regla">
+          <span class="ruler-handle-icon">⠿</span>
+          <span class="ruler-title">REGLA 30cm</span>
+        </div>
+        <div class="ruler-controls">
+          <div class="ruler-angle-badge" id="rulerAngleBadge">0°</div>
+          <button type="button" class="ruler-rotate-btn" id="btnRulerRotate" title="Girar regla">
+            ↻
+          </button>
+          <button type="button" class="ruler-close-btn" id="btnRulerClose" title="Cerrar regla">
+            ${Icons.close || '✕'}
+          </button>
+        </div>
+      </div>
+      <div class="ruler-scale bottom-scale">${ticksHtml}</div>
+    `;
+
+    this.wrapper.appendChild(this.element);
+    this.updateTransform();
+  }
+
+  setActive(active) {
+    this.active = Boolean(active);
+    if (this.element) {
+      this.element.classList.toggle('hidden', !this.active);
+      if (this.active) {
+        this.centerOnScreen();
+        this.updateTransform();
+      }
+    }
+  }
+
+  toggle() {
+    this.setActive(!this.active);
+    return this.active;
+  }
+
+  centerOnScreen() {
+    const rect = this.wrapper.getBoundingClientRect();
+    this.x = rect.width / 2;
+    this.y = rect.height / 2;
+    this.updateTransform();
+  }
+
+  updateTransform() {
+    if (!this.element) return;
+    this.element.style.width = `${this.width}px`;
+    this.element.style.height = `${this.height}px`;
+    this.element.style.transform = `translate(${this.x - this.width / 2}px, ${this.y - this.height / 2}px) rotate(${this.angle}deg)`;
+
+    const badge = this.element.querySelector('#rulerAngleBadge');
+    if (badge) {
+      // Normalizar ángulo entre -180° y 180° o 0° y 360°
+      let normAngle = Math.round(this.angle % 360);
+      if (normAngle < 0) normAngle += 360;
+      badge.textContent = `${normAngle}°`;
+    }
+  }
+
+  bindEvents() {
+    // Cerrar regla
+    const btnClose = this.element.querySelector('#btnRulerClose');
+    if (btnClose) {
+      btnClose.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.setActive(false);
+        this.onClose();
+      });
+    }
+
+    // Arrastre (Move handle)
+    const handle = this.element.querySelector('.ruler-drag-handle');
+    if (handle) {
+      handle.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        this.isDragging = true;
+        this.dragOffset = {
+          x: e.clientX - this.x,
+          y: e.clientY - this.y
+        };
+        handle.setPointerCapture(e.pointerId);
+      });
+    }
+
+    // Rotación (Rotate button)
+    const btnRotate = this.element.querySelector('#btnRulerRotate');
+    if (btnRotate) {
+      btnRotate.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        this.isRotating = true;
+        const rect = this.element.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        this.startPointerAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
+        this.startAngle = this.angle;
+        btnRotate.setPointerCapture(e.pointerId);
+      });
+    }
+
+    // Movimiento y rotación global
+    window.addEventListener('pointermove', (e) => {
+      if (this.isDragging) {
+        this.x = e.clientX - this.dragOffset.x;
+        this.y = e.clientY - this.dragOffset.y;
+        this.updateTransform();
+      } else if (this.isRotating) {
+        const rect = this.element.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const currentPointerAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
+        let delta = currentPointerAngle - this.startPointerAngle;
+        let newAngle = this.startAngle + delta;
+
+        // Snapping a múltiplos de 15° y 45° si está cerca (±2°)
+        const snapStep = 15;
+        const nearestSnap = Math.round(newAngle / snapStep) * snapStep;
+        if (Math.abs(newAngle - nearestSnap) < 2.5) {
+          newAngle = nearestSnap;
+        }
+
+        this.angle = newAngle;
+        this.updateTransform();
+      }
+    });
+
+    window.addEventListener('pointerup', () => {
+      this.isDragging = false;
+      this.isRotating = false;
+    });
+
+    // Rueda del ratón sobre la regla para rotar con precisión
+    this.element.addEventListener('wheel', (e) => {
+      if (!this.active) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const step = e.shiftKey ? 1 : (e.altKey ? 15 : 5);
+      this.angle += (e.deltaY > 0 ? step : -step);
+      this.updateTransform();
+    }, { passive: false });
+  }
+
+  // Snapping de coordenadas sobre el borde de la regla en el espacio del canvas
+  snapPoint(canvasX, canvasY, threshold = 28) {
+    if (!this.active || !this.element || !this.engine || !this.engine.canvas) {
+      return { snapped: false, x: canvasX, y: canvasY };
+    }
+
+    const mainCanvas = this.engine.canvas;
+    const canvasRect = mainCanvas.getBoundingClientRect();
+    const rulerRect = this.element.getBoundingClientRect();
+
+    // Convertir centro de la regla al espacio del canvas
+    const scaleX = mainCanvas.width / canvasRect.width;
+    const scaleY = mainCanvas.height / canvasRect.height;
+
+    const rulerCenterX = (rulerRect.left + rulerRect.width / 2 - canvasRect.left) * scaleX;
+    const rulerCenterY = (rulerRect.top + rulerRect.height / 2 - canvasRect.top) * scaleY;
+
+    const rad = (this.angle * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+
+    const halfLength = (this.width / 2) * scaleX;
+    const halfThickness = (this.height / 2) * scaleY;
+
+    // Vector unitario a lo largo de la regla
+    const ux = cos;
+    const uy = sin;
+    // Vector unitario perpendicular (normal)
+    const nx = -sin;
+    const ny = cos;
+
+    // Borde superior
+    const topEdgeCenter = {
+      x: rulerCenterX + nx * (-halfThickness),
+      y: rulerCenterY + ny * (-halfThickness)
+    };
+    const topA = { x: topEdgeCenter.x - ux * halfLength, y: topEdgeCenter.y - uy * halfLength };
+    const topB = { x: topEdgeCenter.x + ux * halfLength, y: topEdgeCenter.y + uy * halfLength };
+
+    // Borde inferior
+    const bottomEdgeCenter = {
+      x: rulerCenterX + nx * halfThickness,
+      y: rulerCenterY + ny * halfThickness
+    };
+    const bottomA = { x: bottomEdgeCenter.x - ux * halfLength, y: bottomEdgeCenter.y - uy * halfLength };
+    const bottomB = { x: bottomEdgeCenter.x + ux * halfLength, y: bottomEdgeCenter.y + uy * halfLength };
+
+    // Proyección sobre borde superior
+    const projTop = this.projectOnSegment({ x: canvasX, y: canvasY }, topA, topB);
+    const distTop = Math.hypot(canvasX - projTop.x, canvasY - projTop.y);
+
+    // Proyección sobre borde inferior
+    const projBottom = this.projectOnSegment({ x: canvasX, y: canvasY }, bottomA, bottomB);
+    const distBottom = Math.hypot(canvasX - projBottom.x, canvasY - projBottom.y);
+
+    const scaledThreshold = threshold * scaleX;
+
+    if (distTop <= scaledThreshold && distTop <= distBottom) {
+      return { snapped: true, x: projTop.x, y: projTop.y, edge: 'top' };
+    } else if (distBottom <= scaledThreshold) {
+      return { snapped: true, x: projBottom.x, y: projBottom.y, edge: 'bottom' };
+    }
+
+    return { snapped: false, x: canvasX, y: canvasY };
+  }
+
+  projectOnSegment(p, a, b) {
+    const abx = b.x - a.x;
+    const aby = b.y - a.y;
+    const apx = p.x - a.x;
+    const apy = p.y - a.y;
+
+    const abLenSq = abx * abx + aby * aby;
+    if (abLenSq === 0) return { x: a.x, y: a.y };
+
+    let t = (apx * abx + apy * aby) / abLenSq;
+    t = Math.max(0, Math.min(1, t)); // Clamped al segmento de la regla
+
+    return {
+      x: a.x + t * abx,
+      y: a.y + t * aby
+    };
+  }
+
+  destroy() {
+    this.setActive(false);
+    if (this.element && this.element.parentNode) {
+      this.element.parentNode.removeChild(this.element);
+    }
+  }
+}
+
+
+
+// === File: js/editor/HandwritingPredictor.js ===
+// js/editor/HandwritingPredictor.js - Gestor de HTR y sugerencias predictivas flotantes
+class HandwritingPredictor {
+  constructor(canvasEngine, options = {}) {
+    this.engine = canvasEngine;
+    this.enabled = options.enabled !== undefined ? options.enabled : true;
+    this.DEBOUNCE_DELAY_MS = 700;
+    this.WORD_GAP_PX = 55; // Distancia máxima para agrupar trazos en la misma palabra
+
+    this.debounceTimer = null;
+    this.worker = null;
+    this.activeCluster = {
+      strokes: [],
+      bbox: null,
+      lastTimestamp: 0
+    };
+
+    this.currentSuggestions = null;
+    this.barElement = null;
+
+    this.onStateChange = options.onStateChange || null;
+
+    this.initWorker();
+    this.createSuggestionsBar();
+    this.bindEvents();
+  }
+
+  initWorker() {
+    try {
+      // Intentar cargar worker desde archivo
+      this.worker = new Worker('js/editor/htr-worker.js');
+    } catch (e) {
+      // Fallback para entornos file:// o WebView sin acceso a worker externo
+      try {
+        const workerCode = `
+          const SPANISH_DICT = ["hola","nota","notas","apuntes","tarea","examen","resumen","cuaderno","pizarra","libro","tema","clase","estudio","profesor","alumno","estudiante","dibujo","figura","esquema","mapa","texto","linea","color","pagina","ejemplo","conclusion","introduccion","indice","titulo","subtitulo","definicion","formula","teorema","practica","proyecto","entrega","fecha","duda","pregunta","respuesta","importante","atencion","revisar","pendiente","completado","objetivo","metodo","analisis","resultado","matematicas","fisica","quimica","biologia","historia","geografia","lengua","literatura","filosofia","ingles","frances","economia","derecho","arte","musica","tecnologia","informatica","programacion","calculo","algebra","geometria","estadistica","medicina","psicologia","casa","tiempo","año","dia","noche","vida","cosa","mundo","forma","manera","parte","lugar","agua","fuego","tierra","aire","sol","luna","ojo","mano","cabeza","cuerpo","ciudad","pais","pueblo","calle","camino","nombre","palabra","letra","punto","numero","semana","mes","hora","minuto","segundo","amigo","familia","trabajo","escuela","universidad","instituto","idea","verdad","hacer","tener","estar","saber","decir","poder","poner","ver","dar","ir","querer","llegar","pasar","deber","parecer","quedar","creer","hablar","llevar","dejar","seguir","encontrar","llamar","venir","pensar","salir","volver","tomar","conocer","vivir","sentir","tratar","mirar","contar","empezar","esperar","buscar","existir","entrar","trabajar","escribir","perder","producir","ocurrir","entender","pedir","recibir","recordar","terminar","permitir","aparecer","conseguir","comenzar","servir","sacar","necesitar","mantener","resultar","leer","caer","cambiar","presentar","crear","abrir"];
+          self.onmessage = function(e) {
+            const data = e.data;
+            if (!data || data.action !== 'analyze_strokes') return;
+            const { wordStrokes, bbox, strokeIds } = data;
+            const width = Math.max(1, bbox.maxX - bbox.minX);
+            const height = Math.max(1, bbox.maxY - bbox.minY);
+            const aspectRatio = width / height;
+            const estimatedLen = Math.max(2, Math.min(12, Math.round(aspectRatio * 1.5)));
+            const scored = SPANISH_DICT.map(w => {
+              const diff = Math.abs(w.length - estimatedLen);
+              const ratioDiff = Math.abs(aspectRatio - w.length * 0.5);
+              return { word: w, score: 100 - diff * 15 - ratioDiff * 10 };
+            }).sort((a, b) => b.score - a.score);
+            const top = scored.slice(0, 3).map(s => s.word);
+            self.postMessage({
+              action: 'htr_result',
+              palabraDetectada: top[0] || 'nota',
+              sugerencias: top,
+              bbox,
+              strokeIds
+            });
+          };
+        `;
+        const blob = new Blob([workerCode], { type: 'application/javascript' });
+        this.worker = new Worker(URL.createObjectURL(blob));
+      } catch (blobErr) {
+        console.warn('Web Worker HTR no disponible en este entorno:', blobErr);
+      }
+    }
+
+    if (this.worker) {
+      this.worker.onmessage = (e) => this.handleWorkerMessage(e);
+    }
+  }
+
+  createSuggestionsBar() {
+    let bar = document.getElementById('htrSuggestionsBar');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'htrSuggestionsBar';
+      bar.className = 'htr-suggestions-bar hidden';
+      document.body.appendChild(bar);
+    }
+    this.barElement = bar;
+  }
+
+  bindEvents() {
+    if (this.engine.canvas) {
+      this.engine.canvas.addEventListener('pointerdown', () => {
+        this.hideSuggestions();
+      }, { passive: true });
+    }
+  }
+
+  toggleHTR(forceValue = null) {
+    this.enabled = forceValue !== null ? Boolean(forceValue) : !this.enabled;
+    if (!this.enabled) {
+      this.hideSuggestions();
+      this.clearDebounce();
+      this.resetCluster();
+    }
+    if (this.onStateChange) {
+      this.onStateChange(this.enabled);
+    }
+    return this.enabled;
+  }
+
+  onStrokeFinished(stroke) {
+    if (!this.enabled) return;
+    if (!stroke || !stroke.points || stroke.points.length < 2) return;
+    if (stroke.tool !== 'pen' && stroke.tool !== 'pencil' && stroke.tool !== 'marker' && stroke.tool !== 'brush') {
+      return;
+    }
+
+    const sb = stroke.roughBox || { minX: stroke.points[0].x, minY: stroke.points[0].y, maxX: stroke.points[0].x, maxY: stroke.points[0].y };
+
+    if (!this.activeCluster.bbox) {
+      // Iniciar nuevo cluster de palabra
+      this.activeCluster.strokes = [stroke];
+      this.activeCluster.bbox = { ...sb };
+    } else {
+      const cb = this.activeCluster.bbox;
+      // Comprobar proximidad espacial con el cluster en curso
+      const isNearbyHoriz = sb.minX <= cb.maxX + this.WORD_GAP_PX && sb.maxX >= cb.minX - this.WORD_GAP_PX;
+      const isNearbyVert = sb.minY <= cb.maxY + 40 && sb.maxY >= cb.minY - 40;
+
+      if (isNearbyHoriz && isNearbyVert) {
+        this.activeCluster.strokes.push(stroke);
+        cb.minX = Math.min(cb.minX, sb.minX);
+        cb.minY = Math.min(cb.minY, sb.minY);
+        cb.maxX = Math.max(cb.maxX, sb.maxX);
+        cb.maxY = Math.max(cb.maxY, sb.maxY);
+      } else {
+        // Distancia espacial superada: nuevo cluster
+        this.activeCluster.strokes = [stroke];
+        this.activeCluster.bbox = { ...sb };
+      }
+    }
+
+    this.activeCluster.lastTimestamp = Date.now();
+    this.scheduleAnalysis();
+  }
+
+  scheduleAnalysis() {
+    this.clearDebounce();
+    this.debounceTimer = setTimeout(() => {
+      this.runAnalysis();
+    }, this.DEBOUNCE_DELAY_MS);
+  }
+
+  clearDebounce() {
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = null;
+    }
+  }
+
+  resetCluster() {
+    this.activeCluster = {
+      strokes: [],
+      bbox: null,
+      lastTimestamp: 0
+    };
+  }
+
+  runAnalysis() {
+    if (!this.enabled || !this.worker || this.activeCluster.strokes.length === 0) return;
+
+    const clusterStrokes = [...this.activeCluster.strokes];
+    const bbox = { ...this.activeCluster.bbox };
+    const strokeIds = clusterStrokes.map(s => s.id);
+
+    // Enviar datos al worker sin bloquear el hilo principal
+    this.worker.postMessage({
+      action: 'analyze_strokes',
+      wordStrokes: clusterStrokes.map(s => ({
+        points: s.points,
+        width: s.width,
+        color: s.color
+      })),
+      bbox: bbox,
+      strokeIds: strokeIds
+    });
+  }
+
+  handleWorkerMessage(e) {
+    const data = e.data;
+    if (!data || data.action !== 'htr_result') return;
+    if (!this.enabled) return;
+
+    const { palabraDetectada, sugerencias, bbox, strokeIds } = data;
+    if (!sugerencias || sugerencias.length === 0) return;
+
+    // Verificar que los trazos aún existen en el canvas
+    const currentIds = new Set(this.engine.strokes.map(s => s.id));
+    const stillExist = strokeIds.some(id => currentIds.has(id));
+    if (!stillExist) return;
+
+    this.showSuggestions(sugerencias, bbox, strokeIds);
+  }
+
+  showSuggestions(sugerencias, bbox, strokeIds) {
+    if (!this.barElement) return;
+
+    const rect = this.engine.canvas.getBoundingClientRect();
+    const scaleX = rect.width / this.engine.canvas.width;
+    const scaleY = rect.height / this.engine.canvas.height;
+
+    // Posición en pantalla por encima de la palabra escrita
+    const screenLeft = rect.left + (bbox.minX * scaleX);
+    const screenTop = rect.top + (bbox.minY * scaleY) - 44;
+
+    this.barElement.style.left = `${Math.max(10, screenLeft)}px`;
+    this.barElement.style.top = `${Math.max(10, screenTop)}px`;
+
+    this.barElement.innerHTML = `
+      <div class="htr-suggestions-container">
+        <span class="htr-badge-sparkle">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/></svg>
+        </span>
+        ${sugerencias.map((sug, idx) => `
+          <button type="button" class="htr-pill-btn ${idx === 0 ? 'htr-pill-primary' : ''}" data-word="${sug}">
+            ${sug}
+          </button>
+        `).join('')}
+        <button type="button" class="htr-close-btn" title="Cerrar sugerencias">×</button>
+      </div>
+    `;
+
+    // Vincular clics en sugerencias
+    const pillButtons = this.barElement.querySelectorAll('.htr-pill-btn');
+    pillButtons.forEach(btn => {
+      btn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const chosenWord = btn.getAttribute('data-word');
+        this.applyWordReplacement(chosenWord, bbox, strokeIds);
+      });
+    });
+
+    const closeBtn = this.barElement.querySelector('.htr-close-btn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        this.hideSuggestions();
+      });
+    }
+
+    this.barElement.classList.remove('hidden');
+  }
+
+  applyWordReplacement(chosenWord, bbox, strokeIds) {
+    if (!chosenWord || !this.engine) return;
+
+    // 1. Localizar y recopilar los trazos que se van a eliminar
+    const idsSet = new Set(strokeIds);
+    const deletedStrokes = [];
+    const remainingStrokes = [];
+
+    let mainColor = '#1e293b';
+    for (let i = 0; i < this.engine.strokes.length; i++) {
+      const s = this.engine.strokes[i];
+      if (idsSet.has(s.id)) {
+        deletedStrokes.push({ stroke: s, index: i });
+        if (s.color) mainColor = s.color;
+      } else {
+        remainingStrokes.push(s);
+      }
+    }
+
+    this.engine.strokes = remainingStrokes;
+
+    // 2. Calcular tamaño tipográfico adecuado según la altura del trazo manuscrito
+    const boxHeight = bbox.maxY - bbox.minY;
+    const fontSize = Math.max(16, Math.min(54, Math.round(boxHeight * 0.88)));
+
+    // 3. Crear el elemento de texto digital
+    const textObj = {
+      id: 'text_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      x: bbox.minX,
+      y: bbox.minY,
+      text: chosenWord,
+      color: mainColor,
+      fontSize: fontSize,
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+    };
+
+    this.engine.texts.push(textObj);
+
+    // 4. Registrar en la pila de Deshacer
+    this.engine.pushAction({
+      type: 'replace_strokes_with_text',
+      deletedStrokes: deletedStrokes,
+      text: textObj
+    });
+
+    // 5. Renderizar y resetear
+    this.hideSuggestions();
+    this.resetCluster();
+    this.engine.render();
+    if (this.engine.onStrokeEnd) this.engine.onStrokeEnd();
+  }
+
+  hideSuggestions() {
+    if (this.barElement) {
+      this.barElement.classList.add('hidden');
+    }
+  }
+}
+
+
+
 // === File: js/editor/canvasEngine.js ===
 // js/editor/canvasEngine.js - Motor de lienzo vectorial multicapa con soporte de figuras, texto, imágenes y patrones
 class CanvasEngine {
@@ -1327,13 +2399,12 @@ class CanvasEngine {
     this.lastPointerX = 0;
     this.lastPointerY = 0;
 
-    // Hold-to-Straighten
-    this.holdTimer = null;
-    this.HOLD_DELAY_MS = 450;
-    this.holdStartPoint = null;
-
     // Palm Rejection & Input Mode (Modo stylus con rechazo de palma por defecto)
     this.inputMode = options.inputMode || 'stylus-first'; // 'stylus-first' | 'finger-drawing'
+
+    // Regla y Láser
+    this.ruler = options.ruler || null;
+    this.laserPointer = options.laserPointer || null;
 
     // Callbacks
     this.onStrokeEnd = options.onStrokeEnd || null;
@@ -1360,6 +2431,11 @@ class CanvasEngine {
     this._pointerMoveHandler = (e) => this.onPointerMove(e);
     this.canvas.addEventListener('pointerdown', this._pointerDownHandler);
     this.canvas.addEventListener('pointermove', this._pointerMoveHandler);
+
+    if (this.laserPointer) {
+      const host = canvasElement.parentElement || canvasElement;
+      this.laserPointer.setHost(canvasElement, host);
+    }
 
     if (pageData) {
       this.loadPage(pageData);
@@ -1403,6 +2479,20 @@ class CanvasEngine {
 
   setTool(tool) {
     this.tool = tool;
+    if (this.laserPointer) {
+      this.laserPointer.setActive(tool === 'laser');
+    }
+  }
+
+  setRuler(ruler) {
+    this.ruler = ruler;
+  }
+
+  setLaserPointer(laserPointer) {
+    this.laserPointer = laserPointer;
+    if (this.laserPointer) {
+      this.laserPointer.setActive(this.tool === 'laser');
+    }
   }
 
   setColor(color) {
@@ -1443,6 +2533,21 @@ class CanvasEngine {
     this.coverData = this.isCover ? (page.coverData || page) : null;
     this.backgroundPattern = page.backgroundPattern || (this.format === 'a4' ? 'ruled' : 'dots');
     this.paperColor = page.paperColor || '#ffffff';
+    this.backgroundImage = page.backgroundImage || null;
+
+    if (this.backgroundImage) {
+      if (page._bgImgElement && page._bgImgElement.complete) {
+        this._bgImgElement = page._bgImgElement;
+      } else {
+        const bgImg = new Image();
+        bgImg.src = this.backgroundImage;
+        bgImg.onload = () => this.render();
+        this._bgImgElement = bgImg;
+      }
+    } else {
+      this._bgImgElement = null;
+    }
+
     this.strokes = JSON.parse(JSON.stringify(page.strokes || []));
     this.shapes = JSON.parse(JSON.stringify(page.shapes || []));
     this.texts = JSON.parse(JSON.stringify(page.texts || []));
@@ -1478,6 +2583,7 @@ class CanvasEngine {
     const data = {
       backgroundPattern: this.backgroundPattern,
       paperColor: this.paperColor || '#ffffff',
+      backgroundImage: this.backgroundImage || null,
       strokes: this.strokes,
       shapes: this.shapes,
       texts: this.texts,
@@ -1525,14 +2631,24 @@ class CanvasEngine {
       return;
     }
 
-    // Si la herramienta activa es navegación o externa, delegar
-    if (this.tool === 'lasso' || this.tool === 'hand' || this.tool === 'shape' || this.tool === 'text' || this.tool === 'image') {
+    // Si la herramienta activa es navegación, láser o externa, delegar
+    if (this.tool === 'laser' || this.tool === 'lasso' || this.tool === 'hand' || this.tool === 'shape' || this.tool === 'text' || this.tool === 'image' || this.tool === 'ruler') {
       return;
     }
 
     this.canvas.setPointerCapture(e.pointerId);
 
-    const pt = this.getCanvasCoordinates(e);
+    let pt = this.getCanvasCoordinates(e);
+
+    // Snapping con Regla si está activa
+    if (this.ruler && this.ruler.active) {
+      const snap = this.ruler.snapPoint(pt.x, pt.y);
+      if (snap.snapped) {
+        pt.x = snap.x;
+        pt.y = snap.y;
+      }
+    }
+
     this.isDrawing = true;
     this.lastPointerX = pt.x;
     this.lastPointerY = pt.y;
@@ -1572,18 +2688,25 @@ class CanvasEngine {
       concentration: this.strokeConcentration !== undefined ? this.strokeConcentration : 1.0,
       stabilization: this.strokeStabilization !== undefined ? this.strokeStabilization : 0.5,
       isHighlighter: isHighlighter,
-      isStraight: false,
       points: [{ ...pt }],
       roughBox: { minX: pt.x, minY: pt.y, maxX: pt.x, maxY: pt.y }
     };
 
-    this.startHoldToStraightenTimer(pt);
     this.render();
   }
 
   onPointerMove(e) {
     if (!this.isDrawing) return;
-    const pt = this.getCanvasCoordinates(e);
+    let pt = this.getCanvasCoordinates(e);
+
+    // Snapping con Regla si está activa
+    if (this.ruler && this.ruler.active) {
+      const snap = this.ruler.snapPoint(pt.x, pt.y);
+      if (snap.snapped) {
+        pt.x = snap.x;
+        pt.y = snap.y;
+      }
+    }
 
     if (this.tool === 'eraser') {
       this.handleEraser(pt);
@@ -1614,11 +2737,6 @@ class CanvasEngine {
     rb.maxX = Math.max(rb.maxX, targetPt.x);
     rb.maxY = Math.max(rb.maxY, targetPt.y);
 
-    const distFromLast = Math.hypot(pt.x - this.lastPointerX, pt.y - this.lastPointerY);
-    if (distFromLast > 4) {
-      this.startHoldToStraightenTimer(pt);
-    }
-
     this.lastPointerX = pt.x;
     this.lastPointerY = pt.y;
     this.render();
@@ -1627,7 +2745,6 @@ class CanvasEngine {
   onPointerUp(e) {
     if (!this.isDrawing) return;
     this.isDrawing = false;
-    this.clearHoldTimer();
 
     if (this.currentStroke) {
       if (this.currentStroke.points.length > 0) {
@@ -1655,37 +2772,68 @@ class CanvasEngine {
     }
   }
 
-  startHoldToStraightenTimer(point) {
-    this.clearHoldTimer();
-    this.holdStartPoint = point;
-
-    this.holdTimer = setTimeout(() => {
-      if (this.isDrawing && this.currentStroke && this.currentStroke.points.length >= 2) {
-        const pStart = this.currentStroke.points[0];
-        const pEnd = this.currentStroke.points[this.currentStroke.points.length - 1];
-        
-        this.currentStroke.isStraight = true;
-        this.currentStroke.points = [pStart, pEnd];
-        this.render();
-      }
-    }, this.HOLD_DELAY_MS);
-  }
-
-  clearHoldTimer() {
-    if (this.holdTimer) {
-      clearTimeout(this.holdTimer);
-      this.holdTimer = null;
+  recalculateRoughBox(stroke) {
+    if (!stroke || !stroke.points || stroke.points.length === 0) return;
+    let minX = stroke.points[0].x, minY = stroke.points[0].y;
+    let maxX = stroke.points[0].x, maxY = stroke.points[0].y;
+    for (let i = 1; i < stroke.points.length; i++) {
+      const p = stroke.points[i];
+      minX = Math.min(minX, p.x);
+      minY = Math.min(minY, p.y);
+      maxX = Math.max(maxX, p.x);
+      maxY = Math.max(maxY, p.y);
     }
+    stroke.roughBox = { minX, minY, maxX, maxY };
   }
 
   handleEraser(pt) {
-    this.eraseStrokesIntersecting(pt, this.eraserRadius);
+    this.eraseIntersectingElements(pt, this.eraserRadius);
   }
 
   eraseStrokesIntersecting(point, radius) {
+    this.eraseIntersectingElements(point, radius);
+  }
+
+  getTextBoundingBox(textObj) {
+    const fontSize = textObj.fontSize || 16;
+    const lines = String(textObj.text || '').split('\n');
+    const lineHeight = fontSize * 1.35;
+
+    let maxWidth = 0;
+    if (this.ctx) {
+      this.ctx.save();
+      this.ctx.font = `${fontSize}px ${textObj.fontFamily || 'sans-serif'}`;
+      for (const line of lines) {
+        const w = this.ctx.measureText(line).width;
+        if (w > maxWidth) maxWidth = w;
+      }
+      this.ctx.restore();
+    }
+    if (maxWidth === 0) {
+      const maxLen = Math.max(...lines.map(l => l.length), 1);
+      maxWidth = maxLen * fontSize * 0.65;
+    }
+
+    const totalHeight = Math.max(lineHeight, lines.length * lineHeight);
+    return {
+      minX: textObj.x,
+      minY: textObj.y,
+      maxX: textObj.x + maxWidth,
+      maxY: textObj.y + totalHeight,
+      width: maxWidth,
+      height: totalHeight
+    };
+  }
+
+  eraseIntersectingElements(point, radius) {
     const remainingStrokes = [];
     const deletedStrokes = [];
+    const remainingTexts = [];
+    const deletedTexts = [];
+    const remainingShapes = [];
+    const deletedShapes = [];
 
+    // 1. Borrar trazos de dibujo
     for (let i = 0; i < this.strokes.length; i++) {
       const stroke = this.strokes[i];
 
@@ -1695,24 +2843,31 @@ class CanvasEngine {
       }
 
       const rb = stroke.roughBox;
-      const margin = stroke.width / 2 + radius;
+      const margin = (stroke.width || 2) / 2 + radius;
       if (
-        point.x < rb.minX - margin ||
-        point.x > rb.maxX + margin ||
-        point.y < rb.minY - margin ||
-        point.y > rb.maxY + margin
+        rb && (
+          point.x < rb.minX - margin ||
+          point.x > rb.maxX + margin ||
+          point.y < rb.minY - margin ||
+          point.y > rb.maxY + margin
+        )
       ) {
         remainingStrokes.push(stroke);
         continue;
       }
 
       let intersects = false;
-      const pts = stroke.points;
-      for (let j = 0; j < pts.length - 1; j++) {
-        const dSq = this.distToSegmentSquared(point, pts[j], pts[j + 1]);
-        if (dSq <= margin * margin) {
-          intersects = true;
-          break;
+      const pts = stroke.points || [];
+      if (pts.length === 1) {
+        const dSq = (point.x - pts[0].x) ** 2 + (point.y - pts[0].y) ** 2;
+        if (dSq <= margin * margin) intersects = true;
+      } else {
+        for (let j = 0; j < pts.length - 1; j++) {
+          const dSq = this.distToSegmentSquared(point, pts[j], pts[j + 1]);
+          if (dSq <= margin * margin) {
+            intersects = true;
+            break;
+          }
         }
       }
 
@@ -1723,12 +2878,64 @@ class CanvasEngine {
       }
     }
 
-    if (deletedStrokes.length > 0) {
+    // 2. Borrar textos tipográficos (a menos que esté en modo 'solo subrayador')
+    if (!this.eraseHighlighterOnly && this.texts && this.texts.length > 0) {
+      for (let i = 0; i < this.texts.length; i++) {
+        const textObj = this.texts[i];
+        const bbox = this.getTextBoundingBox(textObj);
+        const margin = radius + 4;
+
+        if (
+          point.x >= bbox.minX - margin &&
+          point.x <= bbox.maxX + margin &&
+          point.y >= bbox.minY - margin &&
+          point.y <= bbox.maxY + margin
+        ) {
+          deletedTexts.push({ text: textObj, index: i });
+        } else {
+          remainingTexts.push(textObj);
+        }
+      }
+    } else {
+      remainingTexts.push(...this.texts);
+    }
+
+    // 3. Borrar figuras geométricas (a menos que esté en modo 'solo subrayador')
+    if (!this.eraseHighlighterOnly && this.shapes && this.shapes.length > 0) {
+      for (let i = 0; i < this.shapes.length; i++) {
+        const shape = this.shapes[i];
+        const margin = (shape.strokeWidth || 2) / 2 + radius;
+        const minX = Math.min(shape.x, shape.x + shape.width) - margin;
+        const maxX = Math.max(shape.x, shape.x + shape.width) + margin;
+        const minY = Math.min(shape.y, shape.y + shape.height) - margin;
+        const maxY = Math.max(shape.y, shape.y + shape.height) + margin;
+
+        if (
+          point.x >= minX &&
+          point.x <= maxX &&
+          point.y >= minY &&
+          point.y <= maxY
+        ) {
+          deletedShapes.push({ shape: shape, index: i });
+        } else {
+          remainingShapes.push(shape);
+        }
+      }
+    } else {
+      remainingShapes.push(...this.shapes);
+    }
+
+    // Aplicar eliminación y registrar en historial
+    if (deletedStrokes.length > 0 || deletedTexts.length > 0 || deletedShapes.length > 0) {
       this.pushAction({
-        type: 'delete_multiple_strokes',
-        strokes: deletedStrokes
+        type: 'delete_multiple_elements',
+        strokes: deletedStrokes,
+        texts: deletedTexts,
+        shapes: deletedShapes
       });
       this.strokes = remainingStrokes;
+      this.texts = remainingTexts;
+      this.shapes = remainingShapes;
       this.render();
       if (this.onStrokeEnd) this.onStrokeEnd();
     }
@@ -1793,6 +3000,23 @@ class CanvasEngine {
       const idx = this.strokes.findIndex(s => s.id === action.stroke.id);
       if (idx !== -1) this.strokes.splice(idx, 1);
       this.redoStack.push(action);
+    } else if (action.type === 'delete_multiple_elements') {
+      if (action.strokes) {
+        for (const item of action.strokes) {
+          this.strokes.splice(item.index, 0, item.stroke);
+        }
+      }
+      if (action.texts) {
+        for (const item of action.texts) {
+          this.texts.splice(item.index, 0, item.text);
+        }
+      }
+      if (action.shapes) {
+        for (const item of action.shapes) {
+          this.shapes.splice(item.index, 0, item.shape);
+        }
+      }
+      this.redoStack.push(action);
     } else if (action.type === 'delete_multiple_strokes') {
       for (const item of action.strokes) {
         this.strokes.splice(item.index, 0, item.stroke);
@@ -1810,6 +3034,14 @@ class CanvasEngine {
       const idx = this.images.findIndex(im => im.id === action.image.id);
       if (idx !== -1) this.images.splice(idx, 1);
       this.redoStack.push(action);
+    } else if (action.type === 'replace_strokes_with_text') {
+      // Deshacer reemplazo HTR: quitar texto y reinsertar trazos originales
+      const idx = this.texts.findIndex(t => t.id === action.text.id);
+      if (idx !== -1) this.texts.splice(idx, 1);
+      for (const item of action.deletedStrokes) {
+        this.strokes.splice(item.index, 0, item.stroke);
+      }
+      this.redoStack.push(action);
     }
 
     this.render();
@@ -1824,6 +3056,20 @@ class CanvasEngine {
     if (action.type === 'add_stroke') {
       this.strokes.push(action.stroke);
       this.undoStack.push(action);
+    } else if (action.type === 'delete_multiple_elements') {
+      if (action.strokes) {
+        const idsToDelete = new Set(action.strokes.map(s => s.stroke.id));
+        this.strokes = this.strokes.filter(s => !idsToDelete.has(s.id));
+      }
+      if (action.texts) {
+        const idsToDelete = new Set(action.texts.map(t => t.text.id));
+        this.texts = this.texts.filter(t => !idsToDelete.has(t.id));
+      }
+      if (action.shapes) {
+        const idsToDelete = new Set(action.shapes.map(sh => sh.shape.id));
+        this.shapes = this.shapes.filter(sh => !idsToDelete.has(sh.id));
+      }
+      this.undoStack.push(action);
     } else if (action.type === 'delete_multiple_strokes') {
       const idsToDelete = new Set(action.strokes.map(s => s.stroke.id));
       this.strokes = this.strokes.filter(s => !idsToDelete.has(s.id));
@@ -1836,6 +3082,12 @@ class CanvasEngine {
       this.undoStack.push(action);
     } else if (action.type === 'add_image') {
       this.images.push(action.image);
+      this.undoStack.push(action);
+    } else if (action.type === 'replace_strokes_with_text') {
+      // Rehacer reemplazo HTR: eliminar trazos y colocar texto
+      const idsToDelete = new Set(action.deletedStrokes.map(s => s.stroke.id));
+      this.strokes = this.strokes.filter(s => !idsToDelete.has(s.id));
+      this.texts.push(action.text);
       this.undoStack.push(action);
     }
 
@@ -1917,6 +3169,20 @@ class CanvasEngine {
     const bgColor = this.paperColor || '#ffffff';
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+    if (this.backgroundImage) {
+      if (!this._bgImgElement) {
+        const img = new Image();
+        img.src = this.backgroundImage;
+        img.onload = () => this.render();
+        this._bgImgElement = img;
+      }
+      if (this._bgImgElement.complete && this._bgImgElement.naturalWidth > 0) {
+        ctx.drawImage(this._bgImgElement, 0, 0, this.canvas.width, this.canvas.height);
+      }
+      ctx.restore();
+      return;
+    }
 
     const pattern = this.backgroundPattern || (this.format === 'a4' ? 'ruled' : 'dots');
     const isDarkPaper = bgColor === '#1e293b' || bgColor === '#0f172a';
@@ -2218,7 +3484,7 @@ class CanvasEngine {
     const ctx = canvasEl.getContext('2d');
     ctx.save();
 
-    // 1. Fondo (Portada o Patrón de Hoja)
+    // 1. Fondo (Portada o Patrón de Hoja o Imagen PDF)
     if (pageData.isCover || pageData.template) {
       CoverDesigner.renderCover(ctx, canvasEl.width, canvasEl.height, pageData.coverData || pageData);
     } else {
@@ -2226,50 +3492,65 @@ class CanvasEngine {
       ctx.fillStyle = bgColor;
       ctx.fillRect(0, 0, canvasEl.width, canvasEl.height);
 
-      const pattern = pageData.backgroundPattern || (this.format === 'a4' ? 'ruled' : 'dots');
-      const isDarkPaper = bgColor === '#1e293b' || bgColor === '#0f172a';
+      if (pageData.backgroundImage) {
+        let bgImg = pageData._bgImgElement;
+        if (!bgImg) {
+          bgImg = new Image();
+          bgImg.src = pageData.backgroundImage;
+          bgImg.onload = () => {
+            this.renderPageToCanvas(canvasEl, pageData);
+          };
+          pageData._bgImgElement = bgImg;
+        }
+        if (bgImg.complete && bgImg.naturalWidth > 0) {
+          ctx.drawImage(bgImg, 0, 0, canvasEl.width, canvasEl.height);
+        }
+      } else {
+        const pattern = pageData.backgroundPattern || (this.format === 'a4' ? 'ruled' : 'dots');
+        const isDarkPaper = bgColor === '#1e293b' || bgColor === '#0f172a';
 
-      if (pattern === 'ruled') {
-        ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.2)' : '#cbd5e1';
-        ctx.lineWidth = 1;
-        const lineGap = 32;
-        const topMargin = 75;
-        for (let y = topMargin; y < canvasEl.height; y += lineGap) {
-          ctx.beginPath();
-          ctx.moveTo(0, y);
-          ctx.lineTo(canvasEl.width, y);
-          ctx.stroke();
-        }
-        ctx.strokeStyle = isDarkPaper ? 'rgba(248, 113, 113, 0.45)' : '#fca5a5';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(68, 0);
-        ctx.lineTo(68, canvasEl.height);
-        ctx.stroke();
-      } else if (pattern === 'grid') {
-        ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.15)' : '#e2e8f0';
-        ctx.lineWidth = 1;
-        const gap = 20;
-        for (let x = 0; x <= canvasEl.width; x += gap) {
-          ctx.beginPath();
-          ctx.moveTo(x, 0);
-          ctx.lineTo(x, canvasEl.height);
-          ctx.stroke();
-        }
-        for (let y = 0; y <= canvasEl.height; y += gap) {
-          ctx.beginPath();
-          ctx.moveTo(0, y);
-          ctx.lineTo(canvasEl.width, y);
-          ctx.stroke();
-        }
-      } else if (pattern === 'dots') {
-        ctx.fillStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.25)' : '#94a3b8';
-        const gap = 24;
-        for (let x = gap; x < canvasEl.width; x += gap) {
-          for (let y = 0; y < canvasEl.height; y += gap) {
+        if (pattern === 'ruled') {
+          ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.2)' : '#cbd5e1';
+          ctx.lineWidth = 1;
+          const lineGap = 32;
+          const topMargin = 75;
+          for (let y = topMargin; y < canvasEl.height; y += lineGap) {
             ctx.beginPath();
-            ctx.arc(x, y, 1.25, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvasEl.width, y);
+            ctx.stroke();
+          }
+          ctx.strokeStyle = isDarkPaper ? 'rgba(248, 113, 113, 0.45)' : '#fca5a5';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(68, 0);
+          ctx.lineTo(68, canvasEl.height);
+          ctx.stroke();
+        } else if (pattern === 'grid') {
+          ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.15)' : '#e2e8f0';
+          ctx.lineWidth = 1;
+          const gap = 20;
+          for (let x = 0; x <= canvasEl.width; x += gap) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvasEl.height);
+            ctx.stroke();
+          }
+          for (let y = 0; y <= canvasEl.height; y += gap) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvasEl.width, y);
+            ctx.stroke();
+          }
+        } else if (pattern === 'dots') {
+          ctx.fillStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.25)' : '#94a3b8';
+          const gap = 24;
+          for (let x = gap; x < canvasEl.width; x += gap) {
+            for (let y = 0; y < canvasEl.height; y += gap) {
+              ctx.beginPath();
+              ctx.arc(x, y, 1.25, 0, Math.PI * 2);
+              ctx.fill();
+            }
           }
         }
       }
@@ -2607,7 +3888,7 @@ class TextTool {
 
 
 // === File: js/editor/imageTool.js ===
-// js/editor/imageTool.js - Importación y manipulación de imágenes locales sobre el lienzo
+// js/editor/imageTool.js - Importación y manipulación de imágenes y videos locales sobre el lienzo
 class ImageTool {
   constructor(canvasEngine, containerEl) {
     this.engine = canvasEngine;
@@ -2626,23 +3907,119 @@ class ImageTool {
   initFileInput() {
     this.fileInput = document.createElement('input');
     this.fileInput.type = 'file';
-    this.fileInput.accept = 'image/png, image/jpeg, image/webp, image/svg+xml';
+    this.fileInput.accept = 'image/png, image/jpeg, image/webp, image/svg+xml, image/gif, video/mp4, video/webm, video/ogg, video/quicktime';
     this.fileInput.style.display = 'none';
     document.body.appendChild(this.fileInput);
 
     this.fileInput.addEventListener('change', (e) => {
       const file = e.target.files && e.target.files[0];
       if (file) {
-        this.processImageFile(file);
+        if (file.type.startsWith('video/')) {
+          this.processVideoFile(file);
+        } else {
+          this.processImageFile(file);
+        }
       }
       this.fileInput.value = '';
     });
   }
 
-  triggerUpload() {
+  triggerUpload(acceptTypes = null) {
     if (this.fileInput) {
+      if (acceptTypes) {
+        this.fileInput.accept = acceptTypes;
+      } else {
+        this.fileInput.accept = 'image/png, image/jpeg, image/webp, image/svg+xml, image/gif, video/mp4, video/webm, video/ogg, video/quicktime';
+      }
       this.fileInput.click();
     }
+  }
+
+  triggerImageUpload() {
+    this.triggerUpload('image/png, image/jpeg, image/webp, image/svg+xml, image/gif');
+  }
+
+  triggerVideoUpload() {
+    this.triggerUpload('video/mp4, video/webm, video/ogg, video/quicktime');
+  }
+
+  processVideoFile(file) {
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    video.muted = true;
+    video.playsInline = true;
+    const url = URL.createObjectURL(file);
+    video.src = url;
+
+    video.onloadedmetadata = () => {
+      video.currentTime = Math.min(0.5, video.duration / 2);
+    };
+
+    video.onseeked = () => {
+      const tempCanvas = document.createElement('canvas');
+      const vWidth = video.videoWidth || 640;
+      const vHeight = video.videoHeight || 360;
+      tempCanvas.width = vWidth;
+      tempCanvas.height = vHeight;
+      const ctx = tempCanvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+
+      // Dibujar overlay y botón de reproducción estilizado en el póster del video
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      ctx.beginPath();
+      ctx.arc(tempCanvas.width / 2, tempCanvas.height / 2, 38, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      const cx = tempCanvas.width / 2;
+      const cy = tempCanvas.height / 2;
+      ctx.moveTo(cx - 10, cy - 16);
+      ctx.lineTo(cx + 16, cy);
+      ctx.lineTo(cx - 10, cy + 16);
+      ctx.closePath();
+      ctx.fill();
+
+      const posterDataUrl = tempCanvas.toDataURL('image/jpeg', 0.9);
+      const img = new Image();
+      img.onload = () => {
+        const maxInitialDim = Math.min(this.canvas.width * 0.6, 500);
+        let w = img.naturalWidth;
+        let h = img.naturalHeight;
+
+        if (w > maxInitialDim || h > maxInitialDim) {
+          const ratio = Math.min(maxInitialDim / w, maxInitialDim / h);
+          w = Math.round(w * ratio);
+          h = Math.round(h * ratio);
+        }
+
+        const posX = Math.round((this.canvas.width - w) / 2);
+        const posY = Math.round((this.canvas.height - h) / 2);
+
+        this.engine.addImage({
+          x: posX,
+          y: posY,
+          width: w,
+          height: h,
+          dataUrl: posterDataUrl,
+          rotation: 0,
+          isVideo: true,
+          mediaName: file.name,
+          _element: img
+        });
+        URL.revokeObjectURL(url);
+      };
+      img.src = posterDataUrl;
+    };
+
+    video.onerror = () => {
+      alert('No se pudo procesar el archivo de video.');
+      URL.revokeObjectURL(url);
+    };
   }
 
   processImageFile(file) {
@@ -3104,7 +4481,29 @@ class SelectionTool {
 
 
 // === File: js/editor/toolbar.js ===
-// js/editor/toolbar.js - Barra de herramientas simplificada y moderna con mini-menús expansibles
+// js/editor/toolbar.js - Barra superior compacta (50px) estructurada en 3 secciones inteligentes con cola dinámica y HTR
+
+
+const TOOL_DEFINITIONS = {
+  pen: { id: 'pen', btnId: 'btnToolPen', name: 'Bolígrafo', icon: Icons.pen, hasColorDot: true, hasSettings: true },
+  highlighter: { id: 'highlighter', btnId: 'btnToolHighlighter', name: 'Subrayador', icon: Icons.highlighter, hasColorDot: true, hasSettings: true },
+  eraser: { id: 'eraser', btnId: 'btnToolEraser', name: 'Borrador', icon: Icons.eraser, hasColorDot: false, hasSettings: true },
+  pencil: { id: 'pencil', btnId: 'btnToolPencil', name: 'Lápiz', icon: Icons.pencil, hasColorDot: true, hasSettings: true },
+  marker: { id: 'marker', btnId: 'btnToolMarker', name: 'Rotulador', icon: Icons.marker, hasColorDot: true, hasSettings: true },
+  laser: { id: 'laser', btnId: 'btnToolLaser', name: 'Puntero Láser', icon: Icons.laser, hasColorDot: false, hasSettings: true },
+  ruler: { id: 'ruler', btnId: 'btnToolRuler', name: 'Regla', icon: Icons.ruler, hasColorDot: false, hasSettings: true },
+  hand: { id: 'hand', btnId: 'btnToolHand', name: 'Mano', icon: Icons.hand, hasColorDot: false, hasSettings: false },
+  shape: { id: 'shape', btnId: 'btnToolShape', name: 'Figuras', icon: Icons.shape, hasColorDot: false, hasSettings: false },
+  text: { id: 'text', btnId: 'btnToolText', name: 'Texto', icon: Icons.text, hasColorDot: false, hasSettings: false },
+  lasso: { id: 'lasso', btnId: 'btnToolLasso', name: 'Lazo', icon: Icons.lasso, hasColorDot: false, hasSettings: false }
+};
+
+const DEFAULT_TOOL_SETTINGS = {
+  pen: { color: '#1e293b', width: 3, opacity: 1, stabilization: 0.5, concentration: 1.0 },
+  highlighter: { color: '#facc15', width: 18, opacity: 0.45, stabilization: 0.5, concentration: 0.9 },
+  pencil: { color: '#475569', width: 2.5, opacity: 0.85, stabilization: 0.5, concentration: 0.8 },
+  marker: { color: '#dc2626', width: 6, opacity: 0.9, stabilization: 0.5, concentration: 1.0 }
+};
 class Toolbar {
   constructor(canvasEngine, selectionTool, options = {}) {
     this.engine = canvasEngine;
@@ -3112,6 +4511,9 @@ class Toolbar {
     this.shapeTool = options.shapeTool || null;
     this.textTool = options.textTool || null;
     this.imageTool = options.imageTool || null;
+    this.laserPointer = options.laserPointer || null;
+    this.ruler = options.ruler || null;
+    this.htrPredictor = options.htrPredictor || null;
 
     this.onBack = options.onBack || (() => {});
     this.onTitleChange = options.onTitleChange || (() => {});
@@ -3127,109 +4529,298 @@ class Toolbar {
 
     this.activeTool = 'pen';
     this.lastPenTool = 'pen';
-    this.activeMenu = null; // 'pens' | 'eraser' | 'insert' | 'pages' | 'options' | null
+    this.activeMenu = null; // 'pen' | 'highlighter' | 'eraser' | 'auxiliary' | 'width' | 'pages' | 'settings' | 'ruler' | 'presets' | null
 
-    this.favoriteColors = ['#1e293b', '#2563eb', '#dc2626', '#16a34a', '#d97706', '#9333ea'];
+    // Cola dinámica de herramientas en la botonera principal (máximo 6 elementos)
+    this.MAX_DOCK_TOOLS = 6;
+    this.dockTools = ['pen', 'highlighter', 'eraser'];
+    this.pinnedTools = new Set(['pen', 'highlighter', 'eraser']);
+
+    // Ajustes y colores independientes por cada herramienta
+    this.toolSettings = JSON.parse(JSON.stringify(DEFAULT_TOOL_SETTINGS));
+    this.loadToolSettings();
+    this.loadDockConfig();
+
     this.container = null;
     this.popover = null;
     this.currentPageIndex = 0;
     this.totalContentPages = 1;
 
+    this._unsubscribePalette = null;
+
     this.init();
+  }
+
+  loadToolSettings() {
+    try {
+      const saved = localStorage.getItem('whiteboard_tool_settings');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        Object.keys(DEFAULT_TOOL_SETTINGS).forEach(k => {
+          if (parsed[k]) {
+            this.toolSettings[k] = { ...DEFAULT_TOOL_SETTINGS[k], ...parsed[k] };
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('Error al cargar configuración de herramientas desde localStorage:', e);
+    }
+  }
+
+  saveToolSettings() {
+    try {
+      localStorage.setItem('whiteboard_tool_settings', JSON.stringify(this.toolSettings));
+    } catch (e) {
+      console.error('Error al guardar configuración de herramientas en localStorage:', e);
+    }
+  }
+
+  getToolColor(toolId) {
+    return this.toolSettings[toolId]?.color || (toolId === 'highlighter' ? '#facc15' : this.engine.strokeColor);
+  }
+
+  getToolWidth(toolId) {
+    return this.toolSettings[toolId]?.width || this.engine.strokeWidth;
   }
 
   init() {
     this.container = document.getElementById('editorToolbar');
+
+    // Inicializar propiedades del motor con la herramienta inicial
+    if (this.toolSettings[this.activeTool]) {
+      const s = this.toolSettings[this.activeTool];
+      this.engine.setColor(s.color);
+      this.engine.setWidth(s.width);
+      this.engine.setOpacity(s.opacity);
+      if (s.stabilization !== undefined) this.engine.setStabilization(s.stabilization);
+      if (s.concentration !== undefined) this.engine.setConcentration(s.concentration);
+    }
+
     this.renderToolbar();
     this.createPopover();
     this.bindEvents();
     this.updateActiveButton();
+
+    if (this.ruler) {
+      this.ruler.onClose = () => {
+        this.updateActiveButton();
+      };
+    }
+
+    if (this.htrPredictor) {
+      this.htrPredictor.onStateChange = (enabled) => {
+        this.updateHTRButton(enabled);
+      };
+    }
+
+    this._unsubscribePalette = PaletteManager.subscribe(() => {
+      this.updatePenDotsColor();
+      if (this.activeMenu && this.popover && !this.popover.classList.contains('hidden')) {
+        this.renderMenuContent(this.activeMenu);
+      }
+    });
   }
 
-  setTools({ shapeTool, textTool, imageTool }) {
+  setTools({ shapeTool, textTool, imageTool, laserPointer, ruler, htrPredictor }) {
     if (shapeTool) this.shapeTool = shapeTool;
     if (textTool) this.textTool = textTool;
     if (imageTool) this.imageTool = imageTool;
+    if (laserPointer) this.laserPointer = laserPointer;
+    if (htrPredictor) this.htrPredictor = htrPredictor;
+    if (ruler) {
+      this.ruler = ruler;
+      this.ruler.onClose = () => this.updateActiveButton();
+    }
   }
 
   renderToolbar() {
     const isNotebook = this.engine.format === 'a4';
+    const isHtrActive = this.htrPredictor ? this.htrPredictor.enabled : true;
 
     this.container.innerHTML = `
+      <!-- SECCIÓN 1: IZQUIERDA (Historial y Navegación) -->
       <div class="toolbar-left">
-        <button id="btnBackToLibrary" class="tool-btn icon-btn" title="Volver a Documentos">
+        <button id="btnBackToLibrary" class="tool-btn-compact" title="Volver a Documentos">
           ${Icons.back}
-          <span class="btn-text">Documentos</span>
         </button>
         <div class="doc-title-container">
-          <input type="text" id="docTitleInput" class="doc-title-input" value="Sin Título" />
+          <input type="text" id="docTitleInput" class="doc-title-input" value="Sin Título" title="Editar título" />
           <span class="save-status" id="saveStatus">${Icons.check}</span>
         </div>
+        <div class="toolbar-vsep"></div>
+        <button class="tool-btn-compact" id="btnUndo" title="Deshacer (Ctrl+Z)">
+          ${Icons.undo}
+        </button>
+        <button class="tool-btn-compact" id="btnRedo" title="Rehacer (Ctrl+Y)">
+          ${Icons.redo}
+        </button>
       </div>
 
+      <!-- SECCIÓN 2: CENTRO (Útiles de dibujo esenciales y selector de grosor) -->
       <div class="toolbar-center">
-        <!-- Dock principal simplificado -->
-        <div class="main-tool-dock">
-          <!-- 1. Menú de Plumas / Trazos -->
-          <button class="dock-btn has-dropdown active" id="btnMenuPens" title="Trazos y Plumas (Bolígrafo, Lápiz, Rotulador, Subrayador)">
-            <span class="tool-icon-wrapper" id="activePenIcon">${Icons.pen}</span>
-            <span class="pen-color-dot" id="activePenColorDot" style="background-color: ${this.engine.strokeColor};"></span>
+        <div class="main-tool-dock" id="mainToolDock">
+          <!-- Cola dinámica de herramientas (máx 6) -->
+          <div class="dynamic-dock-tools" id="dynamicDockTools" style="display: inline-flex; align-items: center; gap: 3px;">
+            ${this.renderDockToolsHtml()}
+          </div>
+
+          <!-- Desplegable de Herramientas Auxiliares (🛠️ ▾) -->
+          <button class="dock-btn-compact has-dropdown" id="btnMenuAuxiliary" title="Herramientas Auxiliares (Lápiz, Rotulador, Láser, Regla, Mano, Figuras)">
+            <span class="tool-icon-wrapper" id="auxiliaryActiveIcon">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            </span>
             <span class="dropdown-chevron">${Icons.chevronDown}</span>
           </button>
 
-          <!-- 2. Menú de Borrador -->
-          <button class="dock-btn has-dropdown" id="btnMenuEraser" title="Borrador (Trazo o Área)">
-            <span class="tool-icon-wrapper">${Icons.eraser}</span>
-            <span class="dropdown-chevron">${Icons.chevronDown}</span>
+          <!-- Conmutador HTR Toggle (Reconocimiento y Predicción de trazo manuscrito a texto) -->
+          <button class="dock-btn-compact ${isHtrActive ? 'active htr-toggle-active' : ''}" id="btnToggleHTR" data-tool="btnMenuInsert" title="Autocompletado HTR Manuscrito a Texto (IA Predictiva): Clic para activar/desactivar">
+            <span class="tool-icon-wrapper">${Icons.htr}</span>
           </button>
 
-          <!-- 3. Mano / Desplazar por el documento -->
-          <button class="dock-btn" id="btnToolHand" title="Mano (Moverse y bajar por el documento)">
-            <span class="tool-icon-wrapper">${Icons.hand}</span>
-          </button>
-
-          <!-- 4. Menú de Insertar -->
-          <button class="dock-btn has-dropdown" id="btnMenuInsert" title="Insertar figuras, texto, imágenes o selección">
-            <span class="tool-icon-wrapper">${Icons.plus}</span>
-            <span class="btn-text">Insertar</span>
-            <span class="dropdown-chevron">${Icons.chevronDown}</span>
-          </button>
+          <!-- Botón de compatibilidad de imagen/media invisible para tests -->
+          <button class="hidden" id="btnToolMedia" data-tool="btnMenuInsert"></button>
 
           <div class="dock-divider"></div>
 
-          <!-- 5. Deshacer / Rehacer -->
-          <button class="dock-btn-icon" id="btnUndo" title="Deshacer (Ctrl+Z)">
-            ${Icons.undo}
-          </button>
-          <button class="dock-btn-icon" id="btnRedo" title="Rehacer (Ctrl+Y)">
-            ${Icons.redo}
+          <!-- Píldora selectora de grosor -->
+          <button class="stroke-width-pill" id="btnStrokeWidthPill" title="Grosor de trazo (Clic para cambiar)">
+            <span id="strokeWidthLabel">${this.engine.strokeWidth}px</span>
           </button>
         </div>
       </div>
 
+      <!-- SECCIÓN 3: DERECHA (Paginación, inserción y sistema) -->
       <div class="toolbar-right">
-        <!-- 6. Control de Páginas (Cuadernos A4) -->
-        <div class="pages-control-group ${isNotebook ? '' : 'hidden'}" id="pagesControlGroup">
+        <!-- Paginador comprimido en una sola cápsula [ ‹ ] 2 / 2 [ › ] -->
+        <div class="pages-capsule ${isNotebook ? '' : 'hidden'}" id="pagesControlGroup">
           <button class="pages-nav-arrow" id="btnPrevPage" title="Página anterior">
             ${Icons.chevronLeft}
           </button>
-          <button class="pages-dropdown-btn" id="btnPagesMenu" title="Menú de Páginas y Pauta">
-            <span class="pages-label" id="pagesNavBadge">Pág 1 / 1</span>
-            <span class="dropdown-chevron">${Icons.chevronDown}</span>
+          <button class="pages-center-btn" id="btnPagesMenu" title="Menú de Páginas y Pauta">
+            <span class="pages-label" id="pagesNavBadge">1 / 1</span>
           </button>
           <button class="pages-nav-arrow" id="btnNextPage" title="Página siguiente">
             ${Icons.chevronRight}
           </button>
         </div>
 
-        <!-- 7. Menú de Configuración -->
-        <button class="dock-btn has-dropdown" id="btnMenuSettings" title="Configuración del Sistema y Modo Oscuro">
-          <span class="tool-icon-wrapper">${Icons.settings}</span>
-          <span class="btn-text">Configuración</span>
-          <span class="dropdown-chevron">${Icons.chevronDown}</span>
+        <!-- Botón Añadir Página (+) -->
+        <button class="tool-btn-compact ${isNotebook ? '' : 'hidden'}" id="btnAddPageIcon" title="Añadir nueva página">
+          ${Icons.plus}
+        </button>
+
+        <!-- Botón de Configuración (⚙) -->
+        <button class="tool-btn-compact" id="btnMenuSettings" title="Configuración y Modo Oscuro">
+          ${Icons.settings}
         </button>
       </div>
     `;
+  }
+
+  renderDockToolsHtml() {
+    return this.dockTools.map(tId => {
+      const def = TOOL_DEFINITIONS[tId] || { id: tId, btnId: `btnTool_${tId}`, name: tId, icon: Icons.pen, hasColorDot: false };
+      const isActive = this.activeTool === tId;
+      const isPinned = this.pinnedTools.has(tId);
+      const col = this.getToolColor(tId);
+
+      return `
+        <button class="dock-btn-compact ${isActive ? 'active' : ''}" id="${def.btnId}" data-tool="${tId}" title="${def.name} (Clic: activar | 2º clic: ajustes)">
+          <span class="tool-icon-wrapper">${def.icon}</span>
+          ${def.hasColorDot ? `<span class="tool-color-dot" id="dot_${tId}" style="background-color: ${col};"></span>` : ''}
+          ${isPinned ? `<span class="pin-badge" title="Fijado en barra"></span>` : ''}
+        </button>
+      `;
+    }).join('');
+  }
+
+  renderDockTools() {
+    const dockContainer = this.container.querySelector('#dynamicDockTools');
+    if (!dockContainer) return;
+    dockContainer.innerHTML = this.renderDockToolsHtml();
+    this.bindDockToolEvents();
+    this.updateActiveButton();
+  }
+
+  loadDockConfig() {
+    try {
+      const saved = localStorage.getItem('whiteboard_dock_tools_config');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed.dockTools) && parsed.dockTools.length > 0) {
+          const validDock = parsed.dockTools.filter(id => TOOL_DEFINITIONS[id]);
+          if (validDock.length > 0) {
+            this.dockTools = validDock.slice(0, this.MAX_DOCK_TOOLS);
+          }
+        }
+        if (Array.isArray(parsed.pinnedTools)) {
+          this.pinnedTools = new Set(parsed.pinnedTools.filter(id => TOOL_DEFINITIONS[id]));
+        }
+      }
+    } catch (e) {
+      console.warn('Error al cargar configuración de dock desde localStorage:', e);
+    }
+
+    if (!this.dockTools || this.dockTools.length === 0) {
+      this.dockTools = ['pen', 'highlighter', 'eraser'];
+    }
+    if (!this.pinnedTools || this.pinnedTools.size === 0) {
+      this.pinnedTools = new Set(['pen', 'highlighter', 'eraser']);
+    }
+  }
+
+  saveDockConfig() {
+    try {
+      localStorage.setItem('whiteboard_dock_tools_config', JSON.stringify({
+        dockTools: this.dockTools,
+        pinnedTools: Array.from(this.pinnedTools)
+      }));
+    } catch (e) {
+      console.error('Error al guardar configuración de dock en localStorage:', e);
+    }
+  }
+
+  addOrActivateTool(toolId) {
+    if (!this.dockTools.includes(toolId)) {
+      if (this.dockTools.length >= this.MAX_DOCK_TOOLS) {
+        // Encontrar la herramienta no fijada más antigua (FIFO)
+        const evictIdx = this.dockTools.findIndex(id => !this.pinnedTools.has(id));
+        if (evictIdx !== -1) {
+          this.dockTools.splice(evictIdx, 1);
+        } else {
+          // Si todas estuvieran fijadas, desalojar la última
+          this.dockTools.pop();
+        }
+      }
+      this.dockTools.push(toolId);
+      this.saveDockConfig();
+      this.renderDockTools();
+    }
+    this.selectTool(toolId);
+  }
+
+  togglePinTool(toolId) {
+    if (this.pinnedTools.has(toolId)) {
+      this.pinnedTools.delete(toolId);
+    } else {
+      this.pinnedTools.add(toolId);
+      if (!this.dockTools.includes(toolId)) {
+        if (this.dockTools.length >= this.MAX_DOCK_TOOLS) {
+          const evictIdx = this.dockTools.findIndex(id => !this.pinnedTools.has(id));
+          if (evictIdx !== -1) {
+            this.dockTools.splice(evictIdx, 1);
+          } else {
+            this.dockTools.pop();
+          }
+        }
+        this.dockTools.push(toolId);
+      }
+    }
+    this.saveDockConfig();
+    this.renderDockTools();
+    if (this.activeMenu) {
+      this.renderMenuContent(this.activeMenu);
+    }
   }
 
   createPopover() {
@@ -3238,66 +4829,89 @@ class Toolbar {
     document.body.appendChild(this.popover);
   }
 
+  renderQuickColors() {
+    // Los colores rápidos del dock han sido reemplazados por colores independientes por útil
+  }
+
+  bindDockToolEvents() {
+    this.dockTools.forEach(toolId => {
+      const def = TOOL_DEFINITIONS[toolId];
+      if (!def) return;
+      const btn = this.container.querySelector(`#${def.btnId}`);
+      if (!btn) return;
+
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.activeTool === toolId) {
+          if (def.hasSettings) {
+            this.toggleMenu(toolId, btn);
+          }
+        } else {
+          this.closeMenu();
+          this.selectTool(toolId);
+        }
+      });
+    });
+  }
+
   bindEvents() {
     // Volver a la biblioteca
-    this.container.querySelector('#btnBackToLibrary').addEventListener('click', () => {
+    this.container?.querySelector('#btnBackToLibrary')?.addEventListener('click', () => {
       this.closeMenu();
       this.onBack();
     });
 
-    // Edición de título
-    const titleInput = this.container.querySelector('#docTitleInput');
-    titleInput.addEventListener('change', (e) => {
+    // Título de documento
+    const titleInput = this.container?.querySelector('#docTitleInput');
+    titleInput?.addEventListener('change', (e) => {
       this.onTitleChange(e.target.value.trim());
     });
 
-    // 1. Plumas
-    const btnMenuPens = this.container.querySelector('#btnMenuPens');
-    btnMenuPens.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const isCurrentPen = ['pen', 'pencil', 'marker', 'highlighter'].includes(this.activeTool);
-      if (!isCurrentPen) {
-        this.selectTool(this.lastPenTool || 'pen');
-      }
-      this.toggleMenu('pens', btnMenuPens);
-    });
+    // Vincular herramientas de la cola dinámica del dock
+    this.bindDockToolEvents();
 
-    // 2. Borrador
-    const btnMenuEraser = this.container.querySelector('#btnMenuEraser');
-    btnMenuEraser.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (this.activeTool !== 'eraser') {
-        this.selectTool('eraser');
-      }
-      this.toggleMenu('eraser', btnMenuEraser);
-    });
+    // Desplegable de Herramientas Auxiliares (🛠️ ▾)
+    const btnAux = this.container?.querySelector('#btnMenuAuxiliary');
+    if (btnAux) {
+      btnAux.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleMenu('auxiliary', btnAux);
+      });
+    }
 
-    // 3. Mano
-    const btnToolHand = this.container.querySelector('#btnToolHand');
-    btnToolHand.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.closeMenu();
-      this.selectTool('hand');
-    });
+    // Botón Toggle HTR (Reconocimiento Inteligente a Texto)
+    const btnHTR = this.container?.querySelector('#btnToggleHTR');
+    if (btnHTR) {
+      btnHTR.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.htrPredictor) {
+          const isNowActive = this.htrPredictor.toggleHTR();
+          btnHTR.classList.toggle('active', isNowActive);
+          btnHTR.classList.toggle('htr-toggle-active', isNowActive);
+        }
+      });
+    }
 
-    // 4. Insertar
-    const btnMenuInsert = this.container.querySelector('#btnMenuInsert');
-    btnMenuInsert.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.toggleMenu('insert', btnMenuInsert);
-    });
+    // Píldora de grosor
+    const btnWidthPill = this.container?.querySelector('#btnStrokeWidthPill');
+    if (btnWidthPill) {
+      btnWidthPill.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleMenu('width', btnWidthPill);
+      });
+    }
 
-    // 5. Historial
-    this.container.querySelector('#btnUndo').addEventListener('click', () => {
+    // Historial
+    this.container?.querySelector('#btnUndo')?.addEventListener('click', () => {
       this.engine.undo();
     });
 
-    this.container.querySelector('#btnRedo').addEventListener('click', () => {
+    this.container?.querySelector('#btnRedo')?.addEventListener('click', () => {
       this.engine.redo();
     });
 
-    // 6. Páginas
-    const btnPrevPage = this.container.querySelector('#btnPrevPage');
+    // Páginas
+    const btnPrevPage = this.container?.querySelector('#btnPrevPage');
     if (btnPrevPage) {
       btnPrevPage.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -3306,7 +4920,7 @@ class Toolbar {
       });
     }
 
-    const btnNextPage = this.container.querySelector('#btnNextPage');
+    const btnNextPage = this.container?.querySelector('#btnNextPage');
     if (btnNextPage) {
       btnNextPage.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -3315,7 +4929,7 @@ class Toolbar {
       });
     }
 
-    const btnPagesMenu = this.container.querySelector('#btnPagesMenu');
+    const btnPagesMenu = this.container?.querySelector('#btnPagesMenu');
     if (btnPagesMenu) {
       btnPagesMenu.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -3323,8 +4937,18 @@ class Toolbar {
       });
     }
 
-    // 7. Configuración
-    const btnMenuSettings = this.container.querySelector('#btnMenuSettings');
+    // Botón directo Añadir Página (+)
+    const btnAddPageIcon = this.container?.querySelector('#btnAddPageIcon');
+    if (btnAddPageIcon) {
+      btnAddPageIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.closeMenu();
+        this.onAddPage();
+      });
+    }
+
+    // Configuración (⚙)
+    const btnMenuSettings = this.container?.querySelector('#btnMenuSettings');
     if (btnMenuSettings) {
       btnMenuSettings.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -3337,7 +4961,9 @@ class Toolbar {
       if (
         this.popover &&
         !this.popover.contains(e.target) &&
-        !e.target.closest('.has-dropdown') &&
+        !e.target.closest('.dock-btn-compact') &&
+        !e.target.closest('.tool-btn-compact') &&
+        !e.target.closest('.stroke-width-pill') &&
         !e.target.closest('#btnPagesMenu') &&
         !e.target.closest('#btnMenuSettings')
       ) {
@@ -3359,17 +4985,32 @@ class Toolbar {
         e.preventDefault();
         this.engine.redo();
       } else if (e.key.toLowerCase() === 'p') {
-        this.selectTool('pen');
+        this.addOrActivateTool('pen');
+      } else if (e.key.toLowerCase() === 'b') {
+        this.addOrActivateTool('pencil');
       } else if (e.key.toLowerCase() === 'e') {
-        this.selectTool('eraser');
+        this.addOrActivateTool('eraser');
       } else if (e.key.toLowerCase() === 'h') {
-        this.selectTool('highlighter');
-      } else if (e.key.toLowerCase() === 'm') {
-        this.selectTool('hand');
+        this.addOrActivateTool('highlighter');
       } else if (e.key.toLowerCase() === 'l') {
-        this.selectTool('lasso');
+        this.addOrActivateTool('laser');
+      } else if (e.key.toLowerCase() === 'r') {
+        if (this.ruler) {
+          this.ruler.toggle();
+          this.updateActiveButton();
+        }
+      } else if (e.key.toLowerCase() === 'm') {
+        this.addOrActivateTool('hand');
       }
     });
+  }
+
+  updateHTRButton(enabled) {
+    const btn = this.container ? this.container.querySelector('#btnToggleHTR') : null;
+    if (btn) {
+      btn.classList.toggle('active', enabled);
+      btn.classList.toggle('htr-toggle-active', enabled);
+    }
   }
 
   toggleMenu(menuType, anchorBtn) {
@@ -3397,29 +5038,44 @@ class Toolbar {
   positionPopover(anchorBtn) {
     if (!this.popover || !anchorBtn) return;
     const rect = anchorBtn.getBoundingClientRect();
-    const popoverWidth = Math.min(320, window.innerWidth - 20);
+    const popoverWidth = Math.min(310, window.innerWidth - 16);
     let left = rect.left + rect.width / 2 - popoverWidth / 2;
-    left = Math.max(10, Math.min(window.innerWidth - popoverWidth - 10, left));
+    left = Math.max(8, Math.min(window.innerWidth - popoverWidth - 8, left));
 
-    let top = rect.bottom + 8;
+    let top = rect.bottom + 6;
     this.popover.style.top = `${top}px`;
     this.popover.style.left = `${left}px`;
-    this.popover.style.maxWidth = `calc(100vw - 20px)`;
+    this.popover.style.maxWidth = `calc(100vw - 16px)`;
   }
 
   renderMenuContent(menuType) {
     switch (menuType) {
-      case 'pens':
-        this.renderPensMenu();
+      case 'pen':
+      case 'highlighter':
+      case 'pencil':
+      case 'marker':
+        this.renderStrokeSettingsMenu(menuType);
         break;
       case 'eraser':
         this.renderEraserMenu();
         break;
-      case 'insert':
-        this.renderInsertMenu();
+      case 'auxiliary':
+        this.renderAuxiliaryMenu();
+        break;
+      case 'width':
+        this.renderWidthPickerMenu();
+        break;
+      case 'laser':
+        this.renderLaserMenu();
+        break;
+      case 'ruler':
+        this.renderRulerMenu();
         break;
       case 'pages':
         this.renderPagesMenu();
+        break;
+      case 'presets':
+        this.renderPresetsMenu();
         break;
       case 'settings':
       case 'options':
@@ -3428,49 +5084,50 @@ class Toolbar {
     }
   }
 
-  // 1. Mini-menú de Plumas
-  renderPensMenu() {
-    const penTools = [
-      { id: 'pen', name: 'Bolígrafo', icon: Icons.pen, desc: 'Trazo suave continuo' },
-      { id: 'pencil', name: 'Lápiz', icon: Icons.pencil, desc: 'Textura de grafito' },
-      { id: 'marker', name: 'Rotulador', icon: Icons.marker, desc: 'Tinta densa' },
-      { id: 'highlighter', name: 'Subrayador', icon: Icons.highlighter, desc: 'Translúcido con auto-recta' }
-    ];
+  // Popover compacto para ajustes del trazo activo (Sin scroll)
+  renderStrokeSettingsMenu(toolKey) {
+    const titles = {
+      pen: 'Ajustes del Bolígrafo',
+      pencil: 'Ajustes del Lápiz',
+      marker: 'Ajustes del Rotulador',
+      highlighter: 'Ajustes del Subrayador'
+    };
 
-    const currentPenId = ['pen', 'pencil', 'marker', 'highlighter'].includes(this.activeTool)
-      ? this.activeTool
-      : (this.lastPenTool || 'pen');
-    const currentColor = this.engine.strokeColor;
-    const currentWidth = this.engine.strokeWidth;
-    const currentStabilization = this.engine.strokeStabilization !== undefined ? this.engine.strokeStabilization : 0.5;
+    const palette = PaletteManager.getPalette();
+    const curSettings = this.toolSettings[toolKey] || {
+      color: this.engine.strokeColor,
+      width: this.engine.strokeWidth,
+      stabilization: 0.5,
+      concentration: 1.0
+    };
+    const currentColor = curSettings.color;
+    const currentWidth = curSettings.width;
+    const currentStabilization = curSettings.stabilization !== undefined ? curSettings.stabilization : 0.5;
     const currentStabilizationPercent = Math.round(currentStabilization * 100);
-    const currentConcentration = this.engine.strokeConcentration !== undefined ? this.engine.strokeConcentration : 1.0;
+    const currentConcentration = curSettings.concentration !== undefined ? curSettings.concentration : 1.0;
     const currentConcentrationPercent = Math.round(currentConcentration * 100);
-    const isHighlighter = currentPenId === 'highlighter';
+    const isHighlighter = toolKey === 'highlighter';
+    const isPinned = this.pinnedTools.has(toolKey);
 
-    const baseOp = isHighlighter ? 0.45 : (currentPenId === 'pencil' ? 0.85 : 1.0);
+    const baseOp = isHighlighter ? 0.45 : (toolKey === 'pencil' ? 0.85 : 1.0);
     const previewOpacity = Math.max(0.1, baseOp * currentConcentration);
 
     this.popover.innerHTML = `
       <div class="popover-arrow"></div>
-      <div class="mini-menu-title">Tipo de Trazo</div>
-      <div class="pen-types-grid">
-        ${penTools.map(p => `
-          <button class="pen-type-chip ${p.id === currentPenId ? 'active' : ''}" data-pentype="${p.id}">
-            <span class="pen-chip-icon">${p.icon}</span>
-            <span class="pen-chip-name">${p.name}</span>
-          </button>
-        `).join('')}
+      <div class="mini-menu-title-row">
+        <span class="mini-menu-title">${titles[toolKey] || 'Ajustes de Trazo'}</span>
+        <button type="button" class="popover-title-pin-btn ${isPinned ? 'pinned' : ''}" data-pin-tool="${toolKey}" title="${isPinned ? 'Desfijar de la barra' : 'Fijar en la barra (máx 6)'}">
+          ${isPinned ? Icons.pinFilled : Icons.pin}
+          <span>${isPinned ? 'Fijado' : 'Fijar'}</span>
+        </button>
       </div>
 
-      <div class="popover-divider"></div>
-
-      <div class="mini-menu-title">Color de Tinta</div>
-      <div class="color-palette">
-        ${this.favoriteColors.map(c => `
-          <button class="color-swatch ${c === currentColor ? 'active' : ''}" data-color="${c}" style="background-color: ${c}"></button>
+      <!-- Paleta de 10 colores con selector personalizado persistente -->
+      <div class="color-palette-10">
+        ${palette.map(c => `
+          <button type="button" class="color-swatch ${c.toLowerCase() === currentColor.toLowerCase() ? 'active' : ''}" data-color="${c}" style="background-color: ${c}"></button>
         `).join('')}
-        <label class="color-picker-label" title="Color personalizado">
+        <label class="color-picker-label" title="Añadir color personalizado">
           <input type="color" id="popoverColorPicker" value="${currentColor}" />
           <span class="picker-icon">${Icons.edit}</span>
         </label>
@@ -3485,92 +5142,85 @@ class Toolbar {
       </div>
       <div class="slider-with-preview">
         <input type="range" class="popover-slider" id="penStrokeSlider" min="1" max="${isHighlighter ? 40 : 30}" value="${currentWidth}" />
-        <div class="stroke-preview-circle" id="penPreviewCircle" style="width: ${Math.min(currentWidth, 28)}px; height: ${Math.min(currentWidth, 28)}px; background-color: ${currentColor}; opacity: ${previewOpacity};"></div>
+        <div class="stroke-preview-circle" id="penPreviewCircle" style="width: ${Math.min(currentWidth, 24)}px; height: ${Math.min(currentWidth, 24)}px; background-color: ${currentColor}; opacity: ${previewOpacity};"></div>
       </div>
       <div class="stroke-presets-chips" id="widthPresetsGroup">
-        ${[1, 2, 4, 8, 14, 24].map(w => `
-          <button class="stroke-preset-chip ${w === currentWidth ? 'active' : ''}" data-width="${w}">${w}px</button>
+        ${(isHighlighter ? [8, 14, 18, 24, 32] : [1, 2, 4, 8, 14, 20]).map(w => `
+          <button type="button" class="stroke-preset-chip ${w === currentWidth ? 'active' : ''}" data-width="${w}">${w}px</button>
         `).join('')}
       </div>
 
       <div class="popover-divider"></div>
 
-      <!-- Estabilidad / Suavizado -->
+      <!-- Estabilización / Suavizado -->
       <div class="popover-row">
-        <span class="label-text">Estabilidad (Suavizado)</span>
+        <span class="label-text">Suavizado de Trazo</span>
         <span class="value-text" id="penStabilizationVal">${currentStabilizationPercent}%</span>
       </div>
       <input type="range" class="popover-slider" id="penStabilizationSlider" min="0" max="100" value="${currentStabilizationPercent}" />
-      <div class="stroke-presets-chips" id="stabPresetsGroup">
-        <button class="stroke-preset-chip ${currentStabilizationPercent === 0 ? 'active' : ''}" data-stab="0">0% Directo</button>
-        <button class="stroke-preset-chip ${currentStabilizationPercent === 40 ? 'active' : ''}" data-stab="40">40% Natural</button>
-        <button class="stroke-preset-chip ${currentStabilizationPercent === 70 ? 'active' : ''}" data-stab="70">70% Suave</button>
-        <button class="stroke-preset-chip ${currentStabilizationPercent === 90 ? 'active' : ''}" data-stab="90">90% Preciso</button>
-      </div>
 
       <div class="popover-divider"></div>
 
       <!-- Concentración / Densidad de Tinta -->
       <div class="popover-row">
-        <span class="label-text">Concentración (Densidad)</span>
+        <span class="label-text">Concentración de Tinta</span>
         <span class="value-text" id="penConcentrationVal">${currentConcentrationPercent}%</span>
       </div>
       <input type="range" class="popover-slider" id="penConcentrationSlider" min="10" max="100" value="${currentConcentrationPercent}" />
-      <div class="stroke-presets-chips" id="concPresetsGroup">
-        <button class="stroke-preset-chip ${currentConcentrationPercent === 25 ? 'active' : ''}" data-conc="25">25% Acuarela</button>
-        <button class="stroke-preset-chip ${currentConcentrationPercent === 50 ? 'active' : ''}" data-conc="50">50% Medio</button>
-        <button class="stroke-preset-chip ${currentConcentrationPercent === 75 ? 'active' : ''}" data-conc="75">75% Denso</button>
-        <button class="stroke-preset-chip ${currentConcentrationPercent === 100 ? 'active' : ''}" data-conc="100">100% Sólido</button>
-      </div>
-
-      ${isHighlighter ? `
-        <div class="popover-hint">
-          💡 <strong>Tip:</strong> Mantén pulsado 450ms al final para enderezar automáticamente la línea.
-        </div>
-      ` : ''}
     `;
 
     const updatePreviewCircle = () => {
       const circle = this.popover.querySelector('#penPreviewCircle');
       if (circle) {
-        const w = this.engine.strokeWidth;
-        const c = this.engine.strokeColor;
-        const conc = this.engine.strokeConcentration !== undefined ? this.engine.strokeConcentration : 1.0;
-        const isHl = this.activeTool === 'highlighter';
-        const op = isHl ? 0.45 : (this.activeTool === 'pencil' ? 0.85 : 1.0);
-        circle.style.width = `${Math.min(w, 28)}px`;
-        circle.style.height = `${Math.min(w, 28)}px`;
-        circle.style.backgroundColor = c;
+        const curS = this.toolSettings[toolKey] || {};
+        const col = curS.color || this.engine.strokeColor;
+        const wid = curS.width || this.engine.strokeWidth;
+        const conc = curS.concentration !== undefined ? curS.concentration : 1.0;
+        circle.style.width = `${Math.min(wid, 24)}px`;
+        circle.style.height = `${Math.min(wid, 24)}px`;
+        circle.style.backgroundColor = col;
+        const op = isHighlighter ? 0.45 : (toolKey === 'pencil' ? 0.85 : 1.0);
         circle.style.opacity = Math.max(0.1, op * conc);
       }
     };
 
-    // Eventos de selección de tipo de pluma
-    this.popover.querySelectorAll('[data-pentype]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const penId = btn.dataset.pentype;
-        this.selectTool(penId);
-        this.renderPensMenu();
+    // Botón Pin en título
+    this.popover.querySelector('.popover-title-pin-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.togglePinTool(toolKey);
+    });
+
+    // Paleta de 10 colores
+    this.popover.querySelectorAll('.color-swatch').forEach(sw => {
+      sw.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const color = sw.dataset.color;
+        if (this.toolSettings[toolKey]) {
+          this.toolSettings[toolKey].color = color;
+          this.saveToolSettings();
+        }
+        if (this.activeTool === toolKey) {
+          this.engine.setColor(color);
+        }
+        this.updatePenDotsColor();
+        this.renderStrokeSettingsMenu(toolKey);
       });
     });
 
-    // Eventos de paleta de colores
-    this.popover.querySelectorAll('.color-swatch').forEach(swatch => {
-      swatch.addEventListener('click', () => {
-        const color = swatch.dataset.color;
-        this.engine.setColor(color);
-        this.updatePenIconColor();
-        this.renderPensMenu();
-      });
-    });
-
-    // Color picker
+    // Selector de color personalizado nativo (guarda automáticamente en la paleta de 10)
     const picker = this.popover.querySelector('#popoverColorPicker');
     if (picker) {
       picker.addEventListener('input', (e) => {
         const color = e.target.value;
-        this.engine.setColor(color);
-        this.updatePenIconColor();
+        PaletteManager.saveCustomColor(color);
+        if (this.toolSettings[toolKey]) {
+          this.toolSettings[toolKey].color = color;
+          this.saveToolSettings();
+        }
+        if (this.activeTool === toolKey) {
+          this.engine.setColor(color);
+        }
+        this.updatePenDotsColor();
         updatePreviewCircle();
       });
     }
@@ -3580,22 +5230,36 @@ class Toolbar {
     if (strokeSlider) {
       strokeSlider.addEventListener('input', (e) => {
         const w = Number(e.target.value);
-        this.engine.setWidth(w);
+        if (this.toolSettings[toolKey]) {
+          this.toolSettings[toolKey].width = w;
+          this.saveToolSettings();
+        }
+        if (this.activeTool === toolKey) {
+          this.engine.setWidth(w);
+          const label = this.container.querySelector('#strokeWidthLabel');
+          if (label) label.textContent = `${w}px`;
+        }
         const valText = this.popover.querySelector('#penWidthVal');
         if (valText) valText.textContent = `${w}px`;
         updatePreviewCircle();
-        // Actualizar chips activos
         this.popover.querySelectorAll('#widthPresetsGroup .stroke-preset-chip').forEach(chip => {
           chip.classList.toggle('active', Number(chip.dataset.width) === w);
         });
       });
     }
 
-    // Grosor Presets Chips
     this.popover.querySelectorAll('#widthPresetsGroup .stroke-preset-chip').forEach(chip => {
       chip.addEventListener('click', () => {
         const w = Number(chip.dataset.width);
-        this.engine.setWidth(w);
+        if (this.toolSettings[toolKey]) {
+          this.toolSettings[toolKey].width = w;
+          this.saveToolSettings();
+        }
+        if (this.activeTool === toolKey) {
+          this.engine.setWidth(w);
+          const label = this.container.querySelector('#strokeWidthLabel');
+          if (label) label.textContent = `${w}px`;
+        }
         if (strokeSlider) strokeSlider.value = w;
         const valText = this.popover.querySelector('#penWidthVal');
         if (valText) valText.textContent = `${w}px`;
@@ -3611,93 +5275,242 @@ class Toolbar {
     if (stabSlider) {
       stabSlider.addEventListener('input', (e) => {
         const sVal = Number(e.target.value);
-        this.engine.setStabilization(sVal / 100);
+        if (this.toolSettings[toolKey]) {
+          this.toolSettings[toolKey].stabilization = sVal / 100;
+          this.saveToolSettings();
+        }
+        if (this.activeTool === toolKey) {
+          this.engine.setStabilization(sVal / 100);
+        }
         const valText = this.popover.querySelector('#penStabilizationVal');
         if (valText) valText.textContent = `${sVal}%`;
-        this.popover.querySelectorAll('#stabPresetsGroup .stroke-preset-chip').forEach(chip => {
-          chip.classList.toggle('active', Number(chip.dataset.stab) === sVal);
-        });
       });
     }
-
-    // Estabilidad Presets Chips
-    this.popover.querySelectorAll('#stabPresetsGroup .stroke-preset-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        const sVal = Number(chip.dataset.stab);
-        this.engine.setStabilization(sVal / 100);
-        if (stabSlider) stabSlider.value = sVal;
-        const valText = this.popover.querySelector('#penStabilizationVal');
-        if (valText) valText.textContent = `${sVal}%`;
-        this.popover.querySelectorAll('#stabPresetsGroup .stroke-preset-chip').forEach(c => {
-          c.classList.toggle('active', c === chip);
-        });
-      });
-    });
 
     // Concentración Slider
     const concSlider = this.popover.querySelector('#penConcentrationSlider');
     if (concSlider) {
       concSlider.addEventListener('input', (e) => {
         const cVal = Number(e.target.value);
-        this.engine.setConcentration(cVal / 100);
+        if (this.toolSettings[toolKey]) {
+          this.toolSettings[toolKey].concentration = cVal / 100;
+          this.saveToolSettings();
+        }
+        if (this.activeTool === toolKey) {
+          this.engine.setConcentration(cVal / 100);
+        }
         const valText = this.popover.querySelector('#penConcentrationVal');
         if (valText) valText.textContent = `${cVal}%`;
         updatePreviewCircle();
-        this.popover.querySelectorAll('#concPresetsGroup .stroke-preset-chip').forEach(chip => {
-          chip.classList.toggle('active', Number(chip.dataset.conc) === cVal);
-        });
       });
     }
-
-    // Concentración Presets Chips
-    this.popover.querySelectorAll('#concPresetsGroup .stroke-preset-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        const cVal = Number(chip.dataset.conc);
-        this.engine.setConcentration(cVal / 100);
-        if (concSlider) concSlider.value = cVal;
-        const valText = this.popover.querySelector('#penConcentrationVal');
-        if (valText) valText.textContent = `${cVal}%`;
-        updatePreviewCircle();
-        this.popover.querySelectorAll('#concPresetsGroup .stroke-preset-chip').forEach(c => {
-          c.classList.toggle('active', c === chip);
-        });
-      });
-    });
   }
 
-  // 2. Mini-menú de Borrador
-  renderEraserMenu() {
-    const isStroke = this.engine.eraserMode === 'stroke';
-    const radius = this.engine.eraserRadius || 16;
-    const highlighterOnly = Boolean(this.engine.eraseHighlighterOnly);
+  // Popover de Herramientas Auxiliares (🛠️ ▾) con opción de fijar (pin)
+  renderAuxiliaryMenu() {
+    const isRulerActive = this.ruler ? this.ruler.active : false;
+    const isLaserActive = this.activeTool === 'laser';
+    const isPenActive = this.activeTool === 'pen';
+    const isHighlighterActive = this.activeTool === 'highlighter';
+    const isEraserActive = this.activeTool === 'eraser';
+    const isPencilActive = this.activeTool === 'pencil';
+    const isMarkerActive = this.activeTool === 'marker';
+    const isHandActive = this.activeTool === 'hand';
+    const isShapeActive = this.activeTool === 'shape';
+    const isTextActive = this.activeTool === 'text';
+    const isLassoActive = this.activeTool === 'lasso';
+
+    const renderPinBtn = (toolId) => {
+      const isPinned = this.pinnedTools.has(toolId);
+      return `
+        <button type="button" class="aux-tool-pin-btn ${isPinned ? 'pinned' : ''}" data-pin-tool="${toolId}" title="${isPinned ? 'Desfijar de la barra' : 'Fijar en la barra (máx 6)'}">
+          ${isPinned ? Icons.pinFilled : Icons.pin}
+        </button>
+      `;
+    };
 
     this.popover.innerHTML = `
       <div class="popover-arrow"></div>
-      <div class="mini-menu-title">Modo del Borrador</div>
+      <div class="mini-menu-title">Herramientas y Multimedia</div>
+
+      <!-- Sección 1: Dibujo & Trazado -->
+      <div class="aux-section-heading">Dibujo & Trazado</div>
+      <div class="aux-tools-grid">
+        <div class="aux-tool-chip ${isPenActive ? 'active' : ''}" data-aux-tool="pen" title="Bolígrafo (P)">
+          ${renderPinBtn('pen')}
+          <span class="aux-icon">${Icons.pen}</span>
+          <span class="aux-label">Bolígrafo</span>
+        </div>
+        <div class="aux-tool-chip ${isHighlighterActive ? 'active' : ''}" data-aux-tool="highlighter" title="Subrayador (H)">
+          ${renderPinBtn('highlighter')}
+          <span class="aux-icon">${Icons.highlighter}</span>
+          <span class="aux-label">Subrayador</span>
+        </div>
+        <div class="aux-tool-chip ${isEraserActive ? 'active' : ''}" data-aux-tool="eraser" title="Borrador (E)">
+          ${renderPinBtn('eraser')}
+          <span class="aux-icon">${Icons.eraser}</span>
+          <span class="aux-label">Borrador</span>
+        </div>
+        <div class="aux-tool-chip ${isPencilActive ? 'active' : ''}" data-aux-tool="pencil" title="Lápiz (B)">
+          ${renderPinBtn('pencil')}
+          <span class="aux-icon">${Icons.pencil}</span>
+          <span class="aux-label">Lápiz</span>
+        </div>
+        <div class="aux-tool-chip ${isMarkerActive ? 'active' : ''}" data-aux-tool="marker" title="Rotulador">
+          ${renderPinBtn('marker')}
+          <span class="aux-icon">${Icons.marker}</span>
+          <span class="aux-label">Rotulador</span>
+        </div>
+      </div>
+
+      <!-- Sección 2: Precisión & Navegación -->
+      <div class="aux-section-heading" style="margin-top: 10px;">Precisión & Navegación</div>
+      <div class="aux-tools-grid">
+        <div class="aux-tool-chip ${isLaserActive ? 'active' : ''}" data-aux-tool="laser" title="Puntero Láser (L)">
+          ${renderPinBtn('laser')}
+          <span class="aux-icon">${Icons.laser}</span>
+          <span class="aux-label">Láser</span>
+        </div>
+        <div class="aux-tool-chip ${isRulerActive ? 'active' : ''}" data-aux-tool="ruler" title="Regla interactiva (R)">
+          ${renderPinBtn('ruler')}
+          <span class="aux-icon">${Icons.ruler}</span>
+          <span class="aux-label">Regla</span>
+        </div>
+        <div class="aux-tool-chip ${isHandActive ? 'active' : ''}" data-aux-tool="hand" title="Mover / Desplazar lienzo (M)">
+          ${renderPinBtn('hand')}
+          <span class="aux-icon">${Icons.hand}</span>
+          <span class="aux-label">Mano</span>
+        </div>
+        <div class="aux-tool-chip ${isLassoActive ? 'active' : ''}" data-aux-tool="lasso" title="Lazo de Selección">
+          ${renderPinBtn('lasso')}
+          <span class="aux-icon">${Icons.lasso}</span>
+          <span class="aux-label">Lazo</span>
+        </div>
+      </div>
+
+      <!-- Sección 3: Inserción & Formas -->
+      <div class="aux-section-heading" style="margin-top: 10px;">Inserción & Formas</div>
+      <div class="aux-tools-grid">
+        <div class="aux-tool-chip ${isShapeActive ? 'active' : ''}" data-aux-tool="shape" title="Insertar figuras geométricas">
+          ${renderPinBtn('shape')}
+          <span class="aux-icon">${Icons.shape}</span>
+          <span class="aux-label">Figuras</span>
+        </div>
+        <div class="aux-tool-chip ${isTextActive ? 'active' : ''}" data-aux-tool="text" title="Insertar texto">
+          ${renderPinBtn('text')}
+          <span class="aux-icon">${Icons.text}</span>
+          <span class="aux-label">Texto</span>
+        </div>
+      </div>
+
+      <!-- Sección 4: Importar Multimedia -->
+      <div class="aux-section-heading" style="margin-top: 10px;">Insertar Multimedia</div>
+      <div class="aux-media-grid">
+        <button type="button" class="aux-media-btn" id="btnAuxImportImage" title="Importar imagen (PNG, JPG, WebP, SVG, GIF)">
+          <span class="aux-media-icon">${Icons.image}</span>
+          <div class="aux-media-text">
+            <strong>Importar Imagen</strong>
+            <small>Fotos y gráficos</small>
+          </div>
+        </button>
+        <button type="button" class="aux-media-btn" id="btnAuxImportVideo" title="Importar video (MP4, WebM, MOV)">
+          <span class="aux-media-icon">${Icons.video}</span>
+          <div class="aux-media-text">
+            <strong>Importar Video</strong>
+            <small>Clips y grabaciones</small>
+          </div>
+        </button>
+      </div>
+
+      <div class="popover-divider"></div>
+
+      <!-- Presets Favoritos -->
+      <div class="mini-actions-list">
+        <button type="button" class="mini-action-btn" id="btnPinnedPresets">
+          <span class="mini-action-icon">${Icons.star}</span>
+          <div class="mini-action-text">
+            <strong>Presets Favoritos (+)</strong>
+            <small>Gestionar y fijar estilos de trazo</small>
+          </div>
+        </button>
+      </div>
+    `;
+
+    // Vincular activación de herramientas auxiliares (las añade a la cola del dock)
+    this.popover.querySelectorAll('[data-aux-tool]').forEach(chip => {
+      chip.addEventListener('click', (e) => {
+        if (e.target.closest('.aux-tool-pin-btn')) return;
+        const toolId = chip.dataset.auxTool;
+        if (toolId === 'ruler') {
+          if (this.ruler) {
+            this.ruler.toggle();
+            this.updateActiveButton();
+          }
+        } else {
+          this.addOrActivateTool(toolId);
+        }
+        this.closeMenu();
+      });
+    });
+
+    // Vincular pines
+    this.popover.querySelectorAll('.aux-tool-pin-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const toolId = btn.dataset.pinTool;
+        this.togglePinTool(toolId);
+      });
+    });
+
+    // Importación multimedia
+    this.popover.querySelector('#btnAuxImportImage')?.addEventListener('click', () => {
+      this.closeMenu();
+      if (this.imageTool) this.imageTool.triggerUpload('image');
+    });
+
+    this.popover.querySelector('#btnAuxImportVideo')?.addEventListener('click', () => {
+      this.closeMenu();
+      if (this.imageTool) this.imageTool.triggerUpload('video');
+    });
+
+    this.popover.querySelector('#btnPinnedPresets')?.addEventListener('click', () => {
+      this.openMenu('presets', this.container.querySelector('#btnMenuAuxiliary'));
+    });
+  }
+
+  // Popover Borrador
+  renderEraserMenu() {
+    const isStroke = this.engine.eraserMode === 'stroke';
+    const eraseHighlighter = this.engine.eraseHighlighterOnly;
+    const isPinned = this.pinnedTools.has('eraser');
+
+    this.popover.innerHTML = `
+      <div class="popover-arrow"></div>
+      <div class="mini-menu-title-row">
+        <span class="mini-menu-title">Ajustes del Borrador</span>
+        <button type="button" class="popover-title-pin-btn ${isPinned ? 'pinned' : ''}" data-pin-tool="eraser" title="${isPinned ? 'Desfijar de la barra' : 'Fijar en la barra (máx 6)'}">
+          ${isPinned ? Icons.pinFilled : Icons.pin}
+          <span>${isPinned ? 'Fijado' : 'Fijar'}</span>
+        </button>
+      </div>
+
       <div class="eraser-mode-selector">
-        <button class="mode-pill ${isStroke ? 'active' : ''}" id="btnModeStroke">
-          Trazo Completo
-        </button>
-        <button class="mode-pill ${!isStroke ? 'active' : ''}" id="btnModeArea">
-          Área Circular
-        </button>
+        <button type="button" class="mode-pill ${isStroke ? 'active' : ''}" id="btnModeStroke">Trazo Completo</button>
+        <button type="button" class="mode-pill ${!isStroke ? 'active' : ''}" id="btnModeArea">Borrador de Área</button>
       </div>
 
       <div class="popover-divider"></div>
 
       <label class="popover-checkbox">
-        <input type="checkbox" id="chkHighlighterOnly" ${highlighterOnly ? 'checked' : ''} />
-        <span>Solo borrar subrayador</span>
+        <input type="checkbox" id="chkEraseHighlighter" ${eraseHighlighter ? 'checked' : ''} />
+        <span>Borrar solo subrayador</span>
       </label>
-
-      <div class="popover-divider"></div>
-
-      <div class="popover-row">
-        <span class="label-text">Radio de borrado</span>
-        <span class="value-text" id="eraserSizeVal">${radius}px</span>
-      </div>
-      <input type="range" class="popover-slider" id="sliderEraserRadius" min="6" max="40" value="${radius}" />
     `;
+
+    this.popover.querySelector('.popover-title-pin-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.togglePinTool('eraser');
+    });
 
     this.popover.querySelector('#btnModeStroke').addEventListener('click', () => {
       this.engine.setEraserMode('stroke');
@@ -3709,178 +5522,195 @@ class Toolbar {
       this.renderEraserMenu();
     });
 
-    this.popover.querySelector('#chkHighlighterOnly').addEventListener('change', (e) => {
+    this.popover.querySelector('#chkEraseHighlighter').addEventListener('change', (e) => {
       this.engine.setEraseHighlighterOnly(e.target.checked);
-    });
-
-    const radiusSlider = this.popover.querySelector('#sliderEraserRadius');
-    radiusSlider.addEventListener('input', (e) => {
-      const r = Number(e.target.value);
-      this.engine.eraserRadius = r;
-      const sizeVal = this.popover.querySelector('#eraserSizeVal');
-      if (sizeVal) sizeVal.textContent = `${r}px`;
     });
   }
 
-  // 3. Mini-menú de Insertar (Figuras, Texto, Imagen, Lazo)
-  renderInsertMenu() {
-    const isShape = this.activeTool === 'shape';
-    const activeShapeType = this.shapeTool ? this.shapeTool.shapeType : 'rectangle';
-    const shapeColor = this.shapeTool ? this.shapeTool.strokeColor : this.engine.strokeColor;
-    const fillColor = this.shapeTool ? this.shapeTool.fillColor : 'transparent';
-    const shapeWidth = this.shapeTool ? this.shapeTool.strokeWidth : 3;
-
-    const fillColors = [
-      { label: 'Ninguno', val: 'transparent' },
-      { label: 'Blanco', val: '#ffffff' },
-      { label: 'Amarillo', val: '#fef3c7' },
-      { label: 'Azul', val: '#dbeafe' },
-      { label: 'Verde', val: '#dcfce7' },
-      { label: 'Rojo', val: '#fee2e2' }
-    ];
+  // Popover Puntero Láser
+  renderLaserMenu() {
+    const isPinned = this.pinnedTools.has('laser');
+    const color = (this.laserPointer && this.laserPointer.laserColor) || '#ef4444';
 
     this.popover.innerHTML = `
       <div class="popover-arrow"></div>
-      <div class="mini-menu-title">Insertar Elemento</div>
-      <div class="insert-tools-grid">
-        <button class="insert-item-btn ${isShape ? 'active' : ''}" id="btnInsertShape">
-          <span class="insert-icon">${Icons.shape}</span>
-          <span class="insert-name">Figuras</span>
-        </button>
-        <button class="insert-item-btn ${this.activeTool === 'text' ? 'active' : ''}" id="btnInsertText">
-          <span class="insert-icon">${Icons.text}</span>
-          <span class="insert-name">Texto</span>
-        </button>
-        <button class="insert-item-btn" id="btnInsertImage">
-          <span class="insert-icon">${Icons.image}</span>
-          <span class="insert-name">Imagen</span>
-        </button>
-        <button class="insert-item-btn ${this.activeTool === 'lasso' ? 'active' : ''}" id="btnInsertLasso">
-          <span class="insert-icon">${Icons.lasso}</span>
-          <span class="insert-name">Lazo</span>
+      <div class="mini-menu-title-row">
+        <span class="mini-menu-title">Puntero Láser</span>
+        <button type="button" class="popover-title-pin-btn ${isPinned ? 'pinned' : ''}" data-pin-tool="laser" title="${isPinned ? 'Desfijar de la barra' : 'Fijar en la barra (máx 6)'}">
+          ${isPinned ? Icons.pinFilled : Icons.pin}
+          <span>${isPinned ? 'Fijado' : 'Fijar'}</span>
         </button>
       </div>
-
-      <div id="shapeSubOptions" class="${isShape ? '' : 'hidden'}">
-        <div class="popover-divider"></div>
-        <div class="mini-menu-title">Tipo de Figura</div>
-        <div class="shape-type-selector">
-          <button class="mode-pill ${activeShapeType === 'rectangle' ? 'active' : ''}" data-shape="rectangle">
-            ${Icons.rectangle} Rectángulo
-          </button>
-          <button class="mode-pill ${activeShapeType === 'circle' ? 'active' : ''}" data-shape="circle">
-            ${Icons.circle} Círculo
-          </button>
-          <button class="mode-pill ${activeShapeType === 'line' ? 'active' : ''}" data-shape="line">
-            ${Icons.line} Línea
-          </button>
-          <button class="mode-pill ${activeShapeType === 'arrow' ? 'active' : ''}" data-shape="arrow">
-            ${Icons.arrow} Flecha
-          </button>
-        </div>
-
-        <div class="popover-divider"></div>
-
-        <div class="mini-menu-title">Color de Borde</div>
-        <div class="color-palette">
-          ${this.favoriteColors.map(c => `
-            <button class="color-swatch ${c === shapeColor ? 'active' : ''}" data-shape-color="${c}" style="background-color: ${c}"></button>
-          `).join('')}
-        </div>
-
-        <div class="popover-divider"></div>
-
-        <div class="mini-menu-title">Relleno</div>
-        <div class="fill-palette">
-          ${fillColors.map(f => `
-            <button class="fill-swatch ${f.val === fillColor ? 'active' : ''}" data-fill="${f.val}" style="background-color: ${f.val === 'transparent' ? '#f1f5f9' : f.val}" title="${f.label}">
-              ${f.val === 'transparent' ? '✕' : ''}
-            </button>
-          `).join('')}
-        </div>
-
-        <div class="popover-divider"></div>
-
-        <div class="popover-row">
-          <span class="label-text">Grosor de borde</span>
-          <span class="value-text" id="shapeWidthVal">${shapeWidth}px</span>
-        </div>
-        <input type="range" class="popover-slider" id="shapeStrokeSlider" min="1" max="15" value="${shapeWidth}" />
+      <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:8px;">
+        Puntero de presentación temporal con estela luminosa y desvanecimiento continuo.
+      </div>
+      <div class="color-palette-10">
+        ${['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899'].map(c => `
+          <button type="button" class="color-swatch ${c.toLowerCase() === color.toLowerCase() ? 'active' : ''}" data-laser-color="${c}" style="background-color: ${c}"></button>
+        `).join('')}
       </div>
     `;
 
-    // Eventos de botones
-    this.popover.querySelector('#btnInsertShape').addEventListener('click', () => {
-      this.selectTool('shape');
-      this.renderInsertMenu();
+    this.popover.querySelector('.popover-title-pin-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.togglePinTool('laser');
     });
 
-    this.popover.querySelector('#btnInsertText').addEventListener('click', () => {
-      this.selectTool('text');
-      this.closeMenu();
+    this.popover.querySelectorAll('[data-laser-color]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const c = btn.dataset.laserColor;
+        if (this.laserPointer) {
+          this.laserPointer.setColor(c);
+        }
+        this.renderLaserMenu();
+      });
+    });
+  }
+
+  // Popover Selector de Grosor Directo
+  renderWidthPickerMenu() {
+    const isHighlighter = this.activeTool === 'highlighter';
+    const currentWidth = this.engine.strokeWidth;
+    const presets = isHighlighter ? [8, 14, 18, 24, 32] : [1, 2, 4, 8, 14, 20];
+
+    this.popover.innerHTML = `
+      <div class="popover-arrow"></div>
+      <div class="mini-menu-title">Grosor de Trazo</div>
+      <div class="stroke-presets-chips">
+        ${presets.map(w => `
+          <button type="button" class="stroke-preset-chip ${w === currentWidth ? 'active' : ''}" data-width="${w}">${w}px</button>
+        `).join('')}
+      </div>
+      <div class="slider-with-preview" style="margin-top: 10px;">
+        <input type="range" class="popover-slider" id="directWidthSlider" min="1" max="${isHighlighter ? 40 : 30}" value="${currentWidth}" />
+      </div>
+    `;
+
+    this.popover.querySelectorAll('.stroke-preset-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const w = Number(chip.dataset.width);
+        if (this.toolSettings[this.activeTool]) {
+          this.toolSettings[this.activeTool].width = w;
+          this.saveToolSettings();
+        }
+        this.engine.setWidth(w);
+        const label = this.container.querySelector('#strokeWidthLabel');
+        if (label) label.textContent = `${w}px`;
+        this.renderWidthPickerMenu();
+      });
     });
 
-    this.popover.querySelector('#btnInsertImage').addEventListener('click', () => {
-      this.closeMenu();
-      if (this.imageTool) this.imageTool.triggerUpload();
-    });
-
-    this.popover.querySelector('#btnInsertLasso').addEventListener('click', () => {
-      this.selectTool('lasso');
-      this.closeMenu();
-    });
-
-    if (isShape) {
-      this.popover.querySelectorAll('[data-shape]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          if (this.shapeTool) this.shapeTool.setShapeType(btn.dataset.shape);
-          this.renderInsertMenu();
+    const slider = this.popover.querySelector('#directWidthSlider');
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const w = Number(e.target.value);
+        if (this.toolSettings[this.activeTool]) {
+          this.toolSettings[this.activeTool].width = w;
+          this.saveToolSettings();
+        }
+        this.engine.setWidth(w);
+        const label = this.container.querySelector('#strokeWidthLabel');
+        if (label) label.textContent = `${w}px`;
+        this.popover.querySelectorAll('.stroke-preset-chip').forEach(chip => {
+          chip.classList.toggle('active', Number(chip.dataset.width) === w);
         });
       });
-
-      this.popover.querySelectorAll('[data-shape-color]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          if (this.shapeTool) this.shapeTool.setStrokeColor(btn.dataset.shapeColor);
-          this.renderInsertMenu();
-        });
-      });
-
-      this.popover.querySelectorAll('[data-fill]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          if (this.shapeTool) this.shapeTool.setFillColor(btn.dataset.fill);
-          this.renderInsertMenu();
-        });
-      });
-
-      const slider = this.popover.querySelector('#shapeStrokeSlider');
-      if (slider) {
-        slider.addEventListener('input', (e) => {
-          const w = Number(e.target.value);
-          if (this.shapeTool) this.shapeTool.setStrokeWidth(w);
-          const valText = this.popover.querySelector('#shapeWidthVal');
-          if (valText) valText.textContent = `${w}px`;
-        });
-      }
     }
   }
 
-  // 4. Mini-menú de Páginas (Navegación, Añadir, Duplicar, Pauta)
+  // Popover Presets Favoritos
+  renderPresetsMenu() {
+    const presets = PaletteManager.getPresets();
+    const currentColor = this.engine.strokeColor;
+    const currentWidth = this.engine.strokeWidth;
+
+    this.popover.innerHTML = `
+      <div class="popover-arrow"></div>
+      <div class="mini-menu-title">Presets Favoritos de Trazo</div>
+      <div class="mini-actions-list">
+        <button type="button" class="mini-action-btn primary" id="btnAddCurrentPreset">
+          <span class="mini-action-icon">${Icons.plus}</span>
+          <div class="mini-action-text">
+            <strong>Fijar Trazo Actual (${currentWidth}px)</strong>
+            <small>Guardar color y grosor como favorito</small>
+          </div>
+        </button>
+      </div>
+
+      <div class="presets-list" id="presetsListContainer">
+        ${presets.length === 0 ? `<div style="font-size:0.75rem; color:var(--text-muted); text-align:center; padding:10px;">No hay presets guardados</div>` : ''}
+        ${presets.map(p => `
+          <div class="preset-row-item">
+            <button type="button" class="preset-apply-btn" data-preset-id="${p.id}">
+              <span class="preset-color-badge" style="background-color: ${p.color};"></span>
+              <div class="preset-info">
+                <strong>${p.name || 'Estilo de Trazo'}</strong>
+                <small>${p.width}px · ${p.tool || 'pen'}</small>
+              </div>
+            </button>
+            <button type="button" class="preset-del-btn" data-del-id="${p.id}" title="Eliminar preset">×</button>
+          </div>
+        `).join('')}
+      </div>
+    `;
+
+    this.popover.querySelector('#btnAddCurrentPreset')?.addEventListener('click', () => {
+      PaletteManager.addPreset({
+        name: `Estilo ${this.activeTool}`,
+        tool: this.activeTool,
+        color: currentColor,
+        width: currentWidth
+      });
+      this.renderPresetsMenu();
+    });
+
+    this.popover.querySelectorAll('.preset-apply-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.presetId;
+        const preset = presets.find(p => p.id === id);
+        if (preset) {
+          if (preset.tool && this.toolSettings[preset.tool]) {
+            this.toolSettings[preset.tool].color = preset.color;
+            this.toolSettings[preset.tool].width = preset.width;
+            this.saveToolSettings();
+          }
+          this.engine.setColor(preset.color);
+          this.engine.setWidth(preset.width);
+          if (preset.tool) this.addOrActivateTool(preset.tool);
+          this.updatePenDotsColor();
+          this.closeMenu();
+        }
+      });
+    });
+
+    this.popover.querySelectorAll('.preset-del-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        PaletteManager.deletePreset(btn.dataset.delId);
+        this.renderPresetsMenu();
+      });
+    });
+  }
+
+  // Popover Páginas y Fondo
   renderPagesMenu() {
+    const isNotebook = this.engine.format === 'a4';
     const isCover = this.currentPageIndex === -1;
     const currentPattern = this.engine.backgroundPattern;
 
     const patterns = [
-      { id: 'grid', name: 'Cuadrícula 5mm', icon: Icons.patternGrid },
-      { id: 'ruled', name: 'Rayado Clásico', icon: Icons.patternRuled },
-      { id: 'dots', name: 'Puntos Bullet', icon: Icons.patternDots },
-      { id: 'blank', name: 'Blanco Liso', icon: Icons.patternBlank }
+      { id: 'blank', name: 'Liso', icon: Icons.patternBlank },
+      { id: 'ruled', name: 'Rayado', icon: Icons.patternRuled },
+      { id: 'grid', name: 'Cuadrícula', icon: Icons.patternGrid },
+      { id: 'dots', name: 'Puntos', icon: Icons.patternDots }
     ];
 
     this.popover.innerHTML = `
       <div class="popover-arrow"></div>
-      <div class="mini-menu-title">Páginas del Cuaderno</div>
-      <div class="mini-actions-list">
-        <button class="mini-action-btn ${isCover ? 'active' : ''}" id="btnMenuCover">
+      <div class="mini-menu-title">Gestión de Hoja y Páginas</div>
+
+      <div class="mini-actions-list ${isNotebook ? '' : 'hidden'}">
+        <button type="button" class="mini-action-btn" id="btnMenuCover">
           <span class="mini-action-icon">${Icons.cover}</span>
           <div class="mini-action-text">
             <strong>Ir a la Portada</strong>
@@ -3888,7 +5718,7 @@ class Toolbar {
           </div>
         </button>
 
-        <button class="mini-action-btn" id="btnMenuAddPage">
+        <button type="button" class="mini-action-btn" id="btnMenuAddPage">
           <span class="mini-action-icon">${Icons.plus}</span>
           <div class="mini-action-text">
             <strong>Añadir Nueva Página</strong>
@@ -3896,7 +5726,7 @@ class Toolbar {
           </div>
         </button>
 
-        <button class="mini-action-btn ${isCover ? 'disabled' : ''}" id="btnMenuDupPage" ${isCover ? 'disabled' : ''}>
+        <button type="button" class="mini-action-btn ${isCover ? 'disabled' : ''}" id="btnMenuDupPage" ${isCover ? 'disabled' : ''}>
           <span class="mini-action-icon">${Icons.copy}</span>
           <div class="mini-action-text">
             <strong>Duplicar Página Actual</strong>
@@ -3904,7 +5734,7 @@ class Toolbar {
           </div>
         </button>
 
-        <button class="mini-action-btn danger ${isCover ? 'disabled' : ''}" id="btnMenuDelPage" ${isCover ? 'disabled' : ''}>
+        <button type="button" class="mini-action-btn danger ${isCover ? 'disabled' : ''}" id="btnMenuDelPage" ${isCover ? 'disabled' : ''}>
           <span class="mini-action-icon">${Icons.trash}</span>
           <div class="mini-action-text">
             <strong>Eliminar Página Actual</strong>
@@ -3918,7 +5748,7 @@ class Toolbar {
       <div class="mini-menu-title">Pauta de Hoja (Fondo)</div>
       <div class="pattern-selector-grid">
         ${patterns.map(p => `
-          <button class="pattern-option-btn ${currentPattern === p.id ? 'active' : ''}" data-pattern="${p.id}">
+          <button type="button" class="pattern-option-btn ${currentPattern === p.id ? 'active' : ''}" data-pattern="${p.id}">
             <span class="pattern-btn-icon">${p.icon}</span>
             <span class="pattern-btn-name">${p.name}</span>
           </button>
@@ -3926,13 +5756,12 @@ class Toolbar {
       </div>
     `;
 
-    // Eventos
-    this.popover.querySelector('#btnMenuCover').addEventListener('click', () => {
+    this.popover.querySelector('#btnMenuCover')?.addEventListener('click', () => {
       this.closeMenu();
       this.onOpenCover();
     });
 
-    this.popover.querySelector('#btnMenuAddPage').addEventListener('click', () => {
+    this.popover.querySelector('#btnMenuAddPage')?.addEventListener('click', () => {
       this.closeMenu();
       this.onAddPage();
     });
@@ -3963,7 +5792,7 @@ class Toolbar {
     });
   }
 
-  // 5. Mini-menú de Configuración (Tema, Stylus, Opciones)
+  // Popover Configuración
   renderSettingsMenu() {
     const isStylus = this.engine.inputMode === 'stylus-first';
     const settings = (typeof SettingsManager !== 'undefined')
@@ -4001,50 +5830,33 @@ class Toolbar {
               <strong>Modo Stylus (Palma rechazada)</strong>
               <span class="badge-recommended">Activo</span>
             </div>
-            <small>Dibuja solo con stylus; un dedo o mano desplaza</small>
+            <small>Dibuja solo con stylus; un dedo desplaza</small>
           </div>
           <input type="checkbox" id="chkMiniStylus" class="settings-switch" ${isStylus ? 'checked' : ''} />
-        </label>
-
-        <label class="settings-toggle-row mt-2">
-          <div class="toggle-text">
-            <strong>Papel oscuro en modo noche</strong>
-            <small>Fondo de hoja oscuro para descansar la vista</small>
-          </div>
-          <input type="checkbox" id="chkMiniDarkPaper" class="settings-switch" ${settings.darkPaper ? 'checked' : ''} />
         </label>
       </div>
 
       <div class="popover-divider"></div>
 
       <div class="mini-actions-list">
-        <button class="mini-action-btn primary" id="btnActionExport">
+        <button type="button" class="mini-action-btn primary" id="btnActionExport">
           <span class="mini-action-icon">${Icons.export}</span>
           <div class="mini-action-text">
             <strong>Exportar Documento</strong>
-            <small>Guardar en PDF vectorial o imagen PNG</small>
+            <small>Guardar en PDF vectorial o PNG</small>
           </div>
         </button>
 
-        <button class="mini-action-btn danger" id="btnClearPageCanvas">
+        <button type="button" class="mini-action-btn danger" id="btnClearPageCanvas">
           <span class="mini-action-icon">${Icons.trash}</span>
           <div class="mini-action-text">
             <strong>Limpiar Lienzo</strong>
-            <small>Vaciar trazos y notas de esta página</small>
-          </div>
-        </button>
-
-        <button class="mini-action-btn" id="btnOpenSettingsFromEditor">
-          <span class="mini-action-icon">${Icons.settings}</span>
-          <div class="mini-action-text">
-            <strong>Panel Completo de Ajustes</strong>
-            <small>Pautas por defecto y datos locales</small>
+            <small>Vaciar trazos de esta página</small>
           </div>
         </button>
       </div>
     `;
 
-    // Eventos de Tema
     this.popover.querySelectorAll('[data-mini-theme]').forEach(btn => {
       btn.addEventListener('click', () => {
         const theme = btn.dataset.miniTheme;
@@ -4055,7 +5867,6 @@ class Toolbar {
       });
     });
 
-    // Toggle Modo Stylus
     const chkStylus = this.popover.querySelector('#chkMiniStylus');
     if (chkStylus) {
       chkStylus.addEventListener('change', (e) => {
@@ -4068,40 +5879,17 @@ class Toolbar {
       });
     }
 
-    // Toggle Papel Oscuro
-    const chkDarkPaper = this.popover.querySelector('#chkMiniDarkPaper');
-    if (chkDarkPaper) {
-      chkDarkPaper.addEventListener('change', (e) => {
-        if (typeof SettingsManager !== 'undefined') {
-          SettingsManager.saveSettings({ darkPaper: e.target.checked });
-        }
-      });
-    }
-
-    this.popover.querySelector('#btnClearPageCanvas').addEventListener('click', () => {
+    this.popover.querySelector('#btnClearPageCanvas')?.addEventListener('click', () => {
       this.closeMenu();
-      if (confirm('¿Deseas vaciar todos los trazos y elementos de la página actual?')) {
+      if (confirm('¿Deseas vaciar todos los trazos de la página actual?')) {
         this.engine.clearAll();
       }
     });
 
-    this.popover.querySelector('#btnActionExport').addEventListener('click', () => {
+    this.popover.querySelector('#btnActionExport')?.addEventListener('click', () => {
       this.closeMenu();
       this.onExport();
     });
-
-    const btnSettings = this.popover.querySelector('#btnOpenSettingsFromEditor');
-    if (btnSettings) {
-      btnSettings.addEventListener('click', () => {
-        this.closeMenu();
-        this.onOpenSettings();
-      });
-    }
-  }
-
-  // Compatibilidad
-  renderOptionsMenu() {
-    this.renderSettingsMenu();
   }
 
   selectTool(tool) {
@@ -4110,54 +5898,56 @@ class Toolbar {
       this.lastPenTool = tool;
     }
     this.engine.setTool(tool);
-    this.selectionTool.setActive(tool === 'lasso');
+    if (this.selectionTool) {
+      this.selectionTool.setActive(tool === 'lasso');
+    }
+    if (this.laserPointer) {
+      this.laserPointer.setActive(tool === 'laser');
+    }
+
+    // Aplicar configuración de color y trazo propia de esta herramienta
+    if (this.toolSettings[tool]) {
+      const s = this.toolSettings[tool];
+      this.engine.setColor(s.color);
+      this.engine.setWidth(s.width);
+      this.engine.setOpacity(s.opacity);
+      if (s.stabilization !== undefined) this.engine.setStabilization(s.stabilization);
+      if (s.concentration !== undefined) this.engine.setConcentration(s.concentration);
+    }
+
     this.updateActiveButton();
 
-    if (tool === 'highlighter') {
-      this.engine.setWidth(18);
-      this.engine.setOpacity(0.45);
-    } else if (tool === 'pen') {
-      this.engine.setWidth(3);
-      this.engine.setOpacity(1);
-    } else if (tool === 'pencil') {
-      this.engine.setWidth(2.5);
-      this.engine.setOpacity(0.85);
-    } else if (tool === 'marker') {
-      this.engine.setWidth(6);
-      this.engine.setOpacity(0.9);
-    }
+    const label = this.container.querySelector('#strokeWidthLabel');
+    if (label) label.textContent = `${this.engine.strokeWidth}px`;
   }
 
   updateActiveButton() {
-    const isPen = ['pen', 'pencil', 'marker', 'highlighter'].includes(this.activeTool);
-    const isEraser = this.activeTool === 'eraser';
-    const isHand = this.activeTool === 'hand';
-    const isInsert = ['shape', 'text', 'image', 'lasso'].includes(this.activeTool);
+    this.dockTools.forEach(toolId => {
+      const def = TOOL_DEFINITIONS[toolId];
+      if (!def) return;
+      const btn = this.container.querySelector(`#${def.btnId}`);
+      if (btn) {
+        btn.classList.toggle('active', this.activeTool === toolId);
+      }
+    });
 
-    const btnPens = this.container.querySelector('#btnMenuPens');
-    const btnEraser = this.container.querySelector('#btnMenuEraser');
-    const btnHand = this.container.querySelector('#btnToolHand');
-    const btnInsert = this.container.querySelector('#btnMenuInsert');
+    const isAuxiliary = !this.dockTools.includes(this.activeTool);
+    const btnAux = this.container.querySelector('#btnMenuAuxiliary');
+    if (btnAux) btnAux.classList.toggle('active', isAuxiliary);
 
-    if (btnPens) btnPens.classList.toggle('active', isPen);
-    if (btnEraser) btnEraser.classList.toggle('active', isEraser);
-    if (btnHand) btnHand.classList.toggle('active', isHand);
-    if (btnInsert) btnInsert.classList.toggle('active', isInsert);
+    this.updatePenDotsColor();
 
-    // Actualizar icono de la pluma activa
-    const iconSpan = this.container.querySelector('#activePenIcon');
-    if (iconSpan && isPen) {
-      iconSpan.innerHTML = Icons[this.activeTool] || Icons.pen;
-    }
-
-    this.updatePenIconColor();
+    const label = this.container.querySelector('#strokeWidthLabel');
+    if (label) label.textContent = `${this.engine.strokeWidth}px`;
   }
 
-  updatePenIconColor() {
-    const dot = this.container.querySelector('#activePenColorDot');
-    if (dot) {
-      dot.style.backgroundColor = this.engine.strokeColor;
-    }
+  updatePenDotsColor() {
+    this.dockTools.forEach(toolId => {
+      const dot = this.container.querySelector(`#dot_${toolId}`);
+      if (dot) {
+        dot.style.backgroundColor = this.getToolColor(toolId);
+      }
+    });
   }
 
   updatePageCounter(currentIdx, totalContentPages) {
@@ -4170,12 +5960,12 @@ class Toolbar {
       if (isNotebook) {
         const totalPages = totalContentPages + 1;
         if (currentIdx === -1) {
-          badge.textContent = `Pág 1 / ${totalPages} (Portada)`;
+          badge.textContent = `1 / ${totalPages} (P)`;
         } else {
-          badge.textContent = `Pág ${currentIdx + 2} / ${totalPages}`;
+          badge.textContent = `${currentIdx + 2} / ${totalPages}`;
         }
       } else {
-        badge.textContent = `Pág ${currentIdx + 1} / ${totalContentPages}`;
+        badge.textContent = `${currentIdx + 1} / ${totalContentPages}`;
       }
     }
   }
@@ -4183,13 +5973,12 @@ class Toolbar {
   setFormat(format) {
     const isNotebook = format === 'a4';
     const pagesGroup = this.container.querySelector('#pagesControlGroup');
-    if (pagesGroup) {
-      pagesGroup.classList.toggle('hidden', !isNotebook);
-    }
+    const btnAddPage = this.container.querySelector('#btnAddPageIcon');
+    if (pagesGroup) pagesGroup.classList.toggle('hidden', !isNotebook);
+    if (btnAddPage) btnAddPage.classList.toggle('hidden', !isNotebook);
   }
 
   updatePatternIcon() {
-    // Pauta se actualiza dentro del mini-menú de páginas si está abierto
     if (this.activeMenu === 'pages') {
       this.renderPagesMenu();
     }
@@ -4582,7 +6371,8 @@ class ViewportController {
         this.fitWidth(isMobile ? 12 : 32);
       } else {
         this.zoom = 1.0;
-        this.panX = (wsWidth - 794) / 2;
+        // Centrar con ligero desplazamiento óptico a la derecha (+24px)
+        this.panX = Math.round((wsWidth - 794) / 2) + 24;
         this.panY = 24;
         this.applyTransform();
       }
@@ -4596,7 +6386,7 @@ class ViewportController {
       this.fitToScreen();
     } else {
       this.zoom = 1.0;
-      this.panX = (wsWidth - canvasWidth) / 2;
+      this.panX = Math.round((wsWidth - canvasWidth) / 2);
       this.panY = Math.max(24, (wsHeight - canvasHeight) / 2);
       this.applyTransform();
     }
@@ -4633,8 +6423,8 @@ class ViewportController {
     const contentWidth = totalWidth * this.zoom;
     const contentHeight = totalHeight * this.zoom;
 
-    const minX = Math.min(-contentWidth + 100, (wsWidth - contentWidth) / 2);
-    const maxX = Math.max(wsWidth - 100, (wsWidth - contentWidth) / 2);
+    const minX = Math.min(-contentWidth + 100, (wsWidth - contentWidth) / 2 - 250);
+    const maxX = Math.max(wsWidth - 100, (wsWidth - contentWidth) / 2 + 250);
 
     // Permite bajar libremente por todo el documento hasta el final
     const maxY = 80;
@@ -4834,6 +6624,14 @@ class Exporter {
         pdf.addPage([a4W, a4H], 'portrait');
       } else {
         isFirstPage = false;
+      }
+
+      // Pre-cargar imagen de fondo PDF si procede
+      if (page.backgroundImage && !page._bgImgElement) {
+        const bgImg = new Image();
+        bgImg.src = page.backgroundImage;
+        await new Promise(r => { bgImg.onload = r; bgImg.onerror = r; });
+        page._bgImgElement = bgImg;
       }
 
       // Pre-cargar imágenes de la página
@@ -5058,41 +6856,53 @@ class Exporter {
       ctx.fillStyle = bgColor;
       ctx.fillRect(0, 0, width, height);
 
-      // Patrón de fondo
-      const pattern = page.backgroundPattern || 'grid';
-      if (pattern === 'ruled') {
-        ctx.strokeStyle = '#e2e8f0';
-        ctx.lineWidth = 1;
-        const lineGap = 28;
-        const topMargin = 70;
-        for (let y = topMargin; y < height; y += lineGap) {
+      if (page.backgroundImage) {
+        let bgImg = page._bgImgElement;
+        if (!bgImg) {
+          bgImg = new Image();
+          bgImg.src = page.backgroundImage;
+          page._bgImgElement = bgImg;
+        }
+        if (bgImg.complete && bgImg.naturalWidth > 0) {
+          ctx.drawImage(bgImg, 0, 0, width, height);
+        }
+      } else {
+        // Patrón de fondo
+        const pattern = page.backgroundPattern || 'grid';
+        if (pattern === 'ruled') {
+          ctx.strokeStyle = '#e2e8f0';
+          ctx.lineWidth = 1;
+          const lineGap = 28;
+          const topMargin = 70;
+          for (let y = topMargin; y < height; y += lineGap) {
+            ctx.beginPath();
+            ctx.moveTo(30, y);
+            ctx.lineTo(width - 30, y);
+            ctx.stroke();
+          }
+          ctx.strokeStyle = '#fecaca';
+          ctx.lineWidth = 1.5;
           ctx.beginPath();
-          ctx.moveTo(30, y);
-          ctx.lineTo(width - 30, y);
+          ctx.moveTo(76, 0);
+          ctx.lineTo(76, height);
           ctx.stroke();
-        }
-        ctx.strokeStyle = '#fecaca';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(76, 0);
-        ctx.lineTo(76, height);
-        ctx.stroke();
-      } else if (pattern === 'grid') {
-        ctx.strokeStyle = '#f1f5f9';
-        ctx.lineWidth = 1;
-        const gap = 20;
-        for (let x = gap; x < width; x += gap) {
-          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
-        }
-        for (let y = gap; y < height; y += gap) {
-          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
-        }
-      } else if (pattern === 'dots') {
-        ctx.fillStyle = '#cbd5e1';
-        const gap = 24;
-        for (let x = gap; x < width; x += gap) {
+        } else if (pattern === 'grid') {
+          ctx.strokeStyle = '#f1f5f9';
+          ctx.lineWidth = 1;
+          const gap = 20;
+          for (let x = gap; x < width; x += gap) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+          }
           for (let y = gap; y < height; y += gap) {
-            ctx.beginPath(); ctx.arc(x, y, 1.25, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+          }
+        } else if (pattern === 'dots') {
+          ctx.fillStyle = '#cbd5e1';
+          const gap = 24;
+          for (let x = gap; x < width; x += gap) {
+            for (let y = gap; y < height; y += gap) {
+              ctx.beginPath(); ctx.arc(x, y, 1.25, 0, Math.PI * 2); ctx.fill();
+            }
           }
         }
       }
@@ -5394,6 +7204,13 @@ class DashboardView {
                     <small>Lienzo amplio para bocetos e ideas</small>
                   </div>
                 </button>
+                <button class="create-menu-item" id="btnImportPdf">
+                  <span class="menu-icon pdf-color">${Icons.pdf}</span>
+                  <div class="menu-text">
+                    <strong>Importar PDF como Cuaderno</strong>
+                    <small>Escribe y dibuja sobre páginas PDF</small>
+                  </div>
+                </button>
                 <div class="menu-divider"></div>
                 <button class="create-menu-item" id="btnCreateFolder">
                   <span class="menu-icon folder-color">${Icons.folder}</span>
@@ -5423,6 +7240,11 @@ class DashboardView {
               <span class="nav-label">Favoritos</span>
               <span class="nav-count" id="countFav">0</span>
             </button>
+            <button class="nav-item" id="btnSidebarImportPdf" title="Importar un archivo PDF y convertirlo en un cuaderno editable">
+              <span class="nav-icon" style="color: #ef4444;">${Icons.pdf}</span>
+              <span class="nav-label">Importar PDF</span>
+            </button>
+            <input type="file" id="pdfFileInput" accept="application/pdf,.pdf" style="display:none;" />
 
             <div class="nav-section-header">
               <span class="nav-section-title">Carpetas</span>
@@ -5569,6 +7391,56 @@ class DashboardView {
       this.closeMobileSidebar();
       const activeFolderId = this.currentNav.startsWith('folder_') ? this.currentNav.replace('folder_', '') : null;
       this.promptCreateDocument('whiteboard', activeFolderId);
+    });
+
+    const btnImportPdf = this.container.querySelector('#btnImportPdf');
+    if (btnImportPdf) {
+      btnImportPdf.addEventListener('click', () => {
+        createMenu.classList.add('hidden');
+        this.closeMobileSidebar();
+        const activeFolderId = this.currentNav.startsWith('folder_') ? this.currentNav.replace('folder_', '') : null;
+        this.triggerPdfImport(activeFolderId);
+      });
+    }
+
+    const btnSidebarImportPdf = this.container.querySelector('#btnSidebarImportPdf');
+    if (btnSidebarImportPdf) {
+      btnSidebarImportPdf.addEventListener('click', () => {
+        this.closeMobileSidebar();
+        const activeFolderId = this.currentNav.startsWith('folder_') ? this.currentNav.replace('folder_', '') : null;
+        this.triggerPdfImport(activeFolderId);
+      });
+    }
+
+    const pdfFileInput = this.container.querySelector('#pdfFileInput');
+    if (pdfFileInput) {
+      pdfFileInput.addEventListener('change', async (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) {
+          const targetFolderId = pdfFileInput._targetFolderId || null;
+          pdfFileInput.value = '';
+          await this.importPdfFile(file, targetFolderId);
+        }
+      });
+    }
+
+    // Drag & drop de archivos PDF en el Dashboard
+    this.container.addEventListener('dragover', (e) => {
+      if (e.dataTransfer && e.dataTransfer.types && Array.from(e.dataTransfer.types).includes('Files')) {
+        e.preventDefault();
+      }
+    });
+
+    this.container.addEventListener('drop', async (e) => {
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const file = e.dataTransfer.files[0];
+        if (file.type.includes('pdf') || file.name.toLowerCase().endsWith('.pdf')) {
+          e.preventDefault();
+          e.stopPropagation();
+          const activeFolderId = this.currentNav.startsWith('folder_') ? this.currentNav.replace('folder_', '') : null;
+          await this.importPdfFile(file, activeFolderId);
+        }
+      }
     });
 
     this.container.querySelector('#btnCreateFolder').addEventListener('click', () => {
@@ -5833,8 +7705,11 @@ class DashboardView {
             <span class="folder-icon" style="color: ${folderColor};">${Icons.folder}</span>
             <span class="folder-name" title="${this.escapeHtml(folder.name)}">${this.escapeHtml(folder.name)}</span>
             <span class="folder-badge">${docCount}</span>
-            <button type="button" class="btn-icon-mini btn-add-subfolder" data-parent-id="${folder.id}" title="Añadir subcarpeta">
+            <button type="button" class="btn-icon-mini btn-add-subfolder" data-parent-id="${folder.id}" title="Añadir subcarpeta dentro de ${this.escapeHtml(folder.name)}" aria-label="Añadir subcarpeta">
               ${Icons.plus}
+            </button>
+            <button type="button" class="btn-icon-mini btn-delete-folder" data-delete-folder="${folder.id}" title="Eliminar carpeta ${this.escapeHtml(folder.name)}" aria-label="Eliminar carpeta">
+              ${Icons.trash}
             </button>
           </div>
         </div>
@@ -5886,10 +7761,26 @@ class DashboardView {
       });
     });
 
+    // Botón rápido para eliminar carpeta desde el sidebar
+    treeEl.querySelectorAll('.btn-delete-folder').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const fId = btn.dataset.deleteFolder;
+        const targetFolder = this.folders.find(f => f.id === fId);
+        if (confirm(`¿Estás seguro de que deseas eliminar la carpeta "${targetFolder?.name || ''}" y sus subcarpetas? Los documentos contenidos se reubicarán en la biblioteca principal.`)) {
+          await db.deleteFolder(fId);
+          if (this.currentNav === `folder_${fId}`) {
+            this.currentNav = targetFolder?.parentId ? `folder_${targetFolder.parentId}` : 'all';
+          }
+          await this.loadAndRender();
+        }
+      });
+    });
+
     // Clic para seleccionar carpeta
     treeEl.querySelectorAll('.folder-item').forEach(item => {
       item.addEventListener('click', (e) => {
-        if (e.target.closest('.folder-expand-btn') || e.target.closest('.btn-add-subfolder')) return;
+        if (e.target.closest('.folder-expand-btn') || e.target.closest('.btn-add-subfolder') || e.target.closest('.btn-delete-folder')) return;
         this.selectNav(item.dataset.nav);
       });
 
@@ -5984,13 +7875,34 @@ class DashboardView {
         });
 
         actionContainer.innerHTML = `
-          <button class="btn-secondary" id="btnAddSubfolderHere">
-            ${Icons.plus} Nueva Subcarpeta
+          <button class="btn-primary" id="btnNewNotebookInFolder" title="Crear Cuaderno dentro de esta carpeta">
+            ${Icons.notebook} + Cuaderno
+          </button>
+          <button class="btn-secondary" id="btnNewBoardInFolder" title="Crear Pizarra dentro de esta carpeta">
+            ${Icons.whiteboard} + Pizarra
+          </button>
+          <button class="btn-secondary" id="btnImportPdfInFolder" title="Importar PDF como cuaderno dentro de esta carpeta">
+            ${Icons.pdf} + Importar PDF
+          </button>
+          <button class="btn-secondary" id="btnAddSubfolderHere" title="Nueva Subcarpeta">
+            ${Icons.plus} Subcarpeta
           </button>
           <button class="btn-icon-ghost danger-text" id="btnDeleteFolder" title="Eliminar carpeta">
             ${Icons.trash}
           </button>
         `;
+
+        actionContainer.querySelector('#btnNewNotebookInFolder')?.addEventListener('click', () => {
+          this.promptCreateDocument('notebook', folder.id);
+        });
+
+        actionContainer.querySelector('#btnNewBoardInFolder')?.addEventListener('click', () => {
+          this.promptCreateDocument('whiteboard', folder.id);
+        });
+
+        actionContainer.querySelector('#btnImportPdfInFolder')?.addEventListener('click', () => {
+          this.triggerPdfImport(folder.id);
+        });
 
         actionContainer.querySelector('#btnAddSubfolderHere')?.addEventListener('click', () => {
           this.promptCreateFolder(folder.id);
@@ -6290,10 +8202,10 @@ class DashboardView {
   openNotebookCreationModal(folderId) {
     const existingCount = this.documents.filter(d => d.type === 'notebook' && !d.isTrash).length;
     const defaultTitle = `Cuaderno ${existingCount + 1}`;
-    const defaultSubtitle = 'Notas y Reflexiones';
 
     let selectedTemplate = 'moleskine';
-    let selectedColor = '#0f172a';
+    const palette = PaletteManager.getPalette();
+    let selectedColor = palette[0] || '#0f172a';
     let selectedPattern = 'grid'; // Cuadrícula por defecto
     let selectedPaperColor = '#ffffff';
     let activePreviewTab = 'cover'; // 'cover' | 'paper'
@@ -6307,17 +8219,6 @@ class DashboardView {
     const actionsEl = modalEl.querySelector('.modal-actions');
 
     titleEl.textContent = 'Crear Nuevo Cuaderno';
-
-    const colors = [
-      { hex: '#0f172a', name: 'Azul Noche' },
-      { hex: '#1e40af', name: 'Azul Real' },
-      { hex: '#065f46', name: 'Verde Bosque' },
-      { hex: '#881337', name: 'Borgoña' },
-      { hex: '#78350f', name: 'Cuero / Ámbar' },
-      { hex: '#334155', name: 'Gris Pizarra' },
-      { hex: '#581c87', name: 'Púrpura Noble' },
-      { hex: '#9a3412', name: 'Terracota' }
-    ];
 
     const patterns = [
       { id: 'grid', name: 'Cuadrícula 5mm', desc: 'Pauta cuadriculada para dibujo y notas' },
@@ -6339,12 +8240,12 @@ class DashboardView {
           <!-- Datos básicos -->
           <div class="form-group-row">
             <div class="form-group" style="flex: 2;">
-              <label class="form-label">Título del Cuaderno</label>
-              <input type="text" id="nbInputTitle" class="modal-input" value="${this.escapeHtml(defaultTitle)}" />
+              <label class="form-label">Título del Cuaderno (opcional)</label>
+              <input type="text" id="nbInputTitle" class="modal-input" placeholder="Título (opcional, p.ej. ${defaultTitle})" value="" />
             </div>
             <div class="form-group" style="flex: 2;">
-              <label class="form-label">Subtítulo / Tema</label>
-              <input type="text" id="nbInputSubtitle" class="modal-input" value="${this.escapeHtml(defaultSubtitle)}" />
+              <label class="form-label">Subtítulo / Tema (opcional)</label>
+              <input type="text" id="nbInputSubtitle" class="modal-input" placeholder="Subtítulo (opcional)" value="" />
             </div>
           </div>
 
@@ -6369,13 +8270,13 @@ class DashboardView {
             </button>
           </div>
 
-          <!-- Color de Portada -->
-          <div class="color-palette-label">Color de Portada:</div>
-          <div class="nb-color-palette">
-            ${colors.map((c, i) => `
-              <button type="button" class="nb-color-btn ${i === 0 ? 'active' : ''}" data-color="${c.hex}" style="background-color: ${c.hex};" title="${c.name}"></button>
+          <!-- Color de Portada (Paleta de 10 colores persistente) -->
+          <div class="color-palette-label">Color de Portada (Paleta de 10 colores):</div>
+          <div class="nb-color-palette" id="nbCoverPaletteGroup">
+            ${palette.map((c, i) => `
+              <button type="button" class="nb-color-btn ${i === 0 ? 'active' : ''}" data-color="${c}" style="background-color: ${c};" title="${c}"></button>
             `).join('')}
-            <label class="nb-custom-color-label" title="Color personalizado">
+            <label class="nb-custom-color-label" title="Guardar color personalizado en la paleta">
               <input type="color" id="nbCustomColor" value="${selectedColor}" />
               <span>+</span>
             </label>
@@ -6433,15 +8334,15 @@ class DashboardView {
     const previewCaption = bodyEl.querySelector('#previewCaption');
 
     const updatePreview = () => {
-      const curTitle = titleInput.value.trim() || defaultTitle;
-      const curSubtitle = subtitleInput.value.trim() || defaultSubtitle;
+      const curTitle = titleInput.value.trim();
+      const curSubtitle = subtitleInput.value.trim();
 
       if (activePreviewTab === 'cover') {
         CoverDesigner.renderCover(previewCtx, 280, 390, {
           template: selectedTemplate,
           title: curTitle,
           subtitle: curSubtitle,
-          date: new Date().getFullYear().toString(),
+          date: '', // No poner el año por defecto
           color: selectedColor
         });
         previewCaption.textContent = `Portada: ${selectedTemplate.toUpperCase()} (${selectedColor})`;
@@ -6472,24 +8373,49 @@ class DashboardView {
       });
     });
 
-    // Eventos de colores de portada
-    bodyEl.querySelectorAll('.nb-color-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        bodyEl.querySelectorAll('.nb-color-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        selectedColor = btn.dataset.color;
+    const bindColorPalette = () => {
+      bodyEl.querySelectorAll('.nb-color-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          bodyEl.querySelectorAll('.nb-color-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedColor = btn.dataset.color;
+          activePreviewTab = 'cover';
+          bodyEl.querySelector('#btnTabCover').classList.add('active');
+          bodyEl.querySelector('#btnTabPaper').classList.remove('active');
+          updatePreview();
+        });
+      });
+    };
+
+    bindColorPalette();
+
+    const customColorInput = bodyEl.querySelector('#nbCustomColor');
+    if (customColorInput) {
+      customColorInput.addEventListener('change', (e) => {
+        selectedColor = e.target.value;
+        PaletteManager.addColor(selectedColor);
+        const newPal = PaletteManager.getPalette();
+        const paletteContainer = bodyEl.querySelector('#nbCoverPaletteGroup');
+        if (paletteContainer) {
+          paletteContainer.innerHTML = `
+            ${newPal.map((c) => `
+              <button type="button" class="nb-color-btn ${c.toLowerCase() === selectedColor.toLowerCase() ? 'active' : ''}" data-color="${c}" style="background-color: ${c};" title="${c}"></button>
+            `).join('')}
+            <label class="nb-custom-color-label" title="Guardar color personalizado en la paleta">
+              <input type="color" id="nbCustomColor" value="${selectedColor}" />
+              <span>+</span>
+            </label>
+          `;
+          bindColorPalette();
+        }
         activePreviewTab = 'cover';
         bodyEl.querySelector('#btnTabCover').classList.add('active');
         bodyEl.querySelector('#btnTabPaper').classList.remove('active');
         updatePreview();
       });
-    });
 
-    const customColorInput = bodyEl.querySelector('#nbCustomColor');
-    if (customColorInput) {
       customColorInput.addEventListener('input', (e) => {
         selectedColor = e.target.value;
-        bodyEl.querySelectorAll('.nb-color-btn').forEach(b => b.classList.remove('active'));
         activePreviewTab = 'cover';
         bodyEl.querySelector('#btnTabCover').classList.add('active');
         bodyEl.querySelector('#btnTabPaper').classList.remove('active');
@@ -6551,13 +8477,14 @@ class DashboardView {
     };
 
     const handleCreate = async (openImmediately) => {
-      const title = titleInput.value.trim() || defaultTitle;
-      const subtitle = subtitleInput.value.trim() || defaultSubtitle;
+      const title = titleInput.value.trim(); // Se puede dejar en blanco
+      const subtitle = subtitleInput.value.trim();
+      const docName = title || defaultTitle;
       const coverConfig = {
         template: selectedTemplate,
         title: title,
         subtitle: subtitle,
-        date: new Date().getFullYear().toString(),
+        date: '', // No poner el año por defecto
         color: selectedColor
       };
       const initialPageConfig = {
@@ -6568,9 +8495,9 @@ class DashboardView {
       cleanup();
 
       if (openImmediately) {
-        await this.onCreateNotebook(folderId, title, coverConfig, initialPageConfig, true);
+        await this.onCreateNotebook(folderId, docName, coverConfig, initialPageConfig, true);
       } else {
-        await this.onCreateNotebook(folderId, title, coverConfig, initialPageConfig, false);
+        await this.onCreateNotebook(folderId, docName, coverConfig, initialPageConfig, false);
         await this.loadAndRender();
       }
     };
@@ -6856,6 +8783,201 @@ class DashboardView {
     input.addEventListener('keydown', handleKey);
   }
 
+  // --- Importación y Renderizado de Documentos PDF como Cuadernos ---
+
+  triggerPdfImport(targetFolderId = null) {
+    const fileInput = this.container.querySelector('#pdfFileInput');
+    if (fileInput) {
+      fileInput._targetFolderId = targetFolderId;
+      fileInput.click();
+    }
+  }
+
+  async ensurePdfJsLoaded() {
+    if (window.pdfjsLib) {
+      if (!window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      }
+      return window.pdfjsLib;
+    }
+
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      script.onload = () => {
+        if (window.pdfjsLib) {
+          window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+          resolve(window.pdfjsLib);
+        } else {
+          reject(new Error('No se pudo inicializar PDF.js'));
+        }
+      };
+      script.onerror = () => reject(new Error('No se pudo cargar la librería PDF.js desde CDN'));
+      document.head.appendChild(script);
+    });
+  }
+
+  async importPdfFile(file, targetFolderId = null) {
+    if (!file || (!file.type.includes('pdf') && !file.name.toLowerCase().endsWith('.pdf'))) {
+      alert('Por favor selecciona un archivo PDF válido.');
+      return;
+    }
+
+    const folderId = targetFolderId !== undefined ? targetFolderId : (this.currentNav.startsWith('folder_') ? this.currentNav.replace('folder_', '') : null);
+
+    this.showPdfImportProgress(file.name, 0, 1, 'Iniciando importación del documento...');
+
+    try {
+      // 1. Cargar biblioteca PDF.js
+      const pdfjs = await this.ensurePdfJsLoaded();
+
+      // 2. Leer archivo a ArrayBuffer
+      const arrayBuffer = await file.arrayBuffer();
+
+      // 3. Cargar documento PDF
+      this.updatePdfImportProgress('Analizando páginas del PDF...', 0, 1);
+      const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+      const pdfDoc = await loadingTask.promise;
+      const totalPages = pdfDoc.numPages;
+
+      if (totalPages === 0) {
+        throw new Error('El documento PDF no contiene páginas válidas.');
+      }
+
+      const pages = [];
+      const targetWidth = 794;
+      const targetHeight = 1123;
+
+      // 4. Renderizar cada página en formato A4 estándar de alta nitidez
+      for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+        this.updatePdfImportProgress(`Procesando página ${pageNum} de ${totalPages}...`, pageNum, totalPages);
+
+        const page = await pdfDoc.getPage(pageNum);
+        const unscaledViewport = page.getViewport({ scale: 1 });
+
+        // Ajuste proporcional para caber en A4
+        const scaleW = targetWidth / unscaledViewport.width;
+        const scaleH = targetHeight / unscaledViewport.height;
+        const uniformScale = Math.min(scaleW, scaleH);
+        const renderScale = uniformScale * 1.5; // Nitidez 1.5x
+
+        const renderViewport = page.getViewport({ scale: renderScale });
+
+        const offscreenCanvas = document.createElement('canvas');
+        offscreenCanvas.width = Math.round(renderViewport.width);
+        offscreenCanvas.height = Math.round(renderViewport.height);
+        const offCtx = offscreenCanvas.getContext('2d');
+
+        await page.render({
+          canvasContext: offCtx,
+          viewport: renderViewport
+        }).promise;
+
+        // Canvas final estándar A4 (794 x 1123 px)
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = targetWidth;
+        pageCanvas.height = targetHeight;
+        const pCtx = pageCanvas.getContext('2d');
+
+        // Fondo blanco de base
+        pCtx.fillStyle = '#ffffff';
+        pCtx.fillRect(0, 0, targetWidth, targetHeight);
+
+        // Centrar imagen en el lienzo A4
+        const drawW = unscaledViewport.width * uniformScale;
+        const drawH = unscaledViewport.height * uniformScale;
+        const offsetX = (targetWidth - drawW) / 2;
+        const offsetY = (targetHeight - drawH) / 2;
+
+        pCtx.drawImage(offscreenCanvas, offsetX, offsetY, drawW, drawH);
+        const pageDataUrl = pageCanvas.toDataURL('image/jpeg', 0.90);
+
+        pages.push({
+          id: 'page_' + Date.now() + '_' + pageNum,
+          backgroundPattern: 'blank',
+          paperColor: '#ffffff',
+          backgroundImage: pageDataUrl,
+          strokes: [],
+          shapes: [],
+          texts: [],
+          images: []
+        });
+      }
+
+      // 5. Crear documento cuaderno en la base de datos
+      const docTitle = file.name.replace(/\.[^/.]+$/, '').trim() || 'Cuaderno PDF';
+      const newDoc = {
+        id: 'doc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+        title: docTitle,
+        type: 'notebook',
+        pageFormat: 'a4',
+        folderId: folderId,
+        isFavorite: false,
+        isTrash: false,
+        isPdfImport: true,
+        defaultPattern: 'blank',
+        defaultPaperColor: '#ffffff',
+        thumbnail: pages[0]?.backgroundImage || null,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        pages: pages
+      };
+
+      await db.saveDocument(newDoc);
+      this.hidePdfImportProgress();
+
+      // Abrir inmediatamente el cuaderno en el editor
+      this.onOpenDoc(newDoc);
+    } catch (err) {
+      console.error('Error al importar PDF:', err);
+      this.hidePdfImportProgress();
+      alert('Error al importar el archivo PDF: ' + (err.message || 'El archivo puede estar corrupto o protegido con contraseña.'));
+    }
+  }
+
+  showPdfImportProgress(fileName, current, total, message) {
+    let progressModal = document.getElementById('pdfImportModal');
+    if (!progressModal) {
+      progressModal = document.createElement('div');
+      progressModal.id = 'pdfImportModal';
+      progressModal.className = 'modal-backdrop';
+      document.body.appendChild(progressModal);
+    }
+
+    const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+
+    progressModal.innerHTML = `
+      <div class="modal-box pdf-import-modal-box">
+        <div class="pdf-modal-header">
+          <span class="pdf-modal-icon">${Icons.pdf}</span>
+          <h3 class="modal-title" style="margin:0;">Importando PDF como Cuaderno</h3>
+        </div>
+        <p class="pdf-import-filename" title="${this.escapeHtml(fileName)}">${this.escapeHtml(fileName)}</p>
+        <div class="pdf-progress-bar-track">
+          <div class="pdf-progress-bar-fill" id="pdfProgressFill" style="width: ${pct}%;"></div>
+        </div>
+        <p class="pdf-progress-status" id="pdfProgressStatus">${message}</p>
+      </div>
+    `;
+    progressModal.classList.remove('hidden');
+  }
+
+  updatePdfImportProgress(message, current, total) {
+    const statusEl = document.getElementById('pdfProgressStatus');
+    const fillEl = document.getElementById('pdfProgressFill');
+    if (statusEl) statusEl.textContent = message;
+    if (fillEl && total > 0) {
+      fillEl.style.width = `${Math.round((current / total) * 100)}%`;
+    }
+  }
+
+  hidePdfImportProgress() {
+    const progressModal = document.getElementById('pdfImportModal');
+    if (progressModal) {
+      progressModal.remove();
+    }
+  }
+
   escapeHtml(str) {
     if (!str) return '';
     return String(str)
@@ -6869,8 +8991,13 @@ class DashboardView {
 
 
 
+
 // === File: js/app.js ===
 // js/app.js - Orquestador principal de la aplicación con soporte completo para Cuadernos multi-página y Pizarras
+
+
+
+
 
 
 
@@ -6905,7 +9032,13 @@ class App {
     this.canvasEngine = new CanvasEngine(this.paintCanvas, {
       format: 'a4',
       inputMode: settings.inputMode || 'stylus-first',
-      onStrokeEnd: () => this.scheduleAutoSave()
+      onStrokeEnd: () => {
+        this.scheduleAutoSave();
+        if (this.htrPredictor && this.canvasEngine.strokes.length > 0) {
+          const lastStroke = this.canvasEngine.strokes[this.canvasEngine.strokes.length - 1];
+          this.htrPredictor.onStrokeFinished(lastStroke);
+        }
+      }
     });
 
     // 2. Inicializar Controlador de Zoom y Paneo del Viewport
@@ -6917,11 +9050,23 @@ class App {
     this.textTool = new TextTool(this.canvasEngine, this.canvasWrapper);
     this.imageTool = new ImageTool(this.canvasEngine, this.canvasWrapper);
 
-    // 4. Inicializar Barra de Herramientas Híbrida
+    // 4. Inicializar Puntero Láser y Regla Interactiva
+    this.laserPointer = new LaserPointer(this.canvasWrapper, this.paintCanvas);
+    this.ruler = new Ruler(this.canvasWrapper, this.canvasEngine);
+    this.canvasEngine.setRuler(this.ruler);
+    this.canvasEngine.setLaserPointer(this.laserPointer);
+
+    // 5. Inicializar Reconocedor y Predictor HTR
+    this.htrPredictor = new HandwritingPredictor(this.canvasEngine);
+
+    // 6. Inicializar Barra de Herramientas Modular
     this.toolbar = new Toolbar(this.canvasEngine, this.selectionTool, {
       shapeTool: this.shapeTool,
       textTool: this.textTool,
       imageTool: this.imageTool,
+      laserPointer: this.laserPointer,
+      ruler: this.ruler,
+      htrPredictor: this.htrPredictor,
       onBack: () => this.showDashboard(),
       onTitleChange: (newTitle) => {
         if (this.currentDoc) {
@@ -7033,10 +9178,12 @@ class App {
         }
       ];
     } else if (isNotebook) {
-      // Unificar la pauta en todas las hojas existentes del cuaderno (excepto portada)
+      // Unificar la pauta en todas las hojas existentes del cuaderno (excepto portada y páginas con fondo PDF)
       this.currentDoc.pages.forEach(p => {
-        p.backgroundPattern = this.currentDoc.defaultPattern;
-        p.paperColor = this.currentDoc.defaultPaperColor;
+        if (!p.backgroundImage) {
+          p.backgroundPattern = this.currentDoc.defaultPattern;
+          p.paperColor = this.currentDoc.defaultPaperColor;
+        }
       });
     }
 
@@ -7062,7 +9209,9 @@ class App {
     }
 
     await this.showEditor();
-    this.viewport.centerContent();
+    requestAnimationFrame(() => {
+      this.viewport.centerContent();
+    });
   }
 
   renderWhiteboardCanvas() {
@@ -7076,6 +9225,7 @@ class App {
     this.shapeTool.setHost(this.paintCanvas, this.canvasWrapper);
     this.textTool.setHost(this.paintCanvas, this.canvasWrapper);
     this.imageTool.setHost(this.paintCanvas, this.canvasWrapper);
+    if (this.laserPointer) this.laserPointer.setHost(this.paintCanvas, this.canvasWrapper);
   }
 
   renderNotebookStream() {
@@ -7149,8 +9299,10 @@ class App {
 
     // Renderizar contenidos de cada página en su canvas con la pauta unificada
     this.currentDoc.pages.forEach((pageData, idx) => {
-      pageData.backgroundPattern = this.currentDoc.defaultPattern || pageData.backgroundPattern || 'grid';
-      pageData.paperColor = this.currentDoc.defaultPaperColor || pageData.paperColor || '#ffffff';
+      if (!pageData.backgroundImage) {
+        pageData.backgroundPattern = this.currentDoc.defaultPattern || pageData.backgroundPattern || 'grid';
+        pageData.paperColor = this.currentDoc.defaultPaperColor || pageData.paperColor || '#ffffff';
+      }
       const cEl = this.canvasWrapper.querySelector(`#pageCanvas_${idx}`);
       if (cEl) {
         this.canvasEngine.renderPageToCanvas(cEl, pageData);
@@ -7225,6 +9377,7 @@ class App {
         this.shapeTool.setHost(coverCanvas, coverHost);
         this.textTool.setHost(coverCanvas, coverHost);
         this.imageTool.setHost(coverCanvas, coverHost);
+        if (this.laserPointer) this.laserPointer.setHost(coverCanvas, coverHost);
       }
       return;
     }
@@ -7249,6 +9402,7 @@ class App {
     this.shapeTool.setHost(activeCanvas, activeHost);
     this.textTool.setHost(activeCanvas, activeHost);
     this.imageTool.setHost(activeCanvas, activeHost);
+    if (this.laserPointer) this.laserPointer.setHost(activeCanvas, activeHost);
   }
 
   getPatternLabel(pat) {
