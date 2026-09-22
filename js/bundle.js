@@ -54,7 +54,9 @@ const Icons = {
   
   // Figuras específicas
   rectangle: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="1"/></svg>`,
+  square: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="1"/></svg>`,
   circle: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>`,
+  triangle: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><polygon points="12 3 22 21 2 21"/></svg>`,
   line: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="20" x2="20" y2="4"/></svg>`,
   arrow: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="10 5 19 5 19 14"/></svg>`,
 
@@ -1012,16 +1014,22 @@ class WhiteboardDB {
     };
 
     const jsonString = JSON.stringify(backupData, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `backup_pizarra_cuadernos_${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const filename = `backup_pizarra_cuadernos_${new Date().toISOString().slice(0, 10)}.json`;
+
+    if (typeof window !== 'undefined' && window.Android && typeof window.Android.saveTextFile === 'function') {
+      window.Android.saveTextFile(jsonString, filename, 'application/json');
+    } else if (typeof document !== 'undefined') {
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
 
     return { docsCount: documents.length, foldersCount: folders.length };
   }
@@ -1503,9 +1511,18 @@ class LaserPointer {
 
   syncDimensions() {
     if (!this.laserCanvas || !this.mainCanvas) return;
+    const isNodeEnv = typeof window === 'undefined';
+    const dpr = isNodeEnv ? 1 : Math.min(Math.max(window.devicePixelRatio || 1, 2), 3);
+    const logicalW = this.mainCanvas.style && this.mainCanvas.style.width ? parseFloat(this.mainCanvas.style.width) : (this.mainCanvas.width / dpr || 794);
+    const logicalH = this.mainCanvas.style && this.mainCanvas.style.height ? parseFloat(this.mainCanvas.style.height) : (this.mainCanvas.height / dpr || 1123);
+
     if (this.laserCanvas.width !== this.mainCanvas.width || this.laserCanvas.height !== this.mainCanvas.height) {
       this.laserCanvas.width = this.mainCanvas.width;
       this.laserCanvas.height = this.mainCanvas.height;
+    }
+    if (this.laserCanvas.style) {
+      this.laserCanvas.style.width = `${logicalW}px`;
+      this.laserCanvas.style.height = `${logicalH}px`;
     }
   }
 
@@ -1626,8 +1643,10 @@ class LaserPointer {
     if (!this.mainCanvas) return { x: 0, y: 0, pressure: 0.5 };
     const rect = this.mainCanvas.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return { x: 0, y: 0, pressure: 0.5 };
-    const scaleX = this.mainCanvas.width / rect.width;
-    const scaleY = this.mainCanvas.height / rect.height;
+    const logicalW = this.mainCanvas.style && this.mainCanvas.style.width ? parseFloat(this.mainCanvas.style.width) : 794;
+    const logicalH = this.mainCanvas.style && this.mainCanvas.style.height ? parseFloat(this.mainCanvas.style.height) : 1123;
+    const scaleX = logicalW / rect.width;
+    const scaleY = logicalH / rect.height;
     return {
       x: (e.clientX - rect.left) * scaleX,
       y: (e.clientY - rect.top) * scaleY,
@@ -1652,6 +1671,9 @@ class LaserPointer {
 
   clearCanvas() {
     if (this.ctx && this.laserCanvas) {
+      if (typeof this.ctx.setTransform === 'function') {
+        this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+      }
       this.ctx.clearRect(0, 0, this.laserCanvas.width, this.laserCanvas.height);
     }
   }
@@ -1666,6 +1688,16 @@ class LaserPointer {
     const now = performance.now();
     this.syncDimensions();
     this.clearCanvas();
+
+    const isNodeEnv = typeof window === 'undefined';
+    const dpr = isNodeEnv ? 1 : Math.min(Math.max(window.devicePixelRatio || 1, 2), 3);
+
+    this.ctx.save();
+    if (typeof this.ctx.scale === 'function' && dpr !== 1) {
+      this.ctx.scale(dpr, dpr);
+    }
+    this.ctx.imageSmoothingEnabled = true;
+    this.ctx.imageSmoothingQuality = 'high';
 
     // 1. Filtrar puntos activos que no hayan caducado (> 1000ms)
     this.points = this.points.filter(p => (now - p.time) < this.FADE_DURATION_MS);
@@ -1744,14 +1776,18 @@ class LaserPointer {
       this.ctx.arc(x, y, 2.5, 0, Math.PI * 2);
       this.ctx.fillStyle = '#ffffff';
       this.ctx.globalAlpha = 1.0;
+      this.ctx.shadowColor = '#ffffff';
+      this.ctx.shadowBlur = 6;
       this.ctx.fill();
 
       this.ctx.restore();
     }
 
-    // Si aún hay puntos o el usuario está dibujando o el láser está activo, continuar el loop
-    if (this.points.length > 0 || this.isPointerDown || (this.active && this.currentPointerPos)) {
-      this.animFrameId = requestAnimationFrame(() => this.renderFrame());
+    this.ctx.restore();
+
+    // Mantener bucle activo mientras queden puntos
+    if (this.points.length > 0 || (this.isPointerDown && this.currentPointerPos) || (this.active && this.currentPointerPos)) {
+      this.startAnimationLoop();
     }
   }
 
@@ -2057,7 +2093,7 @@ class Ruler {
 class HandwritingPredictor {
   constructor(canvasEngine, options = {}) {
     this.engine = canvasEngine;
-    this.enabled = options.enabled !== undefined ? options.enabled : true;
+    this.enabled = options.enabled !== undefined ? options.enabled : false;
     this.DEBOUNCE_DELAY_MS = 700;
     this.WORD_GAP_PX = 55; // Distancia máxima para agrupar trazos en la misma palabra
 
@@ -2370,6 +2406,12 @@ class CanvasEngine {
     this.backgroundPattern = this.format === 'a4' ? 'ruled' : 'dots'; // 'blank' | 'ruled' | 'grid' | 'dots'
     this.paperColor = options.paperColor || '#ffffff';
 
+    // Dimensiones lógicas y escalado HiDPI (Retina / Pantallas de alta densidad para máxima nitidez)
+    const isNodeEnv = typeof window === 'undefined';
+    this.dpr = isNodeEnv ? 1 : Math.min(Math.max(window.devicePixelRatio || 1, 2), 3);
+    this.logicalWidth = this.format === 'board' ? 1800 : 794;
+    this.logicalHeight = this.format === 'board' ? 1200 : 1123;
+
     // Colecciones de elementos por capa
     this.strokes = [];
     this.shapes = [];
@@ -2411,30 +2453,109 @@ class CanvasEngine {
 
     this._pointerDownHandler = null;
     this._pointerMoveHandler = null;
-    window.addEventListener('pointerup', (e) => this.onPointerUp(e));
-    window.addEventListener('pointercancel', (e) => this.onPointerUp(e));
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pointerup', (e) => this.onPointerUp(e));
+      window.addEventListener('pointercancel', (e) => this.onPointerUp(e));
+    }
 
     this.attachCanvas(this.canvas);
     this.initDimensions();
   }
 
+  setupHiDPI(canvas) {
+    if (!canvas) return;
+    const isNodeEnv = typeof window === 'undefined';
+    this.dpr = isNodeEnv ? 1 : Math.min(Math.max(window.devicePixelRatio || 1, 2), 3);
+    const targetW = Math.round(this.logicalWidth * this.dpr);
+    const targetH = Math.round(this.logicalHeight * this.dpr);
+    if (canvas.width !== targetW || canvas.height !== targetH) {
+      canvas.width = targetW;
+      canvas.height = targetH;
+    }
+    if (canvas.style) {
+      canvas.style.width = `${this.logicalWidth}px`;
+      canvas.style.height = `${this.logicalHeight}px`;
+    }
+  }
+
+  initEraserIndicator() {
+    if (typeof document === 'undefined') return;
+    if (!this.eraserIndicator) {
+      let el = document.getElementById('eraserCursorIndicator');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'eraserCursorIndicator';
+        el.className = 'eraser-cursor-indicator hidden';
+        document.body.appendChild(el);
+      }
+      this.eraserIndicator = el;
+    }
+  }
+
+  updateEraserIndicator(e) {
+    if (typeof document === 'undefined') return;
+    if (!this.eraserIndicator) this.initEraserIndicator();
+    if (!this.eraserIndicator) return;
+
+    if (this.tool !== 'eraser') {
+      this.eraserIndicator.classList.add('hidden');
+      return;
+    }
+
+    if (e && e.clientX !== undefined && e.clientY !== undefined) {
+      const radius = this.eraserRadius || 16;
+      const diameter = radius * 2;
+      this.eraserIndicator.style.width = `${diameter}px`;
+      this.eraserIndicator.style.height = `${diameter}px`;
+      this.eraserIndicator.style.left = `${e.clientX - radius}px`;
+      this.eraserIndicator.style.top = `${e.clientY - radius}px`;
+      this.eraserIndicator.classList.remove('hidden');
+    }
+  }
+
+  hideEraserIndicator() {
+    if (this.eraserIndicator) {
+      this.eraserIndicator.classList.add('hidden');
+    }
+  }
+
   attachCanvas(canvasElement, pageData = null) {
-    if (this.canvas && this._pointerDownHandler) {
+    if (this.canvas && this._pointerDownHandler && typeof this.canvas.removeEventListener === 'function') {
       this.canvas.removeEventListener('pointerdown', this._pointerDownHandler);
       this.canvas.removeEventListener('pointermove', this._pointerMoveHandler);
+      this.canvas.removeEventListener('pointerleave', this._pointerLeaveHandler);
+      this.canvas.removeEventListener('pointerenter', this._pointerEnterHandler);
     }
 
     this.canvas = canvasElement;
-    this.ctx = this.canvas.getContext('2d');
+    if (this.canvas) {
+      this.setupHiDPI(this.canvas);
+      this.ctx = this.canvas.getContext('2d');
 
-    this._pointerDownHandler = (e) => this.onPointerDown(e);
-    this._pointerMoveHandler = (e) => this.onPointerMove(e);
-    this.canvas.addEventListener('pointerdown', this._pointerDownHandler);
-    this.canvas.addEventListener('pointermove', this._pointerMoveHandler);
+      this._pointerDownHandler = (e) => {
+        if (this.tool === 'eraser') this.updateEraserIndicator(e);
+        this.onPointerDown(e);
+      };
+      this._pointerMoveHandler = (e) => {
+        if (this.tool === 'eraser') this.updateEraserIndicator(e);
+        this.onPointerMove(e);
+      };
+      this._pointerLeaveHandler = () => this.hideEraserIndicator();
+      this._pointerEnterHandler = (e) => {
+        if (this.tool === 'eraser') this.updateEraserIndicator(e);
+      };
 
-    if (this.laserPointer) {
-      const host = canvasElement.parentElement || canvasElement;
-      this.laserPointer.setHost(canvasElement, host);
+      if (typeof this.canvas.addEventListener === 'function') {
+        this.canvas.addEventListener('pointerdown', this._pointerDownHandler);
+        this.canvas.addEventListener('pointermove', this._pointerMoveHandler);
+        this.canvas.addEventListener('pointerleave', this._pointerLeaveHandler);
+        this.canvas.addEventListener('pointerenter', this._pointerEnterHandler);
+      }
+    }
+
+    if (this.laserPointer && this.canvas) {
+      const host = this.canvas.parentElement || this.canvas;
+      this.laserPointer.setHost(this.canvas, host);
     }
 
     if (pageData) {
@@ -2450,8 +2571,9 @@ class CanvasEngine {
       board: { width: 1800, height: 1200 }
     };
     const { width, height } = FORMATS[this.format] || FORMATS.a4;
-    this.canvas.width = width;
-    this.canvas.height = height;
+    this.logicalWidth = width;
+    this.logicalHeight = height;
+    this.setupHiDPI(this.canvas);
     this.render();
   }
 
@@ -2479,9 +2601,16 @@ class CanvasEngine {
 
   setTool(tool) {
     this.tool = tool;
+    if (tool !== 'eraser') {
+      this.hideEraserIndicator();
+    }
     if (this.laserPointer) {
       this.laserPointer.setActive(tool === 'laser');
     }
+  }
+
+  setEraserRadius(radius) {
+    this.eraserRadius = Math.max(4, Number(radius) || 16);
   }
 
   setRuler(ruler) {
@@ -2614,8 +2743,9 @@ class CanvasEngine {
   // Conversión precisa de coordenadas de puntero al espacio del canvas
   getCanvasCoordinates(e) {
     const rect = this.canvas.getBoundingClientRect();
-    const scaleX = this.canvas.width / rect.width;
-    const scaleY = this.canvas.height / rect.height;
+    if (!rect.width || !rect.height) return { x: 0, y: 0, pressure: 0.5 };
+    const scaleX = this.logicalWidth / rect.width;
+    const scaleY = this.logicalHeight / rect.height;
     return {
       x: (e.clientX - rect.left) * scaleX,
       y: (e.clientY - rect.top) * scaleY,
@@ -3109,7 +3239,22 @@ class CanvasEngine {
   // --- Renderizado Multicapa ---
   render() {
     const ctx = this.ctx;
+    if (!ctx || !this.canvas) return;
+    const isNodeEnv = typeof window === 'undefined';
+    const dpr = isNodeEnv ? 1 : (this.dpr || Math.min(Math.max(window.devicePixelRatio || 1, 2), 3));
+
+    // Resetear matriz de transformación para limpiar el búfer completo nativo
+    if (typeof ctx.setTransform === 'function') {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    ctx.save();
+    if (typeof ctx.scale === 'function' && dpr !== 1) {
+      ctx.scale(dpr, dpr);
+    }
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
     // 1. Capa 0: Fondo de Hoja (Blanco, Rayado, Cuadrícula 5mm, Puntos)
     this.renderBackground(ctx);
@@ -3156,19 +3301,24 @@ class CanvasEngine {
       this.drawText(ctx, textObj);
     }
     ctx.restore();
+
+    ctx.restore();
   }
 
   renderBackground(ctx) {
+    const width = this.logicalWidth;
+    const height = this.logicalHeight;
+
     ctx.save();
     if (this.isCover && this.coverData) {
-      CoverDesigner.renderCover(ctx, this.canvas.width, this.canvas.height, this.coverData);
+      CoverDesigner.renderCover(ctx, width, height, this.coverData);
       ctx.restore();
       return;
     }
 
     const bgColor = this.paperColor || '#ffffff';
     ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    ctx.fillRect(0, 0, width, height);
 
     if (this.backgroundImage) {
       if (!this._bgImgElement) {
@@ -3178,7 +3328,7 @@ class CanvasEngine {
         this._bgImgElement = img;
       }
       if (this._bgImgElement.complete && this._bgImgElement.naturalWidth > 0) {
-        ctx.drawImage(this._bgImgElement, 0, 0, this.canvas.width, this.canvas.height);
+        ctx.drawImage(this._bgImgElement, 0, 0, width, height);
       }
       ctx.restore();
       return;
@@ -3188,16 +3338,16 @@ class CanvasEngine {
     const isDarkPaper = bgColor === '#1e293b' || bgColor === '#0f172a';
 
     if (pattern === 'ruled') {
-      // Pauta rayada horizontal continua
+      // Pauta rayada horizontal continua con offset subpixel nítido
       ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.2)' : '#cbd5e1';
       ctx.lineWidth = 1;
       const lineGap = 32;
       const topMargin = 75;
 
-      for (let y = topMargin; y < this.canvas.height; y += lineGap) {
+      for (let y = topMargin; y < height; y += lineGap) {
         ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(this.canvas.width, y);
+        ctx.moveTo(0, y + 0.5);
+        ctx.lineTo(width, y + 0.5);
         ctx.stroke();
       }
 
@@ -3205,8 +3355,8 @@ class CanvasEngine {
       ctx.strokeStyle = isDarkPaper ? 'rgba(248, 113, 113, 0.45)' : '#fca5a5';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(68, 0);
-      ctx.lineTo(68, this.canvas.height);
+      ctx.moveTo(68.5, 0);
+      ctx.lineTo(68.5, height);
       ctx.stroke();
 
     } else if (pattern === 'grid') {
@@ -3215,17 +3365,17 @@ class CanvasEngine {
       ctx.lineWidth = 1;
       const gap = 20;
 
-      for (let x = 0; x <= this.canvas.width; x += gap) {
+      for (let x = 0; x <= width; x += gap) {
         ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, this.canvas.height);
+        ctx.moveTo(x + 0.5, 0);
+        ctx.lineTo(x + 0.5, height);
         ctx.stroke();
       }
 
-      for (let y = 0; y <= this.canvas.height; y += gap) {
+      for (let y = 0; y <= height; y += gap) {
         ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(this.canvas.width, y);
+        ctx.moveTo(0, y + 0.5);
+        ctx.lineTo(width, y + 0.5);
         ctx.stroke();
       }
 
@@ -3233,8 +3383,8 @@ class CanvasEngine {
       // Trama de puntos (Bullet journal / Pizarra)
       ctx.fillStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.25)' : '#94a3b8';
       const gap = 24;
-      for (let x = gap; x < this.canvas.width; x += gap) {
-        for (let y = gap; y < this.canvas.height; y += gap) {
+      for (let x = gap; x < width; x += gap) {
+        for (let y = gap; y < height; y += gap) {
           ctx.beginPath();
           ctx.arc(x, y, 1.25, 0, Math.PI * 2);
           ctx.fill();
@@ -3269,6 +3419,15 @@ class CanvasEngine {
       if (shape.fillColor && shape.fillColor !== 'transparent') ctx.fill();
       ctx.stroke();
 
+    } else if (shape.type === 'square') {
+      ctx.beginPath();
+      const side = Math.min(Math.abs(shape.width), Math.abs(shape.height));
+      const sW = shape.width >= 0 ? side : -side;
+      const sH = shape.height >= 0 ? side : -side;
+      ctx.rect(shape.x, shape.y, sW, sH);
+      if (shape.fillColor && shape.fillColor !== 'transparent') ctx.fill();
+      ctx.stroke();
+
     } else if (shape.type === 'circle') {
       ctx.beginPath();
       const radiusX = Math.abs(shape.width) / 2;
@@ -3276,6 +3435,21 @@ class CanvasEngine {
       const centerX = shape.x + shape.width / 2;
       const centerY = shape.y + shape.height / 2;
       ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
+      if (shape.fillColor && shape.fillColor !== 'transparent') ctx.fill();
+      ctx.stroke();
+
+    } else if (shape.type === 'triangle') {
+      ctx.beginPath();
+      const topX = shape.x + shape.width / 2;
+      const topY = shape.y;
+      const rightX = shape.x + shape.width;
+      const rightY = shape.y + shape.height;
+      const leftX = shape.x;
+      const leftY = shape.y + shape.height;
+      ctx.moveTo(topX, topY);
+      ctx.lineTo(rightX, rightY);
+      ctx.lineTo(leftX, leftY);
+      ctx.closePath();
       if (shape.fillColor && shape.fillColor !== 'transparent') ctx.fill();
       ctx.stroke();
 
@@ -3421,15 +3595,15 @@ class CanvasEngine {
     }
 
     if (!hasContent) {
-      return { minX: 0, minY: 0, maxX: this.canvas.width, maxY: this.canvas.height, width: this.canvas.width, height: this.canvas.height };
+      return { minX: 0, minY: 0, maxX: this.logicalWidth, maxY: this.logicalHeight, width: this.logicalWidth, height: this.logicalHeight };
     }
 
     // Margen de cortesía de 40 px
     const padding = 40;
     const cropMinX = Math.max(0, Math.floor(minX - padding));
     const cropMinY = Math.max(0, Math.floor(minY - padding));
-    const cropMaxX = Math.min(this.canvas.width, Math.ceil(maxX + padding));
-    const cropMaxY = Math.min(this.canvas.height, Math.ceil(maxY + padding));
+    const cropMaxX = Math.min(this.logicalWidth, Math.ceil(maxX + padding));
+    const cropMaxY = Math.min(this.logicalHeight, Math.ceil(maxY + padding));
 
     return {
       minX: cropMinX,
@@ -3451,9 +3625,9 @@ class CanvasEngine {
     tCtx.fillStyle = '#ffffff';
     tCtx.fillRect(0, 0, thumbWidth, thumbHeight);
 
-    const scale = Math.min(thumbWidth / this.canvas.width, thumbHeight / this.canvas.height);
-    const offsetX = (thumbWidth - this.canvas.width * scale) / 2;
-    const offsetY = (thumbHeight - this.canvas.height * scale) / 2;
+    const scale = Math.min(thumbWidth / this.logicalWidth, thumbHeight / this.logicalHeight);
+    const offsetX = (thumbWidth - this.logicalWidth * scale) / 2;
+    const offsetY = (thumbHeight - this.logicalHeight * scale) / 2;
 
     tCtx.save();
     tCtx.translate(offsetX, offsetY);
@@ -3478,19 +3652,46 @@ class CanvasEngine {
     return thumbCanvas.toDataURL('image/jpeg', 0.85);
   }
 
-  // Renderizar los datos de una página específica en cualquier elemento canvas
+  // Renderizar los datos de una página específica en cualquier elemento canvas con nitidez HiDPI
   renderPageToCanvas(canvasEl, pageData) {
     if (!canvasEl || !pageData) return;
+    const isNotebook = this.format === 'a4' || pageData.isCover || !pageData.format || pageData.format === 'a4';
+    const logicalW = isNotebook ? 794 : 1800;
+    const logicalH = isNotebook ? 1123 : 1200;
+    const isNodeEnv = typeof window === 'undefined';
+    const dpr = isNodeEnv ? 1 : (this.dpr || Math.min(Math.max(window.devicePixelRatio || 1, 2), 3));
+
+    const targetW = Math.round(logicalW * dpr);
+    const targetH = Math.round(logicalH * dpr);
+    if (canvasEl.width !== targetW || canvasEl.height !== targetH) {
+      canvasEl.width = targetW;
+      canvasEl.height = targetH;
+    }
+    if (canvasEl.style) {
+      canvasEl.style.width = `${logicalW}px`;
+      canvasEl.style.height = `${logicalH}px`;
+    }
+
     const ctx = canvasEl.getContext('2d');
+    if (typeof ctx.setTransform === 'function') {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
+    ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+
     ctx.save();
+    if (typeof ctx.scale === 'function' && dpr !== 1) {
+      ctx.scale(dpr, dpr);
+    }
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
     // 1. Fondo (Portada o Patrón de Hoja o Imagen PDF)
     if (pageData.isCover || pageData.template) {
-      CoverDesigner.renderCover(ctx, canvasEl.width, canvasEl.height, pageData.coverData || pageData);
+      CoverDesigner.renderCover(ctx, logicalW, logicalH, pageData.coverData || pageData);
     } else {
       const bgColor = pageData.paperColor || '#ffffff';
       ctx.fillStyle = bgColor;
-      ctx.fillRect(0, 0, canvasEl.width, canvasEl.height);
+      ctx.fillRect(0, 0, logicalW, logicalH);
 
       if (pageData.backgroundImage) {
         let bgImg = pageData._bgImgElement;
@@ -3503,7 +3704,7 @@ class CanvasEngine {
           pageData._bgImgElement = bgImg;
         }
         if (bgImg.complete && bgImg.naturalWidth > 0) {
-          ctx.drawImage(bgImg, 0, 0, canvasEl.width, canvasEl.height);
+          ctx.drawImage(bgImg, 0, 0, logicalW, logicalH);
         }
       } else {
         const pattern = pageData.backgroundPattern || (this.format === 'a4' ? 'ruled' : 'dots');
@@ -3514,39 +3715,39 @@ class CanvasEngine {
           ctx.lineWidth = 1;
           const lineGap = 32;
           const topMargin = 75;
-          for (let y = topMargin; y < canvasEl.height; y += lineGap) {
+          for (let y = topMargin; y < logicalH; y += lineGap) {
             ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(canvasEl.width, y);
+            ctx.moveTo(0, y + 0.5);
+            ctx.lineTo(logicalW, y + 0.5);
             ctx.stroke();
           }
           ctx.strokeStyle = isDarkPaper ? 'rgba(248, 113, 113, 0.45)' : '#fca5a5';
           ctx.lineWidth = 1.5;
           ctx.beginPath();
-          ctx.moveTo(68, 0);
-          ctx.lineTo(68, canvasEl.height);
+          ctx.moveTo(68.5, 0);
+          ctx.lineTo(68.5, logicalH);
           ctx.stroke();
         } else if (pattern === 'grid') {
           ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.15)' : '#e2e8f0';
           ctx.lineWidth = 1;
           const gap = 20;
-          for (let x = 0; x <= canvasEl.width; x += gap) {
+          for (let x = 0; x <= logicalW; x += gap) {
             ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, canvasEl.height);
+            ctx.moveTo(x + 0.5, 0);
+            ctx.lineTo(x + 0.5, logicalH);
             ctx.stroke();
           }
-          for (let y = 0; y <= canvasEl.height; y += gap) {
+          for (let y = 0; y <= logicalH; y += gap) {
             ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(canvasEl.width, y);
+            ctx.moveTo(0, y + 0.5);
+            ctx.lineTo(logicalW, y + 0.5);
             ctx.stroke();
           }
         } else if (pattern === 'dots') {
           ctx.fillStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.25)' : '#94a3b8';
           const gap = 24;
-          for (let x = gap; x < canvasEl.width; x += gap) {
-            for (let y = 0; y < canvasEl.height; y += gap) {
+          for (let x = gap; x < logicalW; x += gap) {
+            for (let y = 0; y < logicalH; y += gap) {
               ctx.beginPath();
               ctx.arc(x, y, 1.25, 0, Math.PI * 2);
               ctx.fill();
@@ -3634,9 +3835,20 @@ class ShapeTool {
   }
 
   syncDimensions() {
-    if (this.overlayCanvas) {
-      this.overlayCanvas.width = this.canvas.width;
-      this.overlayCanvas.height = this.canvas.height;
+    if (this.overlayCanvas && this.canvas) {
+      const isNodeEnv = typeof window === 'undefined';
+      const dpr = isNodeEnv ? 1 : Math.min(Math.max(window.devicePixelRatio || 1, 2), 3);
+      const logicalW = this.canvas.style && this.canvas.style.width ? parseFloat(this.canvas.style.width) : (this.canvas.width / dpr || 794);
+      const logicalH = this.canvas.style && this.canvas.style.height ? parseFloat(this.canvas.style.height) : (this.canvas.height / dpr || 1123);
+
+      if (this.overlayCanvas.width !== this.canvas.width || this.overlayCanvas.height !== this.canvas.height) {
+        this.overlayCanvas.width = this.canvas.width;
+        this.overlayCanvas.height = this.canvas.height;
+      }
+      if (this.overlayCanvas.style) {
+        this.overlayCanvas.style.width = `${logicalW}px`;
+        this.overlayCanvas.style.height = `${logicalH}px`;
+      }
     }
   }
 
@@ -3717,7 +3929,15 @@ class ShapeTool {
       let w = width;
       let h = height;
 
-      if (this.shapeType === 'rectangle' || this.shapeType === 'circle') {
+      if (this.shapeType === 'square') {
+        const side = Math.min(Math.abs(w), Math.abs(h));
+        const signX = w >= 0 ? 1 : -1;
+        const signY = h >= 0 ? 1 : -1;
+        w = side * signX;
+        h = side * signY;
+      }
+
+      if (this.shapeType === 'rectangle' || this.shapeType === 'circle' || this.shapeType === 'square' || this.shapeType === 'triangle') {
         if (w < 0) {
           x += w;
           w = Math.abs(w);
@@ -3743,12 +3963,34 @@ class ShapeTool {
 
   renderPreview(currentX, currentY) {
     const ctx = this.overlayCtx;
+    if (!ctx || !this.overlayCanvas) return;
+    this.syncDimensions();
+    const isNodeEnv = typeof window === 'undefined';
+    const dpr = isNodeEnv ? 1 : Math.min(Math.max(window.devicePixelRatio || 1, 2), 3);
+
+    if (typeof ctx.setTransform === 'function') {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
     ctx.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
+
+    ctx.save();
+    if (typeof ctx.scale === 'function' && dpr !== 1) {
+      ctx.scale(dpr, dpr);
+    }
+    ctx.imageSmoothingEnabled = true;
 
     let x = this.startX;
     let y = this.startY;
     let w = currentX - this.startX;
     let h = currentY - this.startY;
+
+    if (this.shapeType === 'square') {
+      const side = Math.min(Math.abs(w), Math.abs(h));
+      const signX = w >= 0 ? 1 : -1;
+      const signY = h >= 0 ? 1 : -1;
+      w = side * signX;
+      h = side * signY;
+    }
 
     const tempShape = {
       type: this.shapeType,
@@ -3761,7 +4003,7 @@ class ShapeTool {
       fillColor: this.fillColor
     };
 
-    if (this.shapeType === 'rectangle' || this.shapeType === 'circle') {
+    if (this.shapeType === 'rectangle' || this.shapeType === 'circle' || this.shapeType === 'square' || this.shapeType === 'triangle') {
       if (w < 0) {
         tempShape.x += w;
         tempShape.width = Math.abs(w);
@@ -3773,10 +4015,16 @@ class ShapeTool {
     }
 
     this.engine.drawShape(ctx, tempShape);
+    ctx.restore();
   }
 
   clearOverlay() {
-    this.overlayCtx.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
+    if (this.overlayCtx && this.overlayCanvas) {
+      if (typeof this.overlayCtx.setTransform === 'function') {
+        this.overlayCtx.setTransform(1, 0, 0, 1, 0, 0);
+      }
+      this.overlayCtx.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
+    }
   }
 }
 
@@ -4182,9 +4430,20 @@ class SelectionTool {
   }
 
   syncDimensions() {
-    if (this.overlayCanvas) {
-      this.overlayCanvas.width = this.canvas.width;
-      this.overlayCanvas.height = this.canvas.height;
+    if (this.overlayCanvas && this.canvas) {
+      const isNodeEnv = typeof window === 'undefined';
+      const dpr = isNodeEnv ? 1 : Math.min(Math.max(window.devicePixelRatio || 1, 2), 3);
+      const logicalW = this.canvas.style && this.canvas.style.width ? parseFloat(this.canvas.style.width) : (this.canvas.width / dpr || 794);
+      const logicalH = this.canvas.style && this.canvas.style.height ? parseFloat(this.canvas.style.height) : (this.canvas.height / dpr || 1123);
+
+      if (this.overlayCanvas.width !== this.canvas.width || this.overlayCanvas.height !== this.canvas.height) {
+        this.overlayCanvas.width = this.canvas.width;
+        this.overlayCanvas.height = this.canvas.height;
+      }
+      if (this.overlayCanvas.style) {
+        this.overlayCanvas.style.width = `${logicalW}px`;
+        this.overlayCanvas.style.height = `${logicalH}px`;
+      }
     }
   }
 
@@ -4272,10 +4531,23 @@ class SelectionTool {
 
   renderLasso() {
     const ctx = this.overlayCtx;
+    if (!ctx || !this.overlayCanvas) return;
+    this.syncDimensions();
+    const isNodeEnv = typeof window === 'undefined';
+    const dpr = isNodeEnv ? 1 : Math.min(Math.max(window.devicePixelRatio || 1, 2), 3);
+
+    if (typeof ctx.setTransform === 'function') {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
     ctx.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
     if (this.lassoPoints.length < 2) return;
 
     ctx.save();
+    if (typeof ctx.scale === 'function' && dpr !== 1) {
+      ctx.scale(dpr, dpr);
+    }
+    ctx.imageSmoothingEnabled = true;
+
     ctx.strokeStyle = '#2563eb';
     ctx.lineWidth = 1.5;
     ctx.setLineDash([6, 4]);
@@ -4350,6 +4622,14 @@ class SelectionTool {
 
   renderSelectionHighlight() {
     const ctx = this.overlayCtx;
+    if (!ctx || !this.overlayCanvas) return;
+    this.syncDimensions();
+    const isNodeEnv = typeof window === 'undefined';
+    const dpr = isNodeEnv ? 1 : Math.min(Math.max(window.devicePixelRatio || 1, 2), 3);
+
+    if (typeof ctx.setTransform === 'function') {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
     ctx.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
     if (!this.selectionBBox) return;
 
@@ -4358,6 +4638,11 @@ class SelectionTool {
     const h = maxY - minY;
 
     ctx.save();
+    if (typeof ctx.scale === 'function' && dpr !== 1) {
+      ctx.scale(dpr, dpr);
+    }
+    ctx.imageSmoothingEnabled = true;
+
     ctx.strokeStyle = '#2563eb';
     ctx.lineWidth = 2;
     ctx.setLineDash([4, 4]);
@@ -4384,12 +4669,8 @@ class SelectionTool {
 
   updateFloatingBarPosition() {
     if (!this.selectionBBox || !this.floatingBar) return;
-    const rect = this.canvas.getBoundingClientRect();
-    const scaleX = rect.width / this.canvas.width;
-    const scaleY = rect.height / this.canvas.height;
-
-    const screenX = (this.selectionBBox.minX + (this.selectionBBox.maxX - this.selectionBBox.minX) / 2) * scaleX;
-    const screenY = this.selectionBBox.minY * scaleY - 48;
+    const screenX = this.selectionBBox.minX + (this.selectionBBox.maxX - this.selectionBBox.minX) / 2;
+    const screenY = this.selectionBBox.minY - 48;
 
     this.floatingBar.style.left = `${Math.max(10, screenX)}px`;
     this.floatingBar.style.top = `${Math.max(10, screenY)}px`;
@@ -4405,7 +4686,12 @@ class SelectionTool {
   }
 
   clearOverlay() {
-    this.overlayCtx.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
+    if (this.overlayCtx && this.overlayCanvas) {
+      if (typeof this.overlayCtx.setTransform === 'function') {
+        this.overlayCtx.setTransform(1, 0, 0, 1, 0, 0);
+      }
+      this.overlayCtx.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
+    }
   }
 
   clearSelection() {
@@ -4493,7 +4779,7 @@ const TOOL_DEFINITIONS = {
   laser: { id: 'laser', btnId: 'btnToolLaser', name: 'Puntero Láser', icon: Icons.laser, hasColorDot: false, hasSettings: true },
   ruler: { id: 'ruler', btnId: 'btnToolRuler', name: 'Regla', icon: Icons.ruler, hasColorDot: false, hasSettings: true },
   hand: { id: 'hand', btnId: 'btnToolHand', name: 'Mano', icon: Icons.hand, hasColorDot: false, hasSettings: false },
-  shape: { id: 'shape', btnId: 'btnToolShape', name: 'Figuras', icon: Icons.shape, hasColorDot: false, hasSettings: false },
+  shape: { id: 'shape', btnId: 'btnToolShape', name: 'Figuras', icon: Icons.shape, hasColorDot: false, hasSettings: true },
   text: { id: 'text', btnId: 'btnToolText', name: 'Texto', icon: Icons.text, hasColorDot: false, hasSettings: false },
   lasso: { id: 'lasso', btnId: 'btnToolLasso', name: 'Lazo', icon: Icons.lasso, hasColorDot: false, hasSettings: false }
 };
@@ -4556,11 +4842,7 @@ class Toolbar {
       const saved = localStorage.getItem('whiteboard_tool_settings');
       if (saved) {
         const parsed = JSON.parse(saved);
-        Object.keys(DEFAULT_TOOL_SETTINGS).forEach(k => {
-          if (parsed[k]) {
-            this.toolSettings[k] = { ...DEFAULT_TOOL_SETTINGS[k], ...parsed[k] };
-          }
-        });
+        this.toolSettings = { ...this.toolSettings, ...parsed };
       }
     } catch (e) {
       console.warn('Error al cargar configuración de herramientas desde localStorage:', e);
@@ -4575,25 +4857,62 @@ class Toolbar {
     }
   }
 
-  getToolColor(toolId) {
-    return this.toolSettings[toolId]?.color || (toolId === 'highlighter' ? '#facc15' : this.engine.strokeColor);
+  getToolDefinition(slotId) {
+    const base = slotId ? slotId.split('_')[0] : 'pen';
+    const def = TOOL_DEFINITIONS[base] || { id: base, btnId: `btnTool_${base}`, name: base, icon: Icons.pen, hasColorDot: false, hasSettings: true };
+    const btnId = slotId === base ? def.btnId : `btnTool_${slotId}`;
+    return {
+      ...def,
+      id: slotId,
+      baseType: base,
+      btnId: btnId
+    };
   }
 
-  getToolWidth(toolId) {
-    return this.toolSettings[toolId]?.width || this.engine.strokeWidth;
+  getToolSettings(slotId) {
+    if (!slotId) slotId = 'pen';
+    const base = slotId.split('_')[0];
+    if (!this.toolSettings[slotId]) {
+      const baseDefault = DEFAULT_TOOL_SETTINGS[base] || { color: '#1e293b', width: 3, opacity: 1, stabilization: 0.5, concentration: 1.0 };
+      let defaultColor = baseDefault.color;
+      if (slotId !== base) {
+        const palette = PaletteManager.getPalette();
+        const instanceNum = parseInt(slotId.split('_')[1] || '2', 10);
+        if (base === 'highlighter') {
+          const highlighterColors = ['#facc15', '#10b981', '#ec4899', '#3b82f6', '#f97316', '#a855f7'];
+          defaultColor = highlighterColors[(instanceNum - 1) % highlighterColors.length] || palette[instanceNum % palette.length];
+        } else {
+          const penColors = ['#1e293b', '#2563eb', '#dc2626', '#16a34a', '#9333ea', '#ea580c'];
+          defaultColor = penColors[(instanceNum - 1) % penColors.length] || palette[instanceNum % palette.length];
+        }
+      }
+      this.toolSettings[slotId] = {
+        ...baseDefault,
+        color: defaultColor
+      };
+    }
+    return this.toolSettings[slotId];
+  }
+
+  getToolColor(slotId) {
+    return this.getToolSettings(slotId)?.color || this.engine.strokeColor;
+  }
+
+  getToolWidth(slotId) {
+    return this.getToolSettings(slotId)?.width || this.engine.strokeWidth;
   }
 
   init() {
     this.container = document.getElementById('editorToolbar');
 
     // Inicializar propiedades del motor con la herramienta inicial
-    if (this.toolSettings[this.activeTool]) {
-      const s = this.toolSettings[this.activeTool];
-      this.engine.setColor(s.color);
-      this.engine.setWidth(s.width);
-      this.engine.setOpacity(s.opacity);
-      if (s.stabilization !== undefined) this.engine.setStabilization(s.stabilization);
-      if (s.concentration !== undefined) this.engine.setConcentration(s.concentration);
+    const initialSettings = this.getToolSettings(this.activeTool);
+    if (initialSettings) {
+      this.engine.setColor(initialSettings.color);
+      this.engine.setWidth(initialSettings.width);
+      this.engine.setOpacity(initialSettings.opacity);
+      if (initialSettings.stabilization !== undefined) this.engine.setStabilization(initialSettings.stabilization);
+      if (initialSettings.concentration !== undefined) this.engine.setConcentration(initialSettings.concentration);
     }
 
     this.renderToolbar();
@@ -4719,13 +5038,14 @@ class Toolbar {
 
   renderDockToolsHtml() {
     return this.dockTools.map(tId => {
-      const def = TOOL_DEFINITIONS[tId] || { id: tId, btnId: `btnTool_${tId}`, name: tId, icon: Icons.pen, hasColorDot: false };
+      const def = this.getToolDefinition(tId);
       const isActive = this.activeTool === tId;
       const isPinned = this.pinnedTools.has(tId);
       const col = this.getToolColor(tId);
+      const instanceNum = tId.includes('_') ? tId.split('_')[1] : null;
 
       return `
-        <button class="dock-btn-compact ${isActive ? 'active' : ''}" id="${def.btnId}" data-tool="${tId}" title="${def.name} (Clic: activar | 2º clic: ajustes)">
+        <button class="dock-btn-compact ${isActive ? 'active' : ''}" id="${def.btnId}" data-tool="${tId}" title="${def.name}${instanceNum ? ' #' + instanceNum : ''} (Clic: activar | 2º clic: ajustes)">
           <span class="tool-icon-wrapper">${def.icon}</span>
           ${def.hasColorDot ? `<span class="tool-color-dot" id="dot_${tId}" style="background-color: ${col};"></span>` : ''}
           ${isPinned ? `<span class="pin-badge" title="Fijado en barra"></span>` : ''}
@@ -4748,13 +5068,19 @@ class Toolbar {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed.dockTools) && parsed.dockTools.length > 0) {
-          const validDock = parsed.dockTools.filter(id => TOOL_DEFINITIONS[id]);
+          const validDock = parsed.dockTools.filter(id => {
+            const base = id.split('_')[0];
+            return TOOL_DEFINITIONS[base];
+          });
           if (validDock.length > 0) {
             this.dockTools = validDock.slice(0, this.MAX_DOCK_TOOLS);
           }
         }
         if (Array.isArray(parsed.pinnedTools)) {
-          this.pinnedTools = new Set(parsed.pinnedTools.filter(id => TOOL_DEFINITIONS[id]));
+          this.pinnedTools = new Set(parsed.pinnedTools.filter(id => {
+            const base = id.split('_')[0];
+            return TOOL_DEFINITIONS[base];
+          }));
         }
       }
     } catch (e) {
@@ -4765,7 +5091,7 @@ class Toolbar {
       this.dockTools = ['pen', 'highlighter', 'eraser'];
     }
     if (!this.pinnedTools || this.pinnedTools.size === 0) {
-      this.pinnedTools = new Set(['pen', 'highlighter', 'eraser']);
+      this.pinnedTools = new Set(this.dockTools);
     }
   }
 
@@ -4780,15 +5106,69 @@ class Toolbar {
     }
   }
 
+  addNewToolInstance(baseToolType) {
+    if (!TOOL_DEFINITIONS[baseToolType]) return null;
+
+    if (this.dockTools.length >= this.MAX_DOCK_TOOLS) {
+      const evictIdx = this.dockTools.findIndex(id => !this.pinnedTools.has(id));
+      if (evictIdx !== -1) {
+        this.dockTools.splice(evictIdx, 1);
+      } else {
+        alert(`Has alcanzado el límite máximo de ${this.MAX_DOCK_TOOLS} herramientas fijadas en la barra.`);
+        return null;
+      }
+    }
+
+    let count = 1;
+    let newId = baseToolType;
+    while (this.dockTools.includes(newId)) {
+      count++;
+      newId = `${baseToolType}_${count}`;
+    }
+
+    this.getToolSettings(newId);
+    this.dockTools.push(newId);
+    this.pinnedTools.add(newId);
+    this.saveDockConfig();
+    this.saveToolSettings();
+    this.renderDockTools();
+    this.selectTool(newId);
+    return newId;
+  }
+
+  removeToolInstance(slotId) {
+    const idx = this.dockTools.indexOf(slotId);
+    if (idx !== -1) {
+      this.dockTools.splice(idx, 1);
+      this.pinnedTools.delete(slotId);
+
+      if (this.dockTools.length === 0) {
+        this.dockTools.push('pen');
+        this.pinnedTools.add('pen');
+      }
+
+      this.saveDockConfig();
+      this.renderDockTools();
+
+      if (this.activeTool === slotId) {
+        this.selectTool(this.dockTools[0]);
+      }
+    }
+  }
+
   addOrActivateTool(toolId) {
+    const existing = this.dockTools.find(id => id === toolId || id.startsWith(toolId + '_'));
+    if (existing) {
+      this.selectTool(existing);
+      return;
+    }
+
     if (!this.dockTools.includes(toolId)) {
       if (this.dockTools.length >= this.MAX_DOCK_TOOLS) {
-        // Encontrar la herramienta no fijada más antigua (FIFO)
         const evictIdx = this.dockTools.findIndex(id => !this.pinnedTools.has(id));
         if (evictIdx !== -1) {
           this.dockTools.splice(evictIdx, 1);
         } else {
-          // Si todas estuvieran fijadas, desalojar la última
           this.dockTools.pop();
         }
       }
@@ -4834,21 +5214,20 @@ class Toolbar {
   }
 
   bindDockToolEvents() {
-    this.dockTools.forEach(toolId => {
-      const def = TOOL_DEFINITIONS[toolId];
-      if (!def) return;
-      const btn = this.container.querySelector(`#${def.btnId}`);
+    this.dockTools.forEach(slotId => {
+      const def = this.getToolDefinition(slotId);
+      const btn = this.container.querySelector(`#${def.btnId}`) || this.container.querySelector(`[data-tool="${slotId}"]`);
       if (!btn) return;
 
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (this.activeTool === toolId) {
+        if (this.activeTool === slotId) {
           if (def.hasSettings) {
-            this.toggleMenu(toolId, btn);
+            this.toggleMenu(slotId, btn);
           }
         } else {
           this.closeMenu();
-          this.selectTool(toolId);
+          this.selectTool(slotId);
         }
       });
     });
@@ -5059,6 +5438,9 @@ class Toolbar {
       case 'eraser':
         this.renderEraserMenu();
         break;
+      case 'shape':
+        this.renderShapeMenu();
+        break;
       case 'auxiliary':
         this.renderAuxiliaryMenu();
         break;
@@ -5086,37 +5468,36 @@ class Toolbar {
 
   // Popover compacto para ajustes del trazo activo (Sin scroll)
   renderStrokeSettingsMenu(toolKey) {
+    const baseType = toolKey.split('_')[0];
     const titles = {
-      pen: 'Ajustes del Bolígrafo',
-      pencil: 'Ajustes del Lápiz',
-      marker: 'Ajustes del Rotulador',
-      highlighter: 'Ajustes del Subrayador'
+      pen: 'Bolígrafo',
+      pencil: 'Lápiz',
+      marker: 'Rotulador',
+      highlighter: 'Subrayador'
     };
 
+    const instanceSuffix = toolKey.includes('_') ? ` #${toolKey.split('_')[1]}` : '';
+    const menuTitle = `Ajustes del ${titles[baseType] || baseType}${instanceSuffix}`;
+
     const palette = PaletteManager.getPalette();
-    const curSettings = this.toolSettings[toolKey] || {
-      color: this.engine.strokeColor,
-      width: this.engine.strokeWidth,
-      stabilization: 0.5,
-      concentration: 1.0
-    };
+    const curSettings = this.getToolSettings(toolKey);
     const currentColor = curSettings.color;
     const currentWidth = curSettings.width;
     const currentStabilization = curSettings.stabilization !== undefined ? curSettings.stabilization : 0.5;
     const currentStabilizationPercent = Math.round(currentStabilization * 100);
     const currentConcentration = curSettings.concentration !== undefined ? curSettings.concentration : 1.0;
     const currentConcentrationPercent = Math.round(currentConcentration * 100);
-    const isHighlighter = toolKey === 'highlighter';
+    const isHighlighter = baseType === 'highlighter';
     const isPinned = this.pinnedTools.has(toolKey);
 
-    const baseOp = isHighlighter ? 0.45 : (toolKey === 'pencil' ? 0.85 : 1.0);
+    const baseOp = isHighlighter ? 0.45 : (baseType === 'pencil' ? 0.85 : 1.0);
     const previewOpacity = Math.max(0.1, baseOp * currentConcentration);
 
     this.popover.innerHTML = `
       <div class="popover-arrow"></div>
       <div class="mini-menu-title-row">
-        <span class="mini-menu-title">${titles[toolKey] || 'Ajustes de Trazo'}</span>
-        <button type="button" class="popover-title-pin-btn ${isPinned ? 'pinned' : ''}" data-pin-tool="${toolKey}" title="${isPinned ? 'Desfijar de la barra' : 'Fijar en la barra (máx 6)'}">
+        <span class="mini-menu-title">${menuTitle}</span>
+        <button type="button" class="popover-title-pin-btn ${isPinned ? 'pinned' : ''}" data-pin-tool="${toolKey}" title="${isPinned ? 'Desfijar de la barra' : 'Fijar en la barra'}">
           ${isPinned ? Icons.pinFilled : Icons.pin}
           <span>${isPinned ? 'Fijado' : 'Fijar'}</span>
         </button>
@@ -5167,19 +5548,35 @@ class Toolbar {
         <span class="value-text" id="penConcentrationVal">${currentConcentrationPercent}%</span>
       </div>
       <input type="range" class="popover-slider" id="penConcentrationSlider" min="10" max="100" value="${currentConcentrationPercent}" />
+
+      <div class="popover-divider"></div>
+
+      <!-- Acciones de Instancia (+ Duplicar / Añadir otro / Eliminar) -->
+      <div style="display: flex; gap: 8px; justify-content: space-between; align-items: center;">
+        <button type="button" class="mini-action-chip-btn" id="btnDuplicateThisTool" title="Añadir otro ${titles[baseType] || baseType} a la barra">
+          ${Icons.plus}
+          <span>Añadir otro</span>
+        </button>
+        ${this.dockTools.length > 1 ? `
+          <button type="button" class="mini-action-chip-btn danger" id="btnRemoveThisTool" title="Quitar de la barra">
+            ${Icons.trash}
+            <span>Quitar</span>
+          </button>
+        ` : ''}
+      </div>
     `;
 
     const updatePreviewCircle = () => {
       const circle = this.popover.querySelector('#penPreviewCircle');
       if (circle) {
-        const curS = this.toolSettings[toolKey] || {};
+        const curS = this.getToolSettings(toolKey) || {};
         const col = curS.color || this.engine.strokeColor;
         const wid = curS.width || this.engine.strokeWidth;
         const conc = curS.concentration !== undefined ? curS.concentration : 1.0;
         circle.style.width = `${Math.min(wid, 24)}px`;
         circle.style.height = `${Math.min(wid, 24)}px`;
         circle.style.backgroundColor = col;
-        const op = isHighlighter ? 0.45 : (toolKey === 'pencil' ? 0.85 : 1.0);
+        const op = isHighlighter ? 0.45 : (baseType === 'pencil' ? 0.85 : 1.0);
         circle.style.opacity = Math.max(0.1, op * conc);
       }
     };
@@ -5190,15 +5587,30 @@ class Toolbar {
       this.togglePinTool(toolKey);
     });
 
+    // Añadir otro útil del mismo tipo
+    this.popover.querySelector('#btnDuplicateThisTool')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const newId = this.addNewToolInstance(baseType);
+      if (newId) {
+        this.renderStrokeSettingsMenu(newId);
+      }
+    });
+
+    // Quitar este útil
+    this.popover.querySelector('#btnRemoveThisTool')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.removeToolInstance(toolKey);
+      this.closeMenu();
+    });
+
     // Paleta de 10 colores
     this.popover.querySelectorAll('.color-swatch').forEach(sw => {
       sw.addEventListener('click', (e) => {
         e.stopPropagation();
         const color = sw.dataset.color;
-        if (this.toolSettings[toolKey]) {
-          this.toolSettings[toolKey].color = color;
-          this.saveToolSettings();
-        }
+        const s = this.getToolSettings(toolKey);
+        s.color = color;
+        this.saveToolSettings();
         if (this.activeTool === toolKey) {
           this.engine.setColor(color);
         }
@@ -5207,16 +5619,15 @@ class Toolbar {
       });
     });
 
-    // Selector de color personalizado nativo (guarda automáticamente en la paleta de 10)
+    // Selector de color personalizado nativo
     const picker = this.popover.querySelector('#popoverColorPicker');
     if (picker) {
       picker.addEventListener('input', (e) => {
         const color = e.target.value;
         PaletteManager.saveCustomColor(color);
-        if (this.toolSettings[toolKey]) {
-          this.toolSettings[toolKey].color = color;
-          this.saveToolSettings();
-        }
+        const s = this.getToolSettings(toolKey);
+        s.color = color;
+        this.saveToolSettings();
         if (this.activeTool === toolKey) {
           this.engine.setColor(color);
         }
@@ -5230,10 +5641,9 @@ class Toolbar {
     if (strokeSlider) {
       strokeSlider.addEventListener('input', (e) => {
         const w = Number(e.target.value);
-        if (this.toolSettings[toolKey]) {
-          this.toolSettings[toolKey].width = w;
-          this.saveToolSettings();
-        }
+        const s = this.getToolSettings(toolKey);
+        s.width = w;
+        this.saveToolSettings();
         if (this.activeTool === toolKey) {
           this.engine.setWidth(w);
           const label = this.container.querySelector('#strokeWidthLabel');
@@ -5251,10 +5661,9 @@ class Toolbar {
     this.popover.querySelectorAll('#widthPresetsGroup .stroke-preset-chip').forEach(chip => {
       chip.addEventListener('click', () => {
         const w = Number(chip.dataset.width);
-        if (this.toolSettings[toolKey]) {
-          this.toolSettings[toolKey].width = w;
-          this.saveToolSettings();
-        }
+        const s = this.getToolSettings(toolKey);
+        s.width = w;
+        this.saveToolSettings();
         if (this.activeTool === toolKey) {
           this.engine.setWidth(w);
           const label = this.container.querySelector('#strokeWidthLabel');
@@ -5275,10 +5684,9 @@ class Toolbar {
     if (stabSlider) {
       stabSlider.addEventListener('input', (e) => {
         const sVal = Number(e.target.value);
-        if (this.toolSettings[toolKey]) {
-          this.toolSettings[toolKey].stabilization = sVal / 100;
-          this.saveToolSettings();
-        }
+        const s = this.getToolSettings(toolKey);
+        s.stabilization = sVal / 100;
+        this.saveToolSettings();
         if (this.activeTool === toolKey) {
           this.engine.setStabilization(sVal / 100);
         }
@@ -5292,10 +5700,9 @@ class Toolbar {
     if (concSlider) {
       concSlider.addEventListener('input', (e) => {
         const cVal = Number(e.target.value);
-        if (this.toolSettings[toolKey]) {
-          this.toolSettings[toolKey].concentration = cVal / 100;
-          this.saveToolSettings();
-        }
+        const s = this.getToolSettings(toolKey);
+        s.concentration = cVal / 100;
+        this.saveToolSettings();
         if (this.activeTool === toolKey) {
           this.engine.setConcentration(cVal / 100);
         }
@@ -5306,183 +5713,106 @@ class Toolbar {
     }
   }
 
-  // Popover de Herramientas Auxiliares (🛠️ ▾) con opción de fijar (pin)
+  // Popover de Fijar / Desfijar Herramientas (🛠️ ▾) con soporte de múltiples instancias
   renderAuxiliaryMenu() {
-    const isRulerActive = this.ruler ? this.ruler.active : false;
-    const isLaserActive = this.activeTool === 'laser';
-    const isPenActive = this.activeTool === 'pen';
-    const isHighlighterActive = this.activeTool === 'highlighter';
-    const isEraserActive = this.activeTool === 'eraser';
-    const isPencilActive = this.activeTool === 'pencil';
-    const isMarkerActive = this.activeTool === 'marker';
-    const isHandActive = this.activeTool === 'hand';
-    const isShapeActive = this.activeTool === 'shape';
-    const isTextActive = this.activeTool === 'text';
-    const isLassoActive = this.activeTool === 'lasso';
+    const allTools = [
+      { id: 'pen', name: 'Bolígrafo', icon: Icons.pen },
+      { id: 'highlighter', name: 'Subrayador', icon: Icons.highlighter },
+      { id: 'eraser', name: 'Borrador', icon: Icons.eraser },
+      { id: 'pencil', name: 'Lápiz', icon: Icons.pencil },
+      { id: 'marker', name: 'Rotulador', icon: Icons.marker },
+      { id: 'laser', name: 'Puntero Láser', icon: Icons.laser },
+      { id: 'ruler', name: 'Regla', icon: Icons.ruler },
+      { id: 'hand', name: 'Mano (Mover)', icon: Icons.hand },
+      { id: 'lasso', name: 'Lazo de Selección', icon: Icons.lasso },
+      { id: 'shape', name: 'Figuras Geométricas', icon: Icons.shape },
+      { id: 'text', name: 'Texto', icon: Icons.text }
+    ];
 
-    const renderPinBtn = (toolId) => {
-      const isPinned = this.pinnedTools.has(toolId);
-      return `
-        <button type="button" class="aux-tool-pin-btn ${isPinned ? 'pinned' : ''}" data-pin-tool="${toolId}" title="${isPinned ? 'Desfijar de la barra' : 'Fijar en la barra (máx 6)'}">
-          ${isPinned ? Icons.pinFilled : Icons.pin}
-        </button>
-      `;
-    };
+    const pinnedCount = this.dockTools.length;
 
     this.popover.innerHTML = `
       <div class="popover-arrow"></div>
-      <div class="mini-menu-title">Herramientas y Multimedia</div>
-
-      <!-- Sección 1: Dibujo & Trazado -->
-      <div class="aux-section-heading">Dibujo & Trazado</div>
-      <div class="aux-tools-grid">
-        <div class="aux-tool-chip ${isPenActive ? 'active' : ''}" data-aux-tool="pen" title="Bolígrafo (P)">
-          ${renderPinBtn('pen')}
-          <span class="aux-icon">${Icons.pen}</span>
-          <span class="aux-label">Bolígrafo</span>
-        </div>
-        <div class="aux-tool-chip ${isHighlighterActive ? 'active' : ''}" data-aux-tool="highlighter" title="Subrayador (H)">
-          ${renderPinBtn('highlighter')}
-          <span class="aux-icon">${Icons.highlighter}</span>
-          <span class="aux-label">Subrayador</span>
-        </div>
-        <div class="aux-tool-chip ${isEraserActive ? 'active' : ''}" data-aux-tool="eraser" title="Borrador (E)">
-          ${renderPinBtn('eraser')}
-          <span class="aux-icon">${Icons.eraser}</span>
-          <span class="aux-label">Borrador</span>
-        </div>
-        <div class="aux-tool-chip ${isPencilActive ? 'active' : ''}" data-aux-tool="pencil" title="Lápiz (B)">
-          ${renderPinBtn('pencil')}
-          <span class="aux-icon">${Icons.pencil}</span>
-          <span class="aux-label">Lápiz</span>
-        </div>
-        <div class="aux-tool-chip ${isMarkerActive ? 'active' : ''}" data-aux-tool="marker" title="Rotulador">
-          ${renderPinBtn('marker')}
-          <span class="aux-icon">${Icons.marker}</span>
-          <span class="aux-label">Rotulador</span>
-        </div>
+      <div class="mini-menu-title-row">
+        <span class="mini-menu-title">Fijar / Desfijar Herramientas</span>
+        <span class="pinned-counter-badge">${pinnedCount}/6 fijadas</span>
       </div>
+      <p style="font-size:0.78rem; color:var(--text-secondary); margin:0 0 10px 0; line-height:1.35;">
+        Añade múltiples útiles (ej: varios subrayadores o bolígrafos) con colores y grosores personalizados a la barra.
+      </p>
 
-      <!-- Sección 2: Precisión & Navegación -->
-      <div class="aux-section-heading" style="margin-top: 10px;">Precisión & Navegación</div>
-      <div class="aux-tools-grid">
-        <div class="aux-tool-chip ${isLaserActive ? 'active' : ''}" data-aux-tool="laser" title="Puntero Láser (L)">
-          ${renderPinBtn('laser')}
-          <span class="aux-icon">${Icons.laser}</span>
-          <span class="aux-label">Láser</span>
-        </div>
-        <div class="aux-tool-chip ${isRulerActive ? 'active' : ''}" data-aux-tool="ruler" title="Regla interactiva (R)">
-          ${renderPinBtn('ruler')}
-          <span class="aux-icon">${Icons.ruler}</span>
-          <span class="aux-label">Regla</span>
-        </div>
-        <div class="aux-tool-chip ${isHandActive ? 'active' : ''}" data-aux-tool="hand" title="Mover / Desplazar lienzo (M)">
-          ${renderPinBtn('hand')}
-          <span class="aux-icon">${Icons.hand}</span>
-          <span class="aux-label">Mano</span>
-        </div>
-        <div class="aux-tool-chip ${isLassoActive ? 'active' : ''}" data-aux-tool="lasso" title="Lazo de Selección">
-          ${renderPinBtn('lasso')}
-          <span class="aux-icon">${Icons.lasso}</span>
-          <span class="aux-label">Lazo</span>
-        </div>
-      </div>
-
-      <!-- Sección 3: Inserción & Formas -->
-      <div class="aux-section-heading" style="margin-top: 10px;">Inserción & Formas</div>
-      <div class="aux-tools-grid">
-        <div class="aux-tool-chip ${isShapeActive ? 'active' : ''}" data-aux-tool="shape" title="Insertar figuras geométricas">
-          ${renderPinBtn('shape')}
-          <span class="aux-icon">${Icons.shape}</span>
-          <span class="aux-label">Figuras</span>
-        </div>
-        <div class="aux-tool-chip ${isTextActive ? 'active' : ''}" data-aux-tool="text" title="Insertar texto">
-          ${renderPinBtn('text')}
-          <span class="aux-icon">${Icons.text}</span>
-          <span class="aux-label">Texto</span>
-        </div>
-      </div>
-
-      <!-- Sección 4: Importar Multimedia -->
-      <div class="aux-section-heading" style="margin-top: 10px;">Insertar Multimedia</div>
-      <div class="aux-media-grid">
-        <button type="button" class="aux-media-btn" id="btnAuxImportImage" title="Importar imagen (PNG, JPG, WebP, SVG, GIF)">
-          <span class="aux-media-icon">${Icons.image}</span>
-          <div class="aux-media-text">
-            <strong>Importar Imagen</strong>
-            <small>Fotos y gráficos</small>
-          </div>
-        </button>
-        <button type="button" class="aux-media-btn" id="btnAuxImportVideo" title="Importar video (MP4, WebM, MOV)">
-          <span class="aux-media-icon">${Icons.video}</span>
-          <div class="aux-media-text">
-            <strong>Importar Video</strong>
-            <small>Clips y grabaciones</small>
-          </div>
-        </button>
-      </div>
-
-      <div class="popover-divider"></div>
-
-      <!-- Presets Favoritos -->
-      <div class="mini-actions-list">
-        <button type="button" class="mini-action-btn" id="btnPinnedPresets">
-          <span class="mini-action-icon">${Icons.star}</span>
-          <div class="mini-action-text">
-            <strong>Presets Favoritos (+)</strong>
-            <small>Gestionar y fijar estilos de trazo</small>
-          </div>
-        </button>
+      <div class="pin-tools-list">
+        ${allTools.map(t => {
+          const instances = this.dockTools.filter(id => id === t.id || id.startsWith(t.id + '_'));
+          const canAdd = this.dockTools.length < this.MAX_DOCK_TOOLS;
+          return `
+            <div class="pin-tool-group">
+              <div class="pin-tool-row-header">
+                <span class="pin-tool-icon">${t.icon}</span>
+                <span class="pin-tool-name">${t.name}</span>
+                <button type="button" class="pin-add-instance-btn" data-add-tool="${t.id}" title="Añadir otro ${t.name} a la barra">
+                  ${Icons.plus}
+                  <span>Añadir</span>
+                </button>
+              </div>
+              ${instances.length > 0 ? `
+                <div class="pin-tool-instances-sublist">
+                  ${instances.map(instId => {
+                    const col = this.getToolColor(instId);
+                    const wid = this.getToolWidth(instId);
+                    const label = instId.includes('_') ? `#${instId.split('_')[1]}` : 'Principal';
+                    return `
+                      <div class="pin-instance-chip" data-activate-tool="${instId}" title="Clic: Activar / Ajustar">
+                        <span class="pin-instance-dot" style="background-color: ${col};"></span>
+                        <span class="pin-instance-label">${label} (${wid}px)</span>
+                        <button type="button" class="pin-instance-remove-btn" data-remove-tool="${instId}" title="Quitar de la barra">
+                          ${Icons.close}
+                        </button>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              ` : ''}
+            </div>
+          `;
+        }).join('')}
       </div>
     `;
 
-    // Vincular activación de herramientas auxiliares (las añade a la cola del dock)
-    this.popover.querySelectorAll('[data-aux-tool]').forEach(chip => {
+    this.popover.querySelectorAll('[data-add-tool]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const baseId = btn.dataset.addTool;
+        this.addNewToolInstance(baseId);
+        this.renderAuxiliaryMenu();
+      });
+    });
+
+    this.popover.querySelectorAll('[data-remove-tool]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const slotId = btn.dataset.removeTool;
+        this.removeToolInstance(slotId);
+        this.renderAuxiliaryMenu();
+      });
+    });
+
+    this.popover.querySelectorAll('[data-activate-tool]').forEach(chip => {
       chip.addEventListener('click', (e) => {
-        if (e.target.closest('.aux-tool-pin-btn')) return;
-        const toolId = chip.dataset.auxTool;
-        if (toolId === 'ruler') {
-          if (this.ruler) {
-            this.ruler.toggle();
-            this.updateActiveButton();
-          }
-        } else {
-          this.addOrActivateTool(toolId);
-        }
+        if (e.target.closest('[data-remove-tool]')) return;
+        const slotId = chip.dataset.activateTool;
+        this.selectTool(slotId);
         this.closeMenu();
       });
     });
-
-    // Vincular pines
-    this.popover.querySelectorAll('.aux-tool-pin-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const toolId = btn.dataset.pinTool;
-        this.togglePinTool(toolId);
-      });
-    });
-
-    // Importación multimedia
-    this.popover.querySelector('#btnAuxImportImage')?.addEventListener('click', () => {
-      this.closeMenu();
-      if (this.imageTool) this.imageTool.triggerUpload('image');
-    });
-
-    this.popover.querySelector('#btnAuxImportVideo')?.addEventListener('click', () => {
-      this.closeMenu();
-      if (this.imageTool) this.imageTool.triggerUpload('video');
-    });
-
-    this.popover.querySelector('#btnPinnedPresets')?.addEventListener('click', () => {
-      this.openMenu('presets', this.container.querySelector('#btnMenuAuxiliary'));
-    });
   }
 
-  // Popover Borrador
+  // Popover Borrador con indicador visual y radio ajustable
   renderEraserMenu() {
     const isStroke = this.engine.eraserMode === 'stroke';
     const eraseHighlighter = this.engine.eraseHighlighterOnly;
     const isPinned = this.pinnedTools.has('eraser');
+    const radius = this.engine.eraserRadius || 16;
 
     this.popover.innerHTML = `
       <div class="popover-arrow"></div>
@@ -5497,6 +5827,23 @@ class Toolbar {
       <div class="eraser-mode-selector">
         <button type="button" class="mode-pill ${isStroke ? 'active' : ''}" id="btnModeStroke">Trazo Completo</button>
         <button type="button" class="mode-pill ${!isStroke ? 'active' : ''}" id="btnModeArea">Borrador de Área</button>
+      </div>
+
+      <div class="popover-divider"></div>
+
+      <!-- Tamaño del Borrador -->
+      <div class="popover-row">
+        <span class="label-text">Radio de Borrado</span>
+        <span class="value-text" id="eraserRadiusVal">${radius}px</span>
+      </div>
+      <div class="slider-with-preview">
+        <input type="range" class="popover-slider" id="eraserRadiusSlider" min="6" max="50" value="${radius}" />
+        <div class="stroke-preview-circle" id="eraserPreviewCircle" style="width: ${Math.min(radius * 2, 28)}px; height: ${Math.min(radius * 2, 28)}px; border: 2px solid #ef4444; background-color: rgba(239, 68, 68, 0.2); border-radius: 50%;"></div>
+      </div>
+      <div class="stroke-presets-chips" id="eraserPresetsGroup">
+        ${[8, 14, 18, 26, 36].map(r => `
+          <button type="button" class="stroke-preset-chip ${r === radius ? 'active' : ''}" data-radius="${r}">${r}px</button>
+        `).join('')}
       </div>
 
       <div class="popover-divider"></div>
@@ -5522,9 +5869,203 @@ class Toolbar {
       this.renderEraserMenu();
     });
 
+    const slider = this.popover.querySelector('#eraserRadiusSlider');
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const r = Number(e.target.value);
+        this.engine.setEraserRadius(r);
+        const valText = this.popover.querySelector('#eraserRadiusVal');
+        if (valText) valText.textContent = `${r}px`;
+        const preview = this.popover.querySelector('#eraserPreviewCircle');
+        if (preview) {
+          preview.style.width = `${Math.min(r * 2, 28)}px`;
+          preview.style.height = `${Math.min(r * 2, 28)}px`;
+        }
+        this.popover.querySelectorAll('#eraserPresetsGroup .stroke-preset-chip').forEach(chip => {
+          chip.classList.toggle('active', Number(chip.dataset.radius) === r);
+        });
+      });
+    }
+
+    this.popover.querySelectorAll('#eraserPresetsGroup .stroke-preset-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const r = Number(chip.dataset.radius);
+        this.engine.setEraserRadius(r);
+        if (slider) slider.value = r;
+        const valText = this.popover.querySelector('#eraserRadiusVal');
+        if (valText) valText.textContent = `${r}px`;
+        const preview = this.popover.querySelector('#eraserPreviewCircle');
+        if (preview) {
+          preview.style.width = `${Math.min(r * 2, 28)}px`;
+          preview.style.height = `${Math.min(r * 2, 28)}px`;
+        }
+        this.popover.querySelectorAll('#eraserPresetsGroup .stroke-preset-chip').forEach(c => {
+          c.classList.toggle('active', c === chip);
+        });
+      });
+    });
+
     this.popover.querySelector('#chkEraseHighlighter').addEventListener('change', (e) => {
       this.engine.setEraseHighlighterOnly(e.target.checked);
     });
+  }
+
+  // Popover Figuras Geométricas (Círculo, Triángulo, Cuadrado, Rectángulo, Línea, Flecha)
+  renderShapeMenu() {
+    const isPinned = this.pinnedTools.has('shape');
+    const shapeTool = this.shapeTool;
+    const currentType = shapeTool ? shapeTool.shapeType : 'rectangle';
+    const currentColor = shapeTool ? shapeTool.strokeColor : this.engine.strokeColor;
+    const currentWidth = shapeTool ? shapeTool.strokeWidth : this.engine.strokeWidth;
+    const hasFill = shapeTool ? (shapeTool.fillColor && shapeTool.fillColor !== 'transparent') : false;
+    const palette = PaletteManager.getPalette();
+
+    const shapesList = [
+      { id: 'circle', name: 'Círculo', icon: Icons.circle },
+      { id: 'triangle', name: 'Triángulo', icon: Icons.triangle },
+      { id: 'square', name: 'Cuadrado', icon: Icons.square },
+      { id: 'rectangle', name: 'Rectángulo', icon: Icons.rectangle },
+      { id: 'line', name: 'Línea', icon: Icons.line },
+      { id: 'arrow', name: 'Flecha', icon: Icons.arrow }
+    ];
+
+    this.popover.innerHTML = `
+      <div class="popover-arrow"></div>
+      <div class="mini-menu-title-row">
+        <span class="mini-menu-title">Figuras Geométricas</span>
+        <button type="button" class="popover-title-pin-btn ${isPinned ? 'pinned' : ''}" data-pin-tool="shape" title="${isPinned ? 'Desfijar de la barra' : 'Fijar en la barra (máx 6)'}">
+          ${isPinned ? Icons.pinFilled : Icons.pin}
+          <span>${isPinned ? 'Fijado' : 'Fijar'}</span>
+        </button>
+      </div>
+
+      <!-- Selector de Tipo de Figura -->
+      <div class="shapes-selector-grid">
+        ${shapesList.map(s => `
+          <button type="button" class="shape-select-btn ${s.id === currentType ? 'active' : ''}" data-shape-type="${s.id}" title="${s.name}">
+            <span class="shape-btn-icon">${s.icon}</span>
+            <span class="shape-btn-label">${s.name}</span>
+          </button>
+        `).join('')}
+      </div>
+
+      <div class="popover-divider"></div>
+
+      <!-- Color de Trazo -->
+      <div class="popover-row">
+        <span class="label-text">Color de Trazo</span>
+      </div>
+      <div class="color-palette-10">
+        ${palette.map(c => `
+          <button type="button" class="color-swatch ${c.toLowerCase() === currentColor.toLowerCase() ? 'active' : ''}" data-shape-color="${c}" style="background-color: ${c}"></button>
+        `).join('')}
+        <label class="color-picker-label" title="Color personalizado">
+          <input type="color" id="popoverShapeColorPicker" value="${currentColor}" />
+          <span class="picker-icon">${Icons.edit}</span>
+        </label>
+      </div>
+
+      <div class="popover-divider"></div>
+
+      <!-- Grosor -->
+      <div class="popover-row">
+        <span class="label-text">Grosor de Borde</span>
+        <span class="value-text" id="shapeWidthVal">${currentWidth}px</span>
+      </div>
+      <div class="slider-with-preview">
+        <input type="range" class="popover-slider" id="shapeStrokeSlider" min="1" max="20" value="${currentWidth}" />
+        <div class="stroke-preview-circle" id="shapePreviewCircle" style="width: ${Math.min(currentWidth * 2, 24)}px; height: ${Math.min(currentWidth * 2, 24)}px; background-color: ${currentColor};"></div>
+      </div>
+
+      <div class="popover-divider"></div>
+
+      <!-- Relleno -->
+      <label class="popover-checkbox">
+        <input type="checkbox" id="chkShapeFill" ${hasFill ? 'checked' : ''} />
+        <span>Relleno traslúcido</span>
+      </label>
+    `;
+
+    // Botón Pin
+    this.popover.querySelector('.popover-title-pin-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.togglePinTool('shape');
+    });
+
+    // Selección de figura
+    this.popover.querySelectorAll('[data-shape-type]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const type = btn.dataset.shapeType;
+        if (this.shapeTool) {
+          this.shapeTool.setShapeType(type);
+        }
+        this.renderShapeMenu();
+      });
+    });
+
+    // Colores
+    this.popover.querySelectorAll('[data-shape-color]').forEach(sw => {
+      sw.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const color = sw.dataset.shapeColor;
+        if (this.shapeTool) {
+          this.shapeTool.setStrokeColor(color);
+          if (this.shapeTool.fillColor && this.shapeTool.fillColor !== 'transparent') {
+            this.shapeTool.setFillColor(color + '26');
+          }
+        }
+        this.renderShapeMenu();
+      });
+    });
+
+    const picker = this.popover.querySelector('#popoverShapeColorPicker');
+    if (picker) {
+      picker.addEventListener('input', (e) => {
+        const color = e.target.value;
+        PaletteManager.saveCustomColor(color);
+        if (this.shapeTool) {
+          this.shapeTool.setStrokeColor(color);
+          if (this.shapeTool.fillColor && this.shapeTool.fillColor !== 'transparent') {
+            this.shapeTool.setFillColor(color + '26');
+          }
+        }
+        this.renderShapeMenu();
+      });
+    }
+
+    // Grosor
+    const slider = this.popover.querySelector('#shapeStrokeSlider');
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const w = Number(e.target.value);
+        if (this.shapeTool) {
+          this.shapeTool.setStrokeWidth(w);
+        }
+        const valText = this.popover.querySelector('#shapeWidthVal');
+        if (valText) valText.textContent = `${w}px`;
+        const preview = this.popover.querySelector('#shapePreviewCircle');
+        if (preview) {
+          preview.style.width = `${Math.min(w * 2, 24)}px`;
+          preview.style.height = `${Math.min(w * 2, 24)}px`;
+        }
+      });
+    }
+
+    // Relleno
+    const chkFill = this.popover.querySelector('#chkShapeFill');
+    if (chkFill) {
+      chkFill.addEventListener('change', (e) => {
+        if (this.shapeTool) {
+          if (e.target.checked) {
+            const col = this.shapeTool.strokeColor || '#1e293b';
+            this.shapeTool.setFillColor(col + '26');
+          } else {
+            this.shapeTool.setFillColor('transparent');
+          }
+        }
+      });
+    }
   }
 
   // Popover Puntero Láser
@@ -5892,22 +6433,23 @@ class Toolbar {
     });
   }
 
-  selectTool(tool) {
-    this.activeTool = tool;
-    if (['pen', 'pencil', 'marker', 'highlighter'].includes(tool)) {
-      this.lastPenTool = tool;
+  selectTool(slotId) {
+    this.activeTool = slotId;
+    const base = slotId.split('_')[0];
+    if (['pen', 'pencil', 'marker', 'highlighter'].includes(base)) {
+      this.lastPenTool = slotId;
     }
-    this.engine.setTool(tool);
+    this.engine.setTool(base);
     if (this.selectionTool) {
-      this.selectionTool.setActive(tool === 'lasso');
+      this.selectionTool.setActive(base === 'lasso');
     }
     if (this.laserPointer) {
-      this.laserPointer.setActive(tool === 'laser');
+      this.laserPointer.setActive(base === 'laser');
     }
 
-    // Aplicar configuración de color y trazo propia de esta herramienta
-    if (this.toolSettings[tool]) {
-      const s = this.toolSettings[tool];
+    // Aplicar configuración de color y trazo propia de esta instancia
+    const s = this.getToolSettings(slotId);
+    if (s) {
       this.engine.setColor(s.color);
       this.engine.setWidth(s.width);
       this.engine.setOpacity(s.opacity);
@@ -5922,12 +6464,11 @@ class Toolbar {
   }
 
   updateActiveButton() {
-    this.dockTools.forEach(toolId => {
-      const def = TOOL_DEFINITIONS[toolId];
-      if (!def) return;
-      const btn = this.container.querySelector(`#${def.btnId}`);
+    this.dockTools.forEach(slotId => {
+      const def = this.getToolDefinition(slotId);
+      const btn = this.container.querySelector(`#${def.btnId}`) || this.container.querySelector(`[data-tool="${slotId}"]`);
       if (btn) {
-        btn.classList.toggle('active', this.activeTool === toolId);
+        btn.classList.toggle('active', this.activeTool === slotId);
       }
     });
 
@@ -5942,10 +6483,10 @@ class Toolbar {
   }
 
   updatePenDotsColor() {
-    this.dockTools.forEach(toolId => {
-      const dot = this.container.querySelector(`#dot_${toolId}`);
+    this.dockTools.forEach(slotId => {
+      const dot = this.container.querySelector(`#dot_${slotId}`);
       if (dot) {
-        dot.style.backgroundColor = this.getToolColor(toolId);
+        dot.style.backgroundColor = this.getToolColor(slotId);
       }
     });
   }
@@ -7273,7 +7814,7 @@ class DashboardView {
               <span class="nav-icon">${Icons.backupImport}</span>
               <span class="nav-label">Restaurar Backup</span>
             </button>
-            <input type="file" id="backupFileInput" accept=".json" style="display:none;" />
+            <input type="file" id="backupFileInput" accept="application/json,.json" style="display:none;" />
 
             <div class="nav-divider"></div>
             <button class="nav-item" id="btnSidebarSettings" title="Configuración del Sistema">
@@ -7579,9 +8120,10 @@ class DashboardView {
           reader.onload = async (ev) => {
             try {
               const json = JSON.parse(ev.target.result);
-              const count = await db.restoreFullBackup(json);
+              const result = await db.restoreFullBackup(json);
               await this.loadAndRender();
-              alert(`Copia de seguridad restaurada con éxito: ${count} documentos importados.`);
+              const numDocs = result?.docsCount ?? result ?? 0;
+              alert(`Copia de seguridad restaurada con éxito: ${numDocs} documentos importados.`);
             } catch (parseErr) {
               alert('El archivo seleccionado no es un JSON de copia de seguridad válido.');
             }

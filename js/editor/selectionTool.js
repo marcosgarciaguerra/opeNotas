@@ -120,9 +120,20 @@ export class SelectionTool {
   }
 
   syncDimensions() {
-    if (this.overlayCanvas) {
-      this.overlayCanvas.width = this.canvas.width;
-      this.overlayCanvas.height = this.canvas.height;
+    if (this.overlayCanvas && this.canvas) {
+      const isNodeEnv = typeof window === 'undefined';
+      const dpr = isNodeEnv ? 1 : Math.min(Math.max(window.devicePixelRatio || 1, 2), 3);
+      const logicalW = this.canvas.style && this.canvas.style.width ? parseFloat(this.canvas.style.width) : (this.canvas.width / dpr || 794);
+      const logicalH = this.canvas.style && this.canvas.style.height ? parseFloat(this.canvas.style.height) : (this.canvas.height / dpr || 1123);
+
+      if (this.overlayCanvas.width !== this.canvas.width || this.overlayCanvas.height !== this.canvas.height) {
+        this.overlayCanvas.width = this.canvas.width;
+        this.overlayCanvas.height = this.canvas.height;
+      }
+      if (this.overlayCanvas.style) {
+        this.overlayCanvas.style.width = `${logicalW}px`;
+        this.overlayCanvas.style.height = `${logicalH}px`;
+      }
     }
   }
 
@@ -210,10 +221,23 @@ export class SelectionTool {
 
   renderLasso() {
     const ctx = this.overlayCtx;
+    if (!ctx || !this.overlayCanvas) return;
+    this.syncDimensions();
+    const isNodeEnv = typeof window === 'undefined';
+    const dpr = isNodeEnv ? 1 : Math.min(Math.max(window.devicePixelRatio || 1, 2), 3);
+
+    if (typeof ctx.setTransform === 'function') {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
     ctx.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
     if (this.lassoPoints.length < 2) return;
 
     ctx.save();
+    if (typeof ctx.scale === 'function' && dpr !== 1) {
+      ctx.scale(dpr, dpr);
+    }
+    ctx.imageSmoothingEnabled = true;
+
     ctx.strokeStyle = '#2563eb';
     ctx.lineWidth = 1.5;
     ctx.setLineDash([6, 4]);
@@ -288,6 +312,14 @@ export class SelectionTool {
 
   renderSelectionHighlight() {
     const ctx = this.overlayCtx;
+    if (!ctx || !this.overlayCanvas) return;
+    this.syncDimensions();
+    const isNodeEnv = typeof window === 'undefined';
+    const dpr = isNodeEnv ? 1 : Math.min(Math.max(window.devicePixelRatio || 1, 2), 3);
+
+    if (typeof ctx.setTransform === 'function') {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
     ctx.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
     if (!this.selectionBBox) return;
 
@@ -296,6 +328,11 @@ export class SelectionTool {
     const h = maxY - minY;
 
     ctx.save();
+    if (typeof ctx.scale === 'function' && dpr !== 1) {
+      ctx.scale(dpr, dpr);
+    }
+    ctx.imageSmoothingEnabled = true;
+
     ctx.strokeStyle = '#2563eb';
     ctx.lineWidth = 2;
     ctx.setLineDash([4, 4]);
@@ -322,12 +359,8 @@ export class SelectionTool {
 
   updateFloatingBarPosition() {
     if (!this.selectionBBox || !this.floatingBar) return;
-    const rect = this.canvas.getBoundingClientRect();
-    const scaleX = rect.width / this.canvas.width;
-    const scaleY = rect.height / this.canvas.height;
-
-    const screenX = (this.selectionBBox.minX + (this.selectionBBox.maxX - this.selectionBBox.minX) / 2) * scaleX;
-    const screenY = this.selectionBBox.minY * scaleY - 48;
+    const screenX = this.selectionBBox.minX + (this.selectionBBox.maxX - this.selectionBBox.minX) / 2;
+    const screenY = this.selectionBBox.minY - 48;
 
     this.floatingBar.style.left = `${Math.max(10, screenX)}px`;
     this.floatingBar.style.top = `${Math.max(10, screenY)}px`;
@@ -343,7 +376,12 @@ export class SelectionTool {
   }
 
   clearOverlay() {
-    this.overlayCtx.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
+    if (this.overlayCtx && this.overlayCanvas) {
+      if (typeof this.overlayCtx.setTransform === 'function') {
+        this.overlayCtx.setTransform(1, 0, 0, 1, 0, 0);
+      }
+      this.overlayCtx.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
+    }
   }
 
   clearSelection() {

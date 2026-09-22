@@ -171,7 +171,7 @@ export class DashboardView {
               <span class="nav-icon">${Icons.backupImport}</span>
               <span class="nav-label">Restaurar Backup</span>
             </button>
-            <input type="file" id="backupFileInput" accept=".json" style="display:none;" />
+            <input type="file" id="backupFileInput" accept="application/json,.json" style="display:none;" />
 
             <div class="nav-divider"></div>
             <button class="nav-item" id="btnSidebarSettings" title="Configuración del Sistema">
@@ -477,9 +477,10 @@ export class DashboardView {
           reader.onload = async (ev) => {
             try {
               const json = JSON.parse(ev.target.result);
-              const count = await db.restoreFullBackup(json);
+              const result = await db.restoreFullBackup(json);
               await this.loadAndRender();
-              alert(`Copia de seguridad restaurada con éxito: ${count} documentos importados.`);
+              const numDocs = result?.docsCount ?? result ?? 0;
+              alert(`Copia de seguridad restaurada con éxito: ${numDocs} documentos importados.`);
             } catch (parseErr) {
               alert('El archivo seleccionado no es un JSON de copia de seguridad válido.');
             }

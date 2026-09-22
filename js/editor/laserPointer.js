@@ -38,9 +38,18 @@ export class LaserPointer {
 
   syncDimensions() {
     if (!this.laserCanvas || !this.mainCanvas) return;
+    const isNodeEnv = typeof window === 'undefined';
+    const dpr = isNodeEnv ? 1 : Math.min(Math.max(window.devicePixelRatio || 1, 2), 3);
+    const logicalW = this.mainCanvas.style && this.mainCanvas.style.width ? parseFloat(this.mainCanvas.style.width) : (this.mainCanvas.width / dpr || 794);
+    const logicalH = this.mainCanvas.style && this.mainCanvas.style.height ? parseFloat(this.mainCanvas.style.height) : (this.mainCanvas.height / dpr || 1123);
+
     if (this.laserCanvas.width !== this.mainCanvas.width || this.laserCanvas.height !== this.mainCanvas.height) {
       this.laserCanvas.width = this.mainCanvas.width;
       this.laserCanvas.height = this.mainCanvas.height;
+    }
+    if (this.laserCanvas.style) {
+      this.laserCanvas.style.width = `${logicalW}px`;
+      this.laserCanvas.style.height = `${logicalH}px`;
     }
   }
 
@@ -161,8 +170,10 @@ export class LaserPointer {
     if (!this.mainCanvas) return { x: 0, y: 0, pressure: 0.5 };
     const rect = this.mainCanvas.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return { x: 0, y: 0, pressure: 0.5 };
-    const scaleX = this.mainCanvas.width / rect.width;
-    const scaleY = this.mainCanvas.height / rect.height;
+    const logicalW = this.mainCanvas.style && this.mainCanvas.style.width ? parseFloat(this.mainCanvas.style.width) : 794;
+    const logicalH = this.mainCanvas.style && this.mainCanvas.style.height ? parseFloat(this.mainCanvas.style.height) : 1123;
+    const scaleX = logicalW / rect.width;
+    const scaleY = logicalH / rect.height;
     return {
       x: (e.clientX - rect.left) * scaleX,
       y: (e.clientY - rect.top) * scaleY,
@@ -187,6 +198,9 @@ export class LaserPointer {
 
   clearCanvas() {
     if (this.ctx && this.laserCanvas) {
+      if (typeof this.ctx.setTransform === 'function') {
+        this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+      }
       this.ctx.clearRect(0, 0, this.laserCanvas.width, this.laserCanvas.height);
     }
   }
@@ -201,6 +215,16 @@ export class LaserPointer {
     const now = performance.now();
     this.syncDimensions();
     this.clearCanvas();
+
+    const isNodeEnv = typeof window === 'undefined';
+    const dpr = isNodeEnv ? 1 : Math.min(Math.max(window.devicePixelRatio || 1, 2), 3);
+
+    this.ctx.save();
+    if (typeof this.ctx.scale === 'function' && dpr !== 1) {
+      this.ctx.scale(dpr, dpr);
+    }
+    this.ctx.imageSmoothingEnabled = true;
+    this.ctx.imageSmoothingQuality = 'high';
 
     // 1. Filtrar puntos activos que no hayan caducado (> 1000ms)
     this.points = this.points.filter(p => (now - p.time) < this.FADE_DURATION_MS);
@@ -279,14 +303,18 @@ export class LaserPointer {
       this.ctx.arc(x, y, 2.5, 0, Math.PI * 2);
       this.ctx.fillStyle = '#ffffff';
       this.ctx.globalAlpha = 1.0;
+      this.ctx.shadowColor = '#ffffff';
+      this.ctx.shadowBlur = 6;
       this.ctx.fill();
 
       this.ctx.restore();
     }
 
-    // Si aún hay puntos o el usuario está dibujando o el láser está activo, continuar el loop
-    if (this.points.length > 0 || this.isPointerDown || (this.active && this.currentPointerPos)) {
-      this.animFrameId = requestAnimationFrame(() => this.renderFrame());
+    this.ctx.restore();
+
+    // Mantener bucle activo mientras queden puntos
+    if (this.points.length > 0 || (this.isPointerDown && this.currentPointerPos) || (this.active && this.currentPointerPos)) {
+      this.startAnimationLoop();
     }
   }
 

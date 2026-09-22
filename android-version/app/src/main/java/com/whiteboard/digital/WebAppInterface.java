@@ -118,6 +118,57 @@ public class WebAppInterface {
     }
 
     /**
+     * Guarda un archivo de texto/JSON en la carpeta Descargas de Android (Scoped Storage compatible).
+     */
+    @JavascriptInterface
+    public boolean saveTextFile(String content, String filename, String mimeType) {
+        try {
+            byte[] fileBytes;
+            if (content.startsWith("data:") && content.contains(",")) {
+                fileBytes = Base64.decode(content.split(",")[1], Base64.DEFAULT);
+            } else {
+                fileBytes = content.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            }
+
+            if (mimeType == null || mimeType.isEmpty()) {
+                mimeType = "application/json";
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ContentValues values = new ContentValues();
+                values.put(MediaStore.MediaColumns.DISPLAY_NAME, filename);
+                values.put(MediaStore.MediaColumns.MIME_TYPE, mimeType);
+                values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/PizarraDigital");
+
+                Uri uri = mContext.getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                if (uri != null) {
+                    try (OutputStream os = mContext.getContentResolver().openOutputStream(uri)) {
+                        if (os != null) {
+                            os.write(fileBytes);
+                            os.flush();
+                        }
+                    }
+                    showToast("Copia de seguridad guardada en Descargas/PizarraDigital");
+                    return true;
+                }
+            } else {
+                File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "PizarraDigital");
+                if (!dir.exists()) dir.mkdirs();
+                File file = new File(dir, filename);
+                try (FileOutputStream fos = new FileOutputStream(file)) {
+                    fos.write(fileBytes);
+                    fos.flush();
+                }
+                showToast("Copia de seguridad guardada en Descargas");
+                return true;
+            }
+        } catch (Exception e) {
+            showToast("Error al guardar archivo: " + e.getMessage());
+        }
+        return false;
+    }
+
+    /**
      * Guarda una imagen PNG en la Galería de Fotos del dispositivo.
      */
     @JavascriptInterface

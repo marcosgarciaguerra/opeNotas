@@ -39,9 +39,20 @@ export class ShapeTool {
   }
 
   syncDimensions() {
-    if (this.overlayCanvas) {
-      this.overlayCanvas.width = this.canvas.width;
-      this.overlayCanvas.height = this.canvas.height;
+    if (this.overlayCanvas && this.canvas) {
+      const isNodeEnv = typeof window === 'undefined';
+      const dpr = isNodeEnv ? 1 : Math.min(Math.max(window.devicePixelRatio || 1, 2), 3);
+      const logicalW = this.canvas.style && this.canvas.style.width ? parseFloat(this.canvas.style.width) : (this.canvas.width / dpr || 794);
+      const logicalH = this.canvas.style && this.canvas.style.height ? parseFloat(this.canvas.style.height) : (this.canvas.height / dpr || 1123);
+
+      if (this.overlayCanvas.width !== this.canvas.width || this.overlayCanvas.height !== this.canvas.height) {
+        this.overlayCanvas.width = this.canvas.width;
+        this.overlayCanvas.height = this.canvas.height;
+      }
+      if (this.overlayCanvas.style) {
+        this.overlayCanvas.style.width = `${logicalW}px`;
+        this.overlayCanvas.style.height = `${logicalH}px`;
+      }
     }
   }
 
@@ -122,7 +133,15 @@ export class ShapeTool {
       let w = width;
       let h = height;
 
-      if (this.shapeType === 'rectangle' || this.shapeType === 'circle') {
+      if (this.shapeType === 'square') {
+        const side = Math.min(Math.abs(w), Math.abs(h));
+        const signX = w >= 0 ? 1 : -1;
+        const signY = h >= 0 ? 1 : -1;
+        w = side * signX;
+        h = side * signY;
+      }
+
+      if (this.shapeType === 'rectangle' || this.shapeType === 'circle' || this.shapeType === 'square' || this.shapeType === 'triangle') {
         if (w < 0) {
           x += w;
           w = Math.abs(w);
@@ -148,12 +167,34 @@ export class ShapeTool {
 
   renderPreview(currentX, currentY) {
     const ctx = this.overlayCtx;
+    if (!ctx || !this.overlayCanvas) return;
+    this.syncDimensions();
+    const isNodeEnv = typeof window === 'undefined';
+    const dpr = isNodeEnv ? 1 : Math.min(Math.max(window.devicePixelRatio || 1, 2), 3);
+
+    if (typeof ctx.setTransform === 'function') {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
     ctx.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
+
+    ctx.save();
+    if (typeof ctx.scale === 'function' && dpr !== 1) {
+      ctx.scale(dpr, dpr);
+    }
+    ctx.imageSmoothingEnabled = true;
 
     let x = this.startX;
     let y = this.startY;
     let w = currentX - this.startX;
     let h = currentY - this.startY;
+
+    if (this.shapeType === 'square') {
+      const side = Math.min(Math.abs(w), Math.abs(h));
+      const signX = w >= 0 ? 1 : -1;
+      const signY = h >= 0 ? 1 : -1;
+      w = side * signX;
+      h = side * signY;
+    }
 
     const tempShape = {
       type: this.shapeType,
@@ -166,7 +207,7 @@ export class ShapeTool {
       fillColor: this.fillColor
     };
 
-    if (this.shapeType === 'rectangle' || this.shapeType === 'circle') {
+    if (this.shapeType === 'rectangle' || this.shapeType === 'circle' || this.shapeType === 'square' || this.shapeType === 'triangle') {
       if (w < 0) {
         tempShape.x += w;
         tempShape.width = Math.abs(w);
@@ -178,9 +219,15 @@ export class ShapeTool {
     }
 
     this.engine.drawShape(ctx, tempShape);
+    ctx.restore();
   }
 
   clearOverlay() {
-    this.overlayCtx.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
+    if (this.overlayCtx && this.overlayCanvas) {
+      if (typeof this.overlayCtx.setTransform === 'function') {
+        this.overlayCtx.setTransform(1, 0, 0, 1, 0, 0);
+      }
+      this.overlayCtx.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
+    }
   }
 }

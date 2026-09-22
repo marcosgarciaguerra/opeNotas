@@ -290,6 +290,59 @@ async function runTests() {
   assert(fs.existsSync(path.join(androidWww, 'js/bundle.js')), 'android-version contiene js/bundle.js');
   assert(fs.existsSync(path.join(androidWww, 'assets/logo.png')), 'android-version contiene assets/logo.png');
 
+  // Test 16: Verificación de Soporte de Backup y PDFs en Android Nativo
+  console.log('\n📱 Test 16: Verificación de Puente Nativo Android (saveTextFile, onShowFileChooser)...');
+  const webAppInterfaceSrc = fs.readFileSync(path.join(__dirname, 'android-version/app/src/main/java/com/whiteboard/digital/WebAppInterface.java'), 'utf8');
+  assert(webAppInterfaceSrc.includes('public boolean saveTextFile'), 'WebAppInterface.java implementa saveTextFile para exportar backups');
+  assert(webAppInterfaceSrc.includes('DIRECTORY_DOWNLOADS'), 'saveTextFile utiliza Environment.DIRECTORY_DOWNLOADS');
+
+  const mainActivitySrc = fs.readFileSync(path.join(__dirname, 'android-version/app/src/main/java/com/whiteboard/digital/MainActivity.java'), 'utf8');
+  assert(mainActivitySrc.includes('onShowFileChooser'), 'MainActivity.java maneja onShowFileChooser para selector de PDFs y JSONs');
+
+  const dbSrc = fs.readFileSync(path.join(__dirname, 'js/db.js'), 'utf8');
+  assert(dbSrc.includes('window.Android.saveTextFile'), 'db.js exportFullBackup se conecta con el puente Android');
+
+  // Test 17: Verificación del Indicador Visual de Borrado en Tiempo Real
+  console.log('\n🧹 Test 17: Verificación del Indicador Visual de Borrado...');
+  assert(canvasEngineSource.includes('initEraserIndicator'), 'CanvasEngine implementa initEraserIndicator');
+  assert(canvasEngineSource.includes('updateEraserIndicator'), 'CanvasEngine implementa updateEraserIndicator');
+  assert(canvasEngineSource.includes('setEraserRadius'), 'CanvasEngine implementa setEraserRadius');
+  assert(toolbarSource.includes('eraserRadiusSlider'), 'Toolbar renderiza slider para calibrar radio de borrado');
+  const stylesSrc = fs.readFileSync(path.join(__dirname, 'styles.css'), 'utf8');
+  assert(stylesSrc.includes('.eraser-cursor-indicator'), 'styles.css incluye estilos para el cursor visual de borrado');
+
+  // Test 18: Verificación de Figuras Geométricas (Círculo, Triángulo, Cuadrado, Rectángulo, Línea, Flecha)
+  console.log('\n🔷 Test 18: Verificación de Figuras Geométricas Completas...');
+  assert(canvasEngineSource.includes("shape.type === 'circle'"), 'CanvasEngine soporta dibujo de círculos');
+  assert(canvasEngineSource.includes("shape.type === 'triangle'"), 'CanvasEngine soporta dibujo de triángulos');
+  assert(canvasEngineSource.includes("shape.type === 'square'"), 'CanvasEngine soporta dibujo de cuadrados');
+  assert(canvasEngineSource.includes("shape.type === 'rectangle'"), 'CanvasEngine soporta dibujo de rectángulos');
+  assert(canvasEngineSource.includes("shape.type === 'line'"), 'CanvasEngine soporta dibujo de líneas');
+  assert(canvasEngineSource.includes("shape.type === 'arrow'"), 'CanvasEngine soporta dibujo de flechas');
+
+  const shapeToolSrc = fs.readFileSync(path.join(__dirname, 'js/editor/shapeTool.js'), 'utf8');
+  assert(shapeToolSrc.includes("this.shapeType === 'square'"), 'ShapeTool calcula proporciones 1:1 para cuadrados');
+  assert(shapeToolSrc.includes("this.shapeType === 'triangle'"), 'ShapeTool soporta previsualización y trazo de triángulos');
+  assert(toolbarSource.includes('renderShapeMenu'), 'Toolbar implementa selector visual con todas las figuras');
+
+  // Test 19: Verificación de Apartado de Herramientas dedicado a Fijar / Desfijar
+  console.log('\n📌 Test 19: Verificación de Menú de Fijar / Desfijar Herramientas...');
+  assert(toolbarSource.includes('pin-tools-list'), 'Toolbar renderiza lista completa para fijar/desfijar');
+  assert(toolbarSource.includes('pinned-counter-badge'), 'Toolbar muestra contador de herramientas fijadas');
+
+  // Test 20: Autocompletado HTR desactivado por defecto
+  console.log('\n🤖 Test 20: Verificación de HTR desactivado por defecto...');
+  const htrSrc = fs.readFileSync(path.join(__dirname, 'js/editor/HandwritingPredictor.js'), 'utf8');
+  assert(htrSrc.includes('this.enabled = options.enabled !== undefined ? options.enabled : false'), 'HandwritingPredictor tiene enabled: false por defecto');
+
+  // Test 21: Soporte de Múltiples Instancias de la Misma Herramienta en el Dock
+  console.log('\n✒️ Test 21: Verificación de Múltiples Instancias de Útiles (Varios Subrayadores/Bolígrafos)...');
+  assert(toolbarSource.includes('addNewToolInstance(baseToolType)'), 'Toolbar implementa addNewToolInstance');
+  assert(toolbarSource.includes('removeToolInstance(slotId)'), 'Toolbar implementa removeToolInstance');
+  assert(toolbarSource.includes('btnDuplicateThisTool'), 'Toolbar incluye botón para duplicar / añadir otro útil');
+  assert(toolbarSource.includes('pin-instance-chip'), 'Toolbar y styles.css incluyen chips para gestionar instancias');
+  assert(stylesSrc.includes('.pin-instance-chip'), 'styles.css incluye estilos para los chips de instancias de herramientas');
+
   console.log('\n====================================================');
   console.log(`🎉 RESULTADOS: ${passedTests}/${totalTests} PRUEBAS SUPERADAS CON ÉXITO (100%)`);
   console.log('====================================================\n');

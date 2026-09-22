@@ -79,16 +79,48 @@ public class MainActivity extends AppCompatActivity {
             public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
                 if (mFilePathCallback != null) {
                     mFilePathCallback.onReceiveValue(null);
+                    mFilePathCallback = null;
                 }
                 mFilePathCallback = filePathCallback;
 
-                Intent intent = fileChooserParams.createIntent();
+                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+
+                String[] acceptTypes = fileChooserParams != null ? fileChooserParams.getAcceptTypes() : null;
+                if (acceptTypes != null && acceptTypes.length > 0 && !acceptTypes[0].isEmpty()) {
+                    boolean hasPdf = false;
+                    boolean hasJson = false;
+                    for (String type : acceptTypes) {
+                        if (type.contains("pdf") || type.equals(".pdf")) hasPdf = true;
+                        if (type.contains("json") || type.equals(".json")) hasJson = true;
+                    }
+                    if (hasPdf && !hasJson) {
+                        intent.setType("application/pdf");
+                    } else if (hasJson && !hasPdf) {
+                        intent.setType("*/*");
+                        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"application/json", "text/plain", "application/octet-stream", "*/*"});
+                    } else {
+                        intent.setType("*/*");
+                        intent.putExtra(Intent.EXTRA_MIME_TYPES, acceptTypes);
+                    }
+                } else {
+                    intent.setType("*/*");
+                }
+
                 try {
-                    startActivityForResult(intent, FILE_CHOOSER_REQUEST_CODE);
+                    startActivityForResult(Intent.createChooser(intent, "Seleccionar archivo"), FILE_CHOOSER_REQUEST_CODE);
                 } catch (ActivityNotFoundException e) {
-                    mFilePathCallback = null;
-                    Toast.makeText(MainActivity.this, "No se encontró explorador de archivos", Toast.LENGTH_SHORT).show();
-                    return false;
+                    try {
+                        Intent fallbackIntent = fileChooserParams != null ? fileChooserParams.createIntent() : intent;
+                        startActivityForResult(fallbackIntent, FILE_CHOOSER_REQUEST_CODE);
+                    } catch (Exception ex) {
+                        if (mFilePathCallback != null) {
+                            mFilePathCallback.onReceiveValue(null);
+                            mFilePathCallback = null;
+                        }
+                        Toast.makeText(MainActivity.this, "No se encontró explorador de archivos", Toast.LENGTH_SHORT).show();
+                        return false;
+                    }
                 }
                 return true;
             }
@@ -127,6 +159,8 @@ public class MainActivity extends AppCompatActivity {
                     String dataString = data.getDataString();
                     if (dataString != null) {
                         results = new Uri[]{Uri.parse(dataString)};
+                    } else if (data.getData() != null) {
+                        results = new Uri[]{data.getData()};
                     } else if (data.getClipData() != null) {
                         final int count = data.getClipData().getItemCount();
                         results = new Uri[count];

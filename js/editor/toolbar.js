@@ -11,7 +11,7 @@ const TOOL_DEFINITIONS = {
   laser: { id: 'laser', btnId: 'btnToolLaser', name: 'Puntero Láser', icon: Icons.laser, hasColorDot: false, hasSettings: true },
   ruler: { id: 'ruler', btnId: 'btnToolRuler', name: 'Regla', icon: Icons.ruler, hasColorDot: false, hasSettings: true },
   hand: { id: 'hand', btnId: 'btnToolHand', name: 'Mano', icon: Icons.hand, hasColorDot: false, hasSettings: false },
-  shape: { id: 'shape', btnId: 'btnToolShape', name: 'Figuras', icon: Icons.shape, hasColorDot: false, hasSettings: false },
+  shape: { id: 'shape', btnId: 'btnToolShape', name: 'Figuras', icon: Icons.shape, hasColorDot: false, hasSettings: true },
   text: { id: 'text', btnId: 'btnToolText', name: 'Texto', icon: Icons.text, hasColorDot: false, hasSettings: false },
   lasso: { id: 'lasso', btnId: 'btnToolLasso', name: 'Lazo', icon: Icons.lasso, hasColorDot: false, hasSettings: false }
 };
@@ -75,11 +75,7 @@ export class Toolbar {
       const saved = localStorage.getItem('whiteboard_tool_settings');
       if (saved) {
         const parsed = JSON.parse(saved);
-        Object.keys(DEFAULT_TOOL_SETTINGS).forEach(k => {
-          if (parsed[k]) {
-            this.toolSettings[k] = { ...DEFAULT_TOOL_SETTINGS[k], ...parsed[k] };
-          }
-        });
+        this.toolSettings = { ...this.toolSettings, ...parsed };
       }
     } catch (e) {
       console.warn('Error al cargar configuración de herramientas desde localStorage:', e);
@@ -94,25 +90,62 @@ export class Toolbar {
     }
   }
 
-  getToolColor(toolId) {
-    return this.toolSettings[toolId]?.color || (toolId === 'highlighter' ? '#facc15' : this.engine.strokeColor);
+  getToolDefinition(slotId) {
+    const base = slotId ? slotId.split('_')[0] : 'pen';
+    const def = TOOL_DEFINITIONS[base] || { id: base, btnId: `btnTool_${base}`, name: base, icon: Icons.pen, hasColorDot: false, hasSettings: true };
+    const btnId = slotId === base ? def.btnId : `btnTool_${slotId}`;
+    return {
+      ...def,
+      id: slotId,
+      baseType: base,
+      btnId: btnId
+    };
   }
 
-  getToolWidth(toolId) {
-    return this.toolSettings[toolId]?.width || this.engine.strokeWidth;
+  getToolSettings(slotId) {
+    if (!slotId) slotId = 'pen';
+    const base = slotId.split('_')[0];
+    if (!this.toolSettings[slotId]) {
+      const baseDefault = DEFAULT_TOOL_SETTINGS[base] || { color: '#1e293b', width: 3, opacity: 1, stabilization: 0.5, concentration: 1.0 };
+      let defaultColor = baseDefault.color;
+      if (slotId !== base) {
+        const palette = PaletteManager.getPalette();
+        const instanceNum = parseInt(slotId.split('_')[1] || '2', 10);
+        if (base === 'highlighter') {
+          const highlighterColors = ['#facc15', '#10b981', '#ec4899', '#3b82f6', '#f97316', '#a855f7'];
+          defaultColor = highlighterColors[(instanceNum - 1) % highlighterColors.length] || palette[instanceNum % palette.length];
+        } else {
+          const penColors = ['#1e293b', '#2563eb', '#dc2626', '#16a34a', '#9333ea', '#ea580c'];
+          defaultColor = penColors[(instanceNum - 1) % penColors.length] || palette[instanceNum % palette.length];
+        }
+      }
+      this.toolSettings[slotId] = {
+        ...baseDefault,
+        color: defaultColor
+      };
+    }
+    return this.toolSettings[slotId];
+  }
+
+  getToolColor(slotId) {
+    return this.getToolSettings(slotId)?.color || this.engine.strokeColor;
+  }
+
+  getToolWidth(slotId) {
+    return this.getToolSettings(slotId)?.width || this.engine.strokeWidth;
   }
 
   init() {
     this.container = document.getElementById('editorToolbar');
 
     // Inicializar propiedades del motor con la herramienta inicial
-    if (this.toolSettings[this.activeTool]) {
-      const s = this.toolSettings[this.activeTool];
-      this.engine.setColor(s.color);
-      this.engine.setWidth(s.width);
-      this.engine.setOpacity(s.opacity);
-      if (s.stabilization !== undefined) this.engine.setStabilization(s.stabilization);
-      if (s.concentration !== undefined) this.engine.setConcentration(s.concentration);
+    const initialSettings = this.getToolSettings(this.activeTool);
+    if (initialSettings) {
+      this.engine.setColor(initialSettings.color);
+      this.engine.setWidth(initialSettings.width);
+      this.engine.setOpacity(initialSettings.opacity);
+      if (initialSettings.stabilization !== undefined) this.engine.setStabilization(initialSettings.stabilization);
+      if (initialSettings.concentration !== undefined) this.engine.setConcentration(initialSettings.concentration);
     }
 
     this.renderToolbar();
@@ -238,13 +271,14 @@ export class Toolbar {
 
   renderDockToolsHtml() {
     return this.dockTools.map(tId => {
-      const def = TOOL_DEFINITIONS[tId] || { id: tId, btnId: `btnTool_${tId}`, name: tId, icon: Icons.pen, hasColorDot: false };
+      const def = this.getToolDefinition(tId);
       const isActive = this.activeTool === tId;
       const isPinned = this.pinnedTools.has(tId);
       const col = this.getToolColor(tId);
+      const instanceNum = tId.includes('_') ? tId.split('_')[1] : null;
 
       return `
-        <button class="dock-btn-compact ${isActive ? 'active' : ''}" id="${def.btnId}" data-tool="${tId}" title="${def.name} (Clic: activar | 2º clic: ajustes)">
+        <button class="dock-btn-compact ${isActive ? 'active' : ''}" id="${def.btnId}" data-tool="${tId}" title="${def.name}${instanceNum ? ' #' + instanceNum : ''} (Clic: activar | 2º clic: ajustes)">
           <span class="tool-icon-wrapper">${def.icon}</span>
           ${def.hasColorDot ? `<span class="tool-color-dot" id="dot_${tId}" style="background-color: ${col};"></span>` : ''}
           ${isPinned ? `<span class="pin-badge" title="Fijado en barra"></span>` : ''}
@@ -267,13 +301,19 @@ export class Toolbar {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed.dockTools) && parsed.dockTools.length > 0) {
-          const validDock = parsed.dockTools.filter(id => TOOL_DEFINITIONS[id]);
+          const validDock = parsed.dockTools.filter(id => {
+            const base = id.split('_')[0];
+            return TOOL_DEFINITIONS[base];
+          });
           if (validDock.length > 0) {
             this.dockTools = validDock.slice(0, this.MAX_DOCK_TOOLS);
           }
         }
         if (Array.isArray(parsed.pinnedTools)) {
-          this.pinnedTools = new Set(parsed.pinnedTools.filter(id => TOOL_DEFINITIONS[id]));
+          this.pinnedTools = new Set(parsed.pinnedTools.filter(id => {
+            const base = id.split('_')[0];
+            return TOOL_DEFINITIONS[base];
+          }));
         }
       }
     } catch (e) {
@@ -284,7 +324,7 @@ export class Toolbar {
       this.dockTools = ['pen', 'highlighter', 'eraser'];
     }
     if (!this.pinnedTools || this.pinnedTools.size === 0) {
-      this.pinnedTools = new Set(['pen', 'highlighter', 'eraser']);
+      this.pinnedTools = new Set(this.dockTools);
     }
   }
 
@@ -299,15 +339,69 @@ export class Toolbar {
     }
   }
 
+  addNewToolInstance(baseToolType) {
+    if (!TOOL_DEFINITIONS[baseToolType]) return null;
+
+    if (this.dockTools.length >= this.MAX_DOCK_TOOLS) {
+      const evictIdx = this.dockTools.findIndex(id => !this.pinnedTools.has(id));
+      if (evictIdx !== -1) {
+        this.dockTools.splice(evictIdx, 1);
+      } else {
+        alert(`Has alcanzado el límite máximo de ${this.MAX_DOCK_TOOLS} herramientas fijadas en la barra.`);
+        return null;
+      }
+    }
+
+    let count = 1;
+    let newId = baseToolType;
+    while (this.dockTools.includes(newId)) {
+      count++;
+      newId = `${baseToolType}_${count}`;
+    }
+
+    this.getToolSettings(newId);
+    this.dockTools.push(newId);
+    this.pinnedTools.add(newId);
+    this.saveDockConfig();
+    this.saveToolSettings();
+    this.renderDockTools();
+    this.selectTool(newId);
+    return newId;
+  }
+
+  removeToolInstance(slotId) {
+    const idx = this.dockTools.indexOf(slotId);
+    if (idx !== -1) {
+      this.dockTools.splice(idx, 1);
+      this.pinnedTools.delete(slotId);
+
+      if (this.dockTools.length === 0) {
+        this.dockTools.push('pen');
+        this.pinnedTools.add('pen');
+      }
+
+      this.saveDockConfig();
+      this.renderDockTools();
+
+      if (this.activeTool === slotId) {
+        this.selectTool(this.dockTools[0]);
+      }
+    }
+  }
+
   addOrActivateTool(toolId) {
+    const existing = this.dockTools.find(id => id === toolId || id.startsWith(toolId + '_'));
+    if (existing) {
+      this.selectTool(existing);
+      return;
+    }
+
     if (!this.dockTools.includes(toolId)) {
       if (this.dockTools.length >= this.MAX_DOCK_TOOLS) {
-        // Encontrar la herramienta no fijada más antigua (FIFO)
         const evictIdx = this.dockTools.findIndex(id => !this.pinnedTools.has(id));
         if (evictIdx !== -1) {
           this.dockTools.splice(evictIdx, 1);
         } else {
-          // Si todas estuvieran fijadas, desalojar la última
           this.dockTools.pop();
         }
       }
@@ -353,21 +447,20 @@ export class Toolbar {
   }
 
   bindDockToolEvents() {
-    this.dockTools.forEach(toolId => {
-      const def = TOOL_DEFINITIONS[toolId];
-      if (!def) return;
-      const btn = this.container.querySelector(`#${def.btnId}`);
+    this.dockTools.forEach(slotId => {
+      const def = this.getToolDefinition(slotId);
+      const btn = this.container.querySelector(`#${def.btnId}`) || this.container.querySelector(`[data-tool="${slotId}"]`);
       if (!btn) return;
 
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (this.activeTool === toolId) {
+        if (this.activeTool === slotId) {
           if (def.hasSettings) {
-            this.toggleMenu(toolId, btn);
+            this.toggleMenu(slotId, btn);
           }
         } else {
           this.closeMenu();
-          this.selectTool(toolId);
+          this.selectTool(slotId);
         }
       });
     });
@@ -578,6 +671,9 @@ export class Toolbar {
       case 'eraser':
         this.renderEraserMenu();
         break;
+      case 'shape':
+        this.renderShapeMenu();
+        break;
       case 'auxiliary':
         this.renderAuxiliaryMenu();
         break;
@@ -605,37 +701,36 @@ export class Toolbar {
 
   // Popover compacto para ajustes del trazo activo (Sin scroll)
   renderStrokeSettingsMenu(toolKey) {
+    const baseType = toolKey.split('_')[0];
     const titles = {
-      pen: 'Ajustes del Bolígrafo',
-      pencil: 'Ajustes del Lápiz',
-      marker: 'Ajustes del Rotulador',
-      highlighter: 'Ajustes del Subrayador'
+      pen: 'Bolígrafo',
+      pencil: 'Lápiz',
+      marker: 'Rotulador',
+      highlighter: 'Subrayador'
     };
 
+    const instanceSuffix = toolKey.includes('_') ? ` #${toolKey.split('_')[1]}` : '';
+    const menuTitle = `Ajustes del ${titles[baseType] || baseType}${instanceSuffix}`;
+
     const palette = PaletteManager.getPalette();
-    const curSettings = this.toolSettings[toolKey] || {
-      color: this.engine.strokeColor,
-      width: this.engine.strokeWidth,
-      stabilization: 0.5,
-      concentration: 1.0
-    };
+    const curSettings = this.getToolSettings(toolKey);
     const currentColor = curSettings.color;
     const currentWidth = curSettings.width;
     const currentStabilization = curSettings.stabilization !== undefined ? curSettings.stabilization : 0.5;
     const currentStabilizationPercent = Math.round(currentStabilization * 100);
     const currentConcentration = curSettings.concentration !== undefined ? curSettings.concentration : 1.0;
     const currentConcentrationPercent = Math.round(currentConcentration * 100);
-    const isHighlighter = toolKey === 'highlighter';
+    const isHighlighter = baseType === 'highlighter';
     const isPinned = this.pinnedTools.has(toolKey);
 
-    const baseOp = isHighlighter ? 0.45 : (toolKey === 'pencil' ? 0.85 : 1.0);
+    const baseOp = isHighlighter ? 0.45 : (baseType === 'pencil' ? 0.85 : 1.0);
     const previewOpacity = Math.max(0.1, baseOp * currentConcentration);
 
     this.popover.innerHTML = `
       <div class="popover-arrow"></div>
       <div class="mini-menu-title-row">
-        <span class="mini-menu-title">${titles[toolKey] || 'Ajustes de Trazo'}</span>
-        <button type="button" class="popover-title-pin-btn ${isPinned ? 'pinned' : ''}" data-pin-tool="${toolKey}" title="${isPinned ? 'Desfijar de la barra' : 'Fijar en la barra (máx 6)'}">
+        <span class="mini-menu-title">${menuTitle}</span>
+        <button type="button" class="popover-title-pin-btn ${isPinned ? 'pinned' : ''}" data-pin-tool="${toolKey}" title="${isPinned ? 'Desfijar de la barra' : 'Fijar en la barra'}">
           ${isPinned ? Icons.pinFilled : Icons.pin}
           <span>${isPinned ? 'Fijado' : 'Fijar'}</span>
         </button>
@@ -686,19 +781,35 @@ export class Toolbar {
         <span class="value-text" id="penConcentrationVal">${currentConcentrationPercent}%</span>
       </div>
       <input type="range" class="popover-slider" id="penConcentrationSlider" min="10" max="100" value="${currentConcentrationPercent}" />
+
+      <div class="popover-divider"></div>
+
+      <!-- Acciones de Instancia (+ Duplicar / Añadir otro / Eliminar) -->
+      <div style="display: flex; gap: 8px; justify-content: space-between; align-items: center;">
+        <button type="button" class="mini-action-chip-btn" id="btnDuplicateThisTool" title="Añadir otro ${titles[baseType] || baseType} a la barra">
+          ${Icons.plus}
+          <span>Añadir otro</span>
+        </button>
+        ${this.dockTools.length > 1 ? `
+          <button type="button" class="mini-action-chip-btn danger" id="btnRemoveThisTool" title="Quitar de la barra">
+            ${Icons.trash}
+            <span>Quitar</span>
+          </button>
+        ` : ''}
+      </div>
     `;
 
     const updatePreviewCircle = () => {
       const circle = this.popover.querySelector('#penPreviewCircle');
       if (circle) {
-        const curS = this.toolSettings[toolKey] || {};
+        const curS = this.getToolSettings(toolKey) || {};
         const col = curS.color || this.engine.strokeColor;
         const wid = curS.width || this.engine.strokeWidth;
         const conc = curS.concentration !== undefined ? curS.concentration : 1.0;
         circle.style.width = `${Math.min(wid, 24)}px`;
         circle.style.height = `${Math.min(wid, 24)}px`;
         circle.style.backgroundColor = col;
-        const op = isHighlighter ? 0.45 : (toolKey === 'pencil' ? 0.85 : 1.0);
+        const op = isHighlighter ? 0.45 : (baseType === 'pencil' ? 0.85 : 1.0);
         circle.style.opacity = Math.max(0.1, op * conc);
       }
     };
@@ -709,15 +820,30 @@ export class Toolbar {
       this.togglePinTool(toolKey);
     });
 
+    // Añadir otro útil del mismo tipo
+    this.popover.querySelector('#btnDuplicateThisTool')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const newId = this.addNewToolInstance(baseType);
+      if (newId) {
+        this.renderStrokeSettingsMenu(newId);
+      }
+    });
+
+    // Quitar este útil
+    this.popover.querySelector('#btnRemoveThisTool')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.removeToolInstance(toolKey);
+      this.closeMenu();
+    });
+
     // Paleta de 10 colores
     this.popover.querySelectorAll('.color-swatch').forEach(sw => {
       sw.addEventListener('click', (e) => {
         e.stopPropagation();
         const color = sw.dataset.color;
-        if (this.toolSettings[toolKey]) {
-          this.toolSettings[toolKey].color = color;
-          this.saveToolSettings();
-        }
+        const s = this.getToolSettings(toolKey);
+        s.color = color;
+        this.saveToolSettings();
         if (this.activeTool === toolKey) {
           this.engine.setColor(color);
         }
@@ -726,16 +852,15 @@ export class Toolbar {
       });
     });
 
-    // Selector de color personalizado nativo (guarda automáticamente en la paleta de 10)
+    // Selector de color personalizado nativo
     const picker = this.popover.querySelector('#popoverColorPicker');
     if (picker) {
       picker.addEventListener('input', (e) => {
         const color = e.target.value;
         PaletteManager.saveCustomColor(color);
-        if (this.toolSettings[toolKey]) {
-          this.toolSettings[toolKey].color = color;
-          this.saveToolSettings();
-        }
+        const s = this.getToolSettings(toolKey);
+        s.color = color;
+        this.saveToolSettings();
         if (this.activeTool === toolKey) {
           this.engine.setColor(color);
         }
@@ -749,10 +874,9 @@ export class Toolbar {
     if (strokeSlider) {
       strokeSlider.addEventListener('input', (e) => {
         const w = Number(e.target.value);
-        if (this.toolSettings[toolKey]) {
-          this.toolSettings[toolKey].width = w;
-          this.saveToolSettings();
-        }
+        const s = this.getToolSettings(toolKey);
+        s.width = w;
+        this.saveToolSettings();
         if (this.activeTool === toolKey) {
           this.engine.setWidth(w);
           const label = this.container.querySelector('#strokeWidthLabel');
@@ -770,10 +894,9 @@ export class Toolbar {
     this.popover.querySelectorAll('#widthPresetsGroup .stroke-preset-chip').forEach(chip => {
       chip.addEventListener('click', () => {
         const w = Number(chip.dataset.width);
-        if (this.toolSettings[toolKey]) {
-          this.toolSettings[toolKey].width = w;
-          this.saveToolSettings();
-        }
+        const s = this.getToolSettings(toolKey);
+        s.width = w;
+        this.saveToolSettings();
         if (this.activeTool === toolKey) {
           this.engine.setWidth(w);
           const label = this.container.querySelector('#strokeWidthLabel');
@@ -794,10 +917,9 @@ export class Toolbar {
     if (stabSlider) {
       stabSlider.addEventListener('input', (e) => {
         const sVal = Number(e.target.value);
-        if (this.toolSettings[toolKey]) {
-          this.toolSettings[toolKey].stabilization = sVal / 100;
-          this.saveToolSettings();
-        }
+        const s = this.getToolSettings(toolKey);
+        s.stabilization = sVal / 100;
+        this.saveToolSettings();
         if (this.activeTool === toolKey) {
           this.engine.setStabilization(sVal / 100);
         }
@@ -811,10 +933,9 @@ export class Toolbar {
     if (concSlider) {
       concSlider.addEventListener('input', (e) => {
         const cVal = Number(e.target.value);
-        if (this.toolSettings[toolKey]) {
-          this.toolSettings[toolKey].concentration = cVal / 100;
-          this.saveToolSettings();
-        }
+        const s = this.getToolSettings(toolKey);
+        s.concentration = cVal / 100;
+        this.saveToolSettings();
         if (this.activeTool === toolKey) {
           this.engine.setConcentration(cVal / 100);
         }
@@ -825,183 +946,106 @@ export class Toolbar {
     }
   }
 
-  // Popover de Herramientas Auxiliares (🛠️ ▾) con opción de fijar (pin)
+  // Popover de Fijar / Desfijar Herramientas (🛠️ ▾) con soporte de múltiples instancias
   renderAuxiliaryMenu() {
-    const isRulerActive = this.ruler ? this.ruler.active : false;
-    const isLaserActive = this.activeTool === 'laser';
-    const isPenActive = this.activeTool === 'pen';
-    const isHighlighterActive = this.activeTool === 'highlighter';
-    const isEraserActive = this.activeTool === 'eraser';
-    const isPencilActive = this.activeTool === 'pencil';
-    const isMarkerActive = this.activeTool === 'marker';
-    const isHandActive = this.activeTool === 'hand';
-    const isShapeActive = this.activeTool === 'shape';
-    const isTextActive = this.activeTool === 'text';
-    const isLassoActive = this.activeTool === 'lasso';
+    const allTools = [
+      { id: 'pen', name: 'Bolígrafo', icon: Icons.pen },
+      { id: 'highlighter', name: 'Subrayador', icon: Icons.highlighter },
+      { id: 'eraser', name: 'Borrador', icon: Icons.eraser },
+      { id: 'pencil', name: 'Lápiz', icon: Icons.pencil },
+      { id: 'marker', name: 'Rotulador', icon: Icons.marker },
+      { id: 'laser', name: 'Puntero Láser', icon: Icons.laser },
+      { id: 'ruler', name: 'Regla', icon: Icons.ruler },
+      { id: 'hand', name: 'Mano (Mover)', icon: Icons.hand },
+      { id: 'lasso', name: 'Lazo de Selección', icon: Icons.lasso },
+      { id: 'shape', name: 'Figuras Geométricas', icon: Icons.shape },
+      { id: 'text', name: 'Texto', icon: Icons.text }
+    ];
 
-    const renderPinBtn = (toolId) => {
-      const isPinned = this.pinnedTools.has(toolId);
-      return `
-        <button type="button" class="aux-tool-pin-btn ${isPinned ? 'pinned' : ''}" data-pin-tool="${toolId}" title="${isPinned ? 'Desfijar de la barra' : 'Fijar en la barra (máx 6)'}">
-          ${isPinned ? Icons.pinFilled : Icons.pin}
-        </button>
-      `;
-    };
+    const pinnedCount = this.dockTools.length;
 
     this.popover.innerHTML = `
       <div class="popover-arrow"></div>
-      <div class="mini-menu-title">Herramientas y Multimedia</div>
-
-      <!-- Sección 1: Dibujo & Trazado -->
-      <div class="aux-section-heading">Dibujo & Trazado</div>
-      <div class="aux-tools-grid">
-        <div class="aux-tool-chip ${isPenActive ? 'active' : ''}" data-aux-tool="pen" title="Bolígrafo (P)">
-          ${renderPinBtn('pen')}
-          <span class="aux-icon">${Icons.pen}</span>
-          <span class="aux-label">Bolígrafo</span>
-        </div>
-        <div class="aux-tool-chip ${isHighlighterActive ? 'active' : ''}" data-aux-tool="highlighter" title="Subrayador (H)">
-          ${renderPinBtn('highlighter')}
-          <span class="aux-icon">${Icons.highlighter}</span>
-          <span class="aux-label">Subrayador</span>
-        </div>
-        <div class="aux-tool-chip ${isEraserActive ? 'active' : ''}" data-aux-tool="eraser" title="Borrador (E)">
-          ${renderPinBtn('eraser')}
-          <span class="aux-icon">${Icons.eraser}</span>
-          <span class="aux-label">Borrador</span>
-        </div>
-        <div class="aux-tool-chip ${isPencilActive ? 'active' : ''}" data-aux-tool="pencil" title="Lápiz (B)">
-          ${renderPinBtn('pencil')}
-          <span class="aux-icon">${Icons.pencil}</span>
-          <span class="aux-label">Lápiz</span>
-        </div>
-        <div class="aux-tool-chip ${isMarkerActive ? 'active' : ''}" data-aux-tool="marker" title="Rotulador">
-          ${renderPinBtn('marker')}
-          <span class="aux-icon">${Icons.marker}</span>
-          <span class="aux-label">Rotulador</span>
-        </div>
+      <div class="mini-menu-title-row">
+        <span class="mini-menu-title">Fijar / Desfijar Herramientas</span>
+        <span class="pinned-counter-badge">${pinnedCount}/6 fijadas</span>
       </div>
+      <p style="font-size:0.78rem; color:var(--text-secondary); margin:0 0 10px 0; line-height:1.35;">
+        Añade múltiples útiles (ej: varios subrayadores o bolígrafos) con colores y grosores personalizados a la barra.
+      </p>
 
-      <!-- Sección 2: Precisión & Navegación -->
-      <div class="aux-section-heading" style="margin-top: 10px;">Precisión & Navegación</div>
-      <div class="aux-tools-grid">
-        <div class="aux-tool-chip ${isLaserActive ? 'active' : ''}" data-aux-tool="laser" title="Puntero Láser (L)">
-          ${renderPinBtn('laser')}
-          <span class="aux-icon">${Icons.laser}</span>
-          <span class="aux-label">Láser</span>
-        </div>
-        <div class="aux-tool-chip ${isRulerActive ? 'active' : ''}" data-aux-tool="ruler" title="Regla interactiva (R)">
-          ${renderPinBtn('ruler')}
-          <span class="aux-icon">${Icons.ruler}</span>
-          <span class="aux-label">Regla</span>
-        </div>
-        <div class="aux-tool-chip ${isHandActive ? 'active' : ''}" data-aux-tool="hand" title="Mover / Desplazar lienzo (M)">
-          ${renderPinBtn('hand')}
-          <span class="aux-icon">${Icons.hand}</span>
-          <span class="aux-label">Mano</span>
-        </div>
-        <div class="aux-tool-chip ${isLassoActive ? 'active' : ''}" data-aux-tool="lasso" title="Lazo de Selección">
-          ${renderPinBtn('lasso')}
-          <span class="aux-icon">${Icons.lasso}</span>
-          <span class="aux-label">Lazo</span>
-        </div>
-      </div>
-
-      <!-- Sección 3: Inserción & Formas -->
-      <div class="aux-section-heading" style="margin-top: 10px;">Inserción & Formas</div>
-      <div class="aux-tools-grid">
-        <div class="aux-tool-chip ${isShapeActive ? 'active' : ''}" data-aux-tool="shape" title="Insertar figuras geométricas">
-          ${renderPinBtn('shape')}
-          <span class="aux-icon">${Icons.shape}</span>
-          <span class="aux-label">Figuras</span>
-        </div>
-        <div class="aux-tool-chip ${isTextActive ? 'active' : ''}" data-aux-tool="text" title="Insertar texto">
-          ${renderPinBtn('text')}
-          <span class="aux-icon">${Icons.text}</span>
-          <span class="aux-label">Texto</span>
-        </div>
-      </div>
-
-      <!-- Sección 4: Importar Multimedia -->
-      <div class="aux-section-heading" style="margin-top: 10px;">Insertar Multimedia</div>
-      <div class="aux-media-grid">
-        <button type="button" class="aux-media-btn" id="btnAuxImportImage" title="Importar imagen (PNG, JPG, WebP, SVG, GIF)">
-          <span class="aux-media-icon">${Icons.image}</span>
-          <div class="aux-media-text">
-            <strong>Importar Imagen</strong>
-            <small>Fotos y gráficos</small>
-          </div>
-        </button>
-        <button type="button" class="aux-media-btn" id="btnAuxImportVideo" title="Importar video (MP4, WebM, MOV)">
-          <span class="aux-media-icon">${Icons.video}</span>
-          <div class="aux-media-text">
-            <strong>Importar Video</strong>
-            <small>Clips y grabaciones</small>
-          </div>
-        </button>
-      </div>
-
-      <div class="popover-divider"></div>
-
-      <!-- Presets Favoritos -->
-      <div class="mini-actions-list">
-        <button type="button" class="mini-action-btn" id="btnPinnedPresets">
-          <span class="mini-action-icon">${Icons.star}</span>
-          <div class="mini-action-text">
-            <strong>Presets Favoritos (+)</strong>
-            <small>Gestionar y fijar estilos de trazo</small>
-          </div>
-        </button>
+      <div class="pin-tools-list">
+        ${allTools.map(t => {
+          const instances = this.dockTools.filter(id => id === t.id || id.startsWith(t.id + '_'));
+          const canAdd = this.dockTools.length < this.MAX_DOCK_TOOLS;
+          return `
+            <div class="pin-tool-group">
+              <div class="pin-tool-row-header">
+                <span class="pin-tool-icon">${t.icon}</span>
+                <span class="pin-tool-name">${t.name}</span>
+                <button type="button" class="pin-add-instance-btn" data-add-tool="${t.id}" title="Añadir otro ${t.name} a la barra">
+                  ${Icons.plus}
+                  <span>Añadir</span>
+                </button>
+              </div>
+              ${instances.length > 0 ? `
+                <div class="pin-tool-instances-sublist">
+                  ${instances.map(instId => {
+                    const col = this.getToolColor(instId);
+                    const wid = this.getToolWidth(instId);
+                    const label = instId.includes('_') ? `#${instId.split('_')[1]}` : 'Principal';
+                    return `
+                      <div class="pin-instance-chip" data-activate-tool="${instId}" title="Clic: Activar / Ajustar">
+                        <span class="pin-instance-dot" style="background-color: ${col};"></span>
+                        <span class="pin-instance-label">${label} (${wid}px)</span>
+                        <button type="button" class="pin-instance-remove-btn" data-remove-tool="${instId}" title="Quitar de la barra">
+                          ${Icons.close}
+                        </button>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              ` : ''}
+            </div>
+          `;
+        }).join('')}
       </div>
     `;
 
-    // Vincular activación de herramientas auxiliares (las añade a la cola del dock)
-    this.popover.querySelectorAll('[data-aux-tool]').forEach(chip => {
+    this.popover.querySelectorAll('[data-add-tool]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const baseId = btn.dataset.addTool;
+        this.addNewToolInstance(baseId);
+        this.renderAuxiliaryMenu();
+      });
+    });
+
+    this.popover.querySelectorAll('[data-remove-tool]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const slotId = btn.dataset.removeTool;
+        this.removeToolInstance(slotId);
+        this.renderAuxiliaryMenu();
+      });
+    });
+
+    this.popover.querySelectorAll('[data-activate-tool]').forEach(chip => {
       chip.addEventListener('click', (e) => {
-        if (e.target.closest('.aux-tool-pin-btn')) return;
-        const toolId = chip.dataset.auxTool;
-        if (toolId === 'ruler') {
-          if (this.ruler) {
-            this.ruler.toggle();
-            this.updateActiveButton();
-          }
-        } else {
-          this.addOrActivateTool(toolId);
-        }
+        if (e.target.closest('[data-remove-tool]')) return;
+        const slotId = chip.dataset.activateTool;
+        this.selectTool(slotId);
         this.closeMenu();
       });
     });
-
-    // Vincular pines
-    this.popover.querySelectorAll('.aux-tool-pin-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const toolId = btn.dataset.pinTool;
-        this.togglePinTool(toolId);
-      });
-    });
-
-    // Importación multimedia
-    this.popover.querySelector('#btnAuxImportImage')?.addEventListener('click', () => {
-      this.closeMenu();
-      if (this.imageTool) this.imageTool.triggerUpload('image');
-    });
-
-    this.popover.querySelector('#btnAuxImportVideo')?.addEventListener('click', () => {
-      this.closeMenu();
-      if (this.imageTool) this.imageTool.triggerUpload('video');
-    });
-
-    this.popover.querySelector('#btnPinnedPresets')?.addEventListener('click', () => {
-      this.openMenu('presets', this.container.querySelector('#btnMenuAuxiliary'));
-    });
   }
 
-  // Popover Borrador
+  // Popover Borrador con indicador visual y radio ajustable
   renderEraserMenu() {
     const isStroke = this.engine.eraserMode === 'stroke';
     const eraseHighlighter = this.engine.eraseHighlighterOnly;
     const isPinned = this.pinnedTools.has('eraser');
+    const radius = this.engine.eraserRadius || 16;
 
     this.popover.innerHTML = `
       <div class="popover-arrow"></div>
@@ -1016,6 +1060,23 @@ export class Toolbar {
       <div class="eraser-mode-selector">
         <button type="button" class="mode-pill ${isStroke ? 'active' : ''}" id="btnModeStroke">Trazo Completo</button>
         <button type="button" class="mode-pill ${!isStroke ? 'active' : ''}" id="btnModeArea">Borrador de Área</button>
+      </div>
+
+      <div class="popover-divider"></div>
+
+      <!-- Tamaño del Borrador -->
+      <div class="popover-row">
+        <span class="label-text">Radio de Borrado</span>
+        <span class="value-text" id="eraserRadiusVal">${radius}px</span>
+      </div>
+      <div class="slider-with-preview">
+        <input type="range" class="popover-slider" id="eraserRadiusSlider" min="6" max="50" value="${radius}" />
+        <div class="stroke-preview-circle" id="eraserPreviewCircle" style="width: ${Math.min(radius * 2, 28)}px; height: ${Math.min(radius * 2, 28)}px; border: 2px solid #ef4444; background-color: rgba(239, 68, 68, 0.2); border-radius: 50%;"></div>
+      </div>
+      <div class="stroke-presets-chips" id="eraserPresetsGroup">
+        ${[8, 14, 18, 26, 36].map(r => `
+          <button type="button" class="stroke-preset-chip ${r === radius ? 'active' : ''}" data-radius="${r}">${r}px</button>
+        `).join('')}
       </div>
 
       <div class="popover-divider"></div>
@@ -1041,9 +1102,203 @@ export class Toolbar {
       this.renderEraserMenu();
     });
 
+    const slider = this.popover.querySelector('#eraserRadiusSlider');
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const r = Number(e.target.value);
+        this.engine.setEraserRadius(r);
+        const valText = this.popover.querySelector('#eraserRadiusVal');
+        if (valText) valText.textContent = `${r}px`;
+        const preview = this.popover.querySelector('#eraserPreviewCircle');
+        if (preview) {
+          preview.style.width = `${Math.min(r * 2, 28)}px`;
+          preview.style.height = `${Math.min(r * 2, 28)}px`;
+        }
+        this.popover.querySelectorAll('#eraserPresetsGroup .stroke-preset-chip').forEach(chip => {
+          chip.classList.toggle('active', Number(chip.dataset.radius) === r);
+        });
+      });
+    }
+
+    this.popover.querySelectorAll('#eraserPresetsGroup .stroke-preset-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const r = Number(chip.dataset.radius);
+        this.engine.setEraserRadius(r);
+        if (slider) slider.value = r;
+        const valText = this.popover.querySelector('#eraserRadiusVal');
+        if (valText) valText.textContent = `${r}px`;
+        const preview = this.popover.querySelector('#eraserPreviewCircle');
+        if (preview) {
+          preview.style.width = `${Math.min(r * 2, 28)}px`;
+          preview.style.height = `${Math.min(r * 2, 28)}px`;
+        }
+        this.popover.querySelectorAll('#eraserPresetsGroup .stroke-preset-chip').forEach(c => {
+          c.classList.toggle('active', c === chip);
+        });
+      });
+    });
+
     this.popover.querySelector('#chkEraseHighlighter').addEventListener('change', (e) => {
       this.engine.setEraseHighlighterOnly(e.target.checked);
     });
+  }
+
+  // Popover Figuras Geométricas (Círculo, Triángulo, Cuadrado, Rectángulo, Línea, Flecha)
+  renderShapeMenu() {
+    const isPinned = this.pinnedTools.has('shape');
+    const shapeTool = this.shapeTool;
+    const currentType = shapeTool ? shapeTool.shapeType : 'rectangle';
+    const currentColor = shapeTool ? shapeTool.strokeColor : this.engine.strokeColor;
+    const currentWidth = shapeTool ? shapeTool.strokeWidth : this.engine.strokeWidth;
+    const hasFill = shapeTool ? (shapeTool.fillColor && shapeTool.fillColor !== 'transparent') : false;
+    const palette = PaletteManager.getPalette();
+
+    const shapesList = [
+      { id: 'circle', name: 'Círculo', icon: Icons.circle },
+      { id: 'triangle', name: 'Triángulo', icon: Icons.triangle },
+      { id: 'square', name: 'Cuadrado', icon: Icons.square },
+      { id: 'rectangle', name: 'Rectángulo', icon: Icons.rectangle },
+      { id: 'line', name: 'Línea', icon: Icons.line },
+      { id: 'arrow', name: 'Flecha', icon: Icons.arrow }
+    ];
+
+    this.popover.innerHTML = `
+      <div class="popover-arrow"></div>
+      <div class="mini-menu-title-row">
+        <span class="mini-menu-title">Figuras Geométricas</span>
+        <button type="button" class="popover-title-pin-btn ${isPinned ? 'pinned' : ''}" data-pin-tool="shape" title="${isPinned ? 'Desfijar de la barra' : 'Fijar en la barra (máx 6)'}">
+          ${isPinned ? Icons.pinFilled : Icons.pin}
+          <span>${isPinned ? 'Fijado' : 'Fijar'}</span>
+        </button>
+      </div>
+
+      <!-- Selector de Tipo de Figura -->
+      <div class="shapes-selector-grid">
+        ${shapesList.map(s => `
+          <button type="button" class="shape-select-btn ${s.id === currentType ? 'active' : ''}" data-shape-type="${s.id}" title="${s.name}">
+            <span class="shape-btn-icon">${s.icon}</span>
+            <span class="shape-btn-label">${s.name}</span>
+          </button>
+        `).join('')}
+      </div>
+
+      <div class="popover-divider"></div>
+
+      <!-- Color de Trazo -->
+      <div class="popover-row">
+        <span class="label-text">Color de Trazo</span>
+      </div>
+      <div class="color-palette-10">
+        ${palette.map(c => `
+          <button type="button" class="color-swatch ${c.toLowerCase() === currentColor.toLowerCase() ? 'active' : ''}" data-shape-color="${c}" style="background-color: ${c}"></button>
+        `).join('')}
+        <label class="color-picker-label" title="Color personalizado">
+          <input type="color" id="popoverShapeColorPicker" value="${currentColor}" />
+          <span class="picker-icon">${Icons.edit}</span>
+        </label>
+      </div>
+
+      <div class="popover-divider"></div>
+
+      <!-- Grosor -->
+      <div class="popover-row">
+        <span class="label-text">Grosor de Borde</span>
+        <span class="value-text" id="shapeWidthVal">${currentWidth}px</span>
+      </div>
+      <div class="slider-with-preview">
+        <input type="range" class="popover-slider" id="shapeStrokeSlider" min="1" max="20" value="${currentWidth}" />
+        <div class="stroke-preview-circle" id="shapePreviewCircle" style="width: ${Math.min(currentWidth * 2, 24)}px; height: ${Math.min(currentWidth * 2, 24)}px; background-color: ${currentColor};"></div>
+      </div>
+
+      <div class="popover-divider"></div>
+
+      <!-- Relleno -->
+      <label class="popover-checkbox">
+        <input type="checkbox" id="chkShapeFill" ${hasFill ? 'checked' : ''} />
+        <span>Relleno traslúcido</span>
+      </label>
+    `;
+
+    // Botón Pin
+    this.popover.querySelector('.popover-title-pin-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.togglePinTool('shape');
+    });
+
+    // Selección de figura
+    this.popover.querySelectorAll('[data-shape-type]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const type = btn.dataset.shapeType;
+        if (this.shapeTool) {
+          this.shapeTool.setShapeType(type);
+        }
+        this.renderShapeMenu();
+      });
+    });
+
+    // Colores
+    this.popover.querySelectorAll('[data-shape-color]').forEach(sw => {
+      sw.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const color = sw.dataset.shapeColor;
+        if (this.shapeTool) {
+          this.shapeTool.setStrokeColor(color);
+          if (this.shapeTool.fillColor && this.shapeTool.fillColor !== 'transparent') {
+            this.shapeTool.setFillColor(color + '26');
+          }
+        }
+        this.renderShapeMenu();
+      });
+    });
+
+    const picker = this.popover.querySelector('#popoverShapeColorPicker');
+    if (picker) {
+      picker.addEventListener('input', (e) => {
+        const color = e.target.value;
+        PaletteManager.saveCustomColor(color);
+        if (this.shapeTool) {
+          this.shapeTool.setStrokeColor(color);
+          if (this.shapeTool.fillColor && this.shapeTool.fillColor !== 'transparent') {
+            this.shapeTool.setFillColor(color + '26');
+          }
+        }
+        this.renderShapeMenu();
+      });
+    }
+
+    // Grosor
+    const slider = this.popover.querySelector('#shapeStrokeSlider');
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const w = Number(e.target.value);
+        if (this.shapeTool) {
+          this.shapeTool.setStrokeWidth(w);
+        }
+        const valText = this.popover.querySelector('#shapeWidthVal');
+        if (valText) valText.textContent = `${w}px`;
+        const preview = this.popover.querySelector('#shapePreviewCircle');
+        if (preview) {
+          preview.style.width = `${Math.min(w * 2, 24)}px`;
+          preview.style.height = `${Math.min(w * 2, 24)}px`;
+        }
+      });
+    }
+
+    // Relleno
+    const chkFill = this.popover.querySelector('#chkShapeFill');
+    if (chkFill) {
+      chkFill.addEventListener('change', (e) => {
+        if (this.shapeTool) {
+          if (e.target.checked) {
+            const col = this.shapeTool.strokeColor || '#1e293b';
+            this.shapeTool.setFillColor(col + '26');
+          } else {
+            this.shapeTool.setFillColor('transparent');
+          }
+        }
+      });
+    }
   }
 
   // Popover Puntero Láser
@@ -1411,22 +1666,23 @@ export class Toolbar {
     });
   }
 
-  selectTool(tool) {
-    this.activeTool = tool;
-    if (['pen', 'pencil', 'marker', 'highlighter'].includes(tool)) {
-      this.lastPenTool = tool;
+  selectTool(slotId) {
+    this.activeTool = slotId;
+    const base = slotId.split('_')[0];
+    if (['pen', 'pencil', 'marker', 'highlighter'].includes(base)) {
+      this.lastPenTool = slotId;
     }
-    this.engine.setTool(tool);
+    this.engine.setTool(base);
     if (this.selectionTool) {
-      this.selectionTool.setActive(tool === 'lasso');
+      this.selectionTool.setActive(base === 'lasso');
     }
     if (this.laserPointer) {
-      this.laserPointer.setActive(tool === 'laser');
+      this.laserPointer.setActive(base === 'laser');
     }
 
-    // Aplicar configuración de color y trazo propia de esta herramienta
-    if (this.toolSettings[tool]) {
-      const s = this.toolSettings[tool];
+    // Aplicar configuración de color y trazo propia de esta instancia
+    const s = this.getToolSettings(slotId);
+    if (s) {
       this.engine.setColor(s.color);
       this.engine.setWidth(s.width);
       this.engine.setOpacity(s.opacity);
@@ -1441,12 +1697,11 @@ export class Toolbar {
   }
 
   updateActiveButton() {
-    this.dockTools.forEach(toolId => {
-      const def = TOOL_DEFINITIONS[toolId];
-      if (!def) return;
-      const btn = this.container.querySelector(`#${def.btnId}`);
+    this.dockTools.forEach(slotId => {
+      const def = this.getToolDefinition(slotId);
+      const btn = this.container.querySelector(`#${def.btnId}`) || this.container.querySelector(`[data-tool="${slotId}"]`);
       if (btn) {
-        btn.classList.toggle('active', this.activeTool === toolId);
+        btn.classList.toggle('active', this.activeTool === slotId);
       }
     });
 
@@ -1461,10 +1716,10 @@ export class Toolbar {
   }
 
   updatePenDotsColor() {
-    this.dockTools.forEach(toolId => {
-      const dot = this.container.querySelector(`#dot_${toolId}`);
+    this.dockTools.forEach(slotId => {
+      const dot = this.container.querySelector(`#dot_${slotId}`);
       if (dot) {
-        dot.style.backgroundColor = this.getToolColor(toolId);
+        dot.style.backgroundColor = this.getToolColor(slotId);
       }
     });
   }

@@ -3,7 +3,7 @@
 export class HandwritingPredictor {
   constructor(canvasEngine, options = {}) {
     this.engine = canvasEngine;
-    this.enabled = options.enabled !== undefined ? options.enabled : true;
+    this.enabled = options.enabled !== undefined ? options.enabled : false;
     this.DEBOUNCE_DELAY_MS = 700;
     this.WORD_GAP_PX = 55; // Distancia máxima para agrupar trazos en la misma palabra
 

@@ -10,6 +10,12 @@ export class CanvasEngine {
     this.backgroundPattern = this.format === 'a4' ? 'ruled' : 'dots'; // 'blank' | 'ruled' | 'grid' | 'dots'
     this.paperColor = options.paperColor || '#ffffff';
 
+    // Dimensiones lógicas y escalado HiDPI (Retina / Pantallas de alta densidad para máxima nitidez)
+    const isNodeEnv = typeof window === 'undefined';
+    this.dpr = isNodeEnv ? 1 : Math.min(Math.max(window.devicePixelRatio || 1, 2), 3);
+    this.logicalWidth = this.format === 'board' ? 1800 : 794;
+    this.logicalHeight = this.format === 'board' ? 1200 : 1123;
+
     // Colecciones de elementos por capa
     this.strokes = [];
     this.shapes = [];
@@ -51,30 +57,109 @@ export class CanvasEngine {
 
     this._pointerDownHandler = null;
     this._pointerMoveHandler = null;
-    window.addEventListener('pointerup', (e) => this.onPointerUp(e));
-    window.addEventListener('pointercancel', (e) => this.onPointerUp(e));
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pointerup', (e) => this.onPointerUp(e));
+      window.addEventListener('pointercancel', (e) => this.onPointerUp(e));
+    }
 
     this.attachCanvas(this.canvas);
     this.initDimensions();
   }
 
+  setupHiDPI(canvas) {
+    if (!canvas) return;
+    const isNodeEnv = typeof window === 'undefined';
+    this.dpr = isNodeEnv ? 1 : Math.min(Math.max(window.devicePixelRatio || 1, 2), 3);
+    const targetW = Math.round(this.logicalWidth * this.dpr);
+    const targetH = Math.round(this.logicalHeight * this.dpr);
+    if (canvas.width !== targetW || canvas.height !== targetH) {
+      canvas.width = targetW;
+      canvas.height = targetH;
+    }
+    if (canvas.style) {
+      canvas.style.width = `${this.logicalWidth}px`;
+      canvas.style.height = `${this.logicalHeight}px`;
+    }
+  }
+
+  initEraserIndicator() {
+    if (typeof document === 'undefined') return;
+    if (!this.eraserIndicator) {
+      let el = document.getElementById('eraserCursorIndicator');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'eraserCursorIndicator';
+        el.className = 'eraser-cursor-indicator hidden';
+        document.body.appendChild(el);
+      }
+      this.eraserIndicator = el;
+    }
+  }
+
+  updateEraserIndicator(e) {
+    if (typeof document === 'undefined') return;
+    if (!this.eraserIndicator) this.initEraserIndicator();
+    if (!this.eraserIndicator) return;
+
+    if (this.tool !== 'eraser') {
+      this.eraserIndicator.classList.add('hidden');
+      return;
+    }
+
+    if (e && e.clientX !== undefined && e.clientY !== undefined) {
+      const radius = this.eraserRadius || 16;
+      const diameter = radius * 2;
+      this.eraserIndicator.style.width = `${diameter}px`;
+      this.eraserIndicator.style.height = `${diameter}px`;
+      this.eraserIndicator.style.left = `${e.clientX - radius}px`;
+      this.eraserIndicator.style.top = `${e.clientY - radius}px`;
+      this.eraserIndicator.classList.remove('hidden');
+    }
+  }
+
+  hideEraserIndicator() {
+    if (this.eraserIndicator) {
+      this.eraserIndicator.classList.add('hidden');
+    }
+  }
+
   attachCanvas(canvasElement, pageData = null) {
-    if (this.canvas && this._pointerDownHandler) {
+    if (this.canvas && this._pointerDownHandler && typeof this.canvas.removeEventListener === 'function') {
       this.canvas.removeEventListener('pointerdown', this._pointerDownHandler);
       this.canvas.removeEventListener('pointermove', this._pointerMoveHandler);
+      this.canvas.removeEventListener('pointerleave', this._pointerLeaveHandler);
+      this.canvas.removeEventListener('pointerenter', this._pointerEnterHandler);
     }
 
     this.canvas = canvasElement;
-    this.ctx = this.canvas.getContext('2d');
+    if (this.canvas) {
+      this.setupHiDPI(this.canvas);
+      this.ctx = this.canvas.getContext('2d');
 
-    this._pointerDownHandler = (e) => this.onPointerDown(e);
-    this._pointerMoveHandler = (e) => this.onPointerMove(e);
-    this.canvas.addEventListener('pointerdown', this._pointerDownHandler);
-    this.canvas.addEventListener('pointermove', this._pointerMoveHandler);
+      this._pointerDownHandler = (e) => {
+        if (this.tool === 'eraser') this.updateEraserIndicator(e);
+        this.onPointerDown(e);
+      };
+      this._pointerMoveHandler = (e) => {
+        if (this.tool === 'eraser') this.updateEraserIndicator(e);
+        this.onPointerMove(e);
+      };
+      this._pointerLeaveHandler = () => this.hideEraserIndicator();
+      this._pointerEnterHandler = (e) => {
+        if (this.tool === 'eraser') this.updateEraserIndicator(e);
+      };
 
-    if (this.laserPointer) {
-      const host = canvasElement.parentElement || canvasElement;
-      this.laserPointer.setHost(canvasElement, host);
+      if (typeof this.canvas.addEventListener === 'function') {
+        this.canvas.addEventListener('pointerdown', this._pointerDownHandler);
+        this.canvas.addEventListener('pointermove', this._pointerMoveHandler);
+        this.canvas.addEventListener('pointerleave', this._pointerLeaveHandler);
+        this.canvas.addEventListener('pointerenter', this._pointerEnterHandler);
+      }
+    }
+
+    if (this.laserPointer && this.canvas) {
+      const host = this.canvas.parentElement || this.canvas;
+      this.laserPointer.setHost(this.canvas, host);
     }
 
     if (pageData) {
@@ -90,8 +175,9 @@ export class CanvasEngine {
       board: { width: 1800, height: 1200 }
     };
     const { width, height } = FORMATS[this.format] || FORMATS.a4;
-    this.canvas.width = width;
-    this.canvas.height = height;
+    this.logicalWidth = width;
+    this.logicalHeight = height;
+    this.setupHiDPI(this.canvas);
     this.render();
   }
 
@@ -119,9 +205,16 @@ export class CanvasEngine {
 
   setTool(tool) {
     this.tool = tool;
+    if (tool !== 'eraser') {
+      this.hideEraserIndicator();
+    }
     if (this.laserPointer) {
       this.laserPointer.setActive(tool === 'laser');
     }
+  }
+
+  setEraserRadius(radius) {
+    this.eraserRadius = Math.max(4, Number(radius) || 16);
   }
 
   setRuler(ruler) {
@@ -254,8 +347,9 @@ export class CanvasEngine {
   // Conversión precisa de coordenadas de puntero al espacio del canvas
   getCanvasCoordinates(e) {
     const rect = this.canvas.getBoundingClientRect();
-    const scaleX = this.canvas.width / rect.width;
-    const scaleY = this.canvas.height / rect.height;
+    if (!rect.width || !rect.height) return { x: 0, y: 0, pressure: 0.5 };
+    const scaleX = this.logicalWidth / rect.width;
+    const scaleY = this.logicalHeight / rect.height;
     return {
       x: (e.clientX - rect.left) * scaleX,
       y: (e.clientY - rect.top) * scaleY,
@@ -749,7 +843,22 @@ export class CanvasEngine {
   // --- Renderizado Multicapa ---
   render() {
     const ctx = this.ctx;
+    if (!ctx || !this.canvas) return;
+    const isNodeEnv = typeof window === 'undefined';
+    const dpr = isNodeEnv ? 1 : (this.dpr || Math.min(Math.max(window.devicePixelRatio || 1, 2), 3));
+
+    // Resetear matriz de transformación para limpiar el búfer completo nativo
+    if (typeof ctx.setTransform === 'function') {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    ctx.save();
+    if (typeof ctx.scale === 'function' && dpr !== 1) {
+      ctx.scale(dpr, dpr);
+    }
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
     // 1. Capa 0: Fondo de Hoja (Blanco, Rayado, Cuadrícula 5mm, Puntos)
     this.renderBackground(ctx);
@@ -796,19 +905,24 @@ export class CanvasEngine {
       this.drawText(ctx, textObj);
     }
     ctx.restore();
+
+    ctx.restore();
   }
 
   renderBackground(ctx) {
+    const width = this.logicalWidth;
+    const height = this.logicalHeight;
+
     ctx.save();
     if (this.isCover && this.coverData) {
-      CoverDesigner.renderCover(ctx, this.canvas.width, this.canvas.height, this.coverData);
+      CoverDesigner.renderCover(ctx, width, height, this.coverData);
       ctx.restore();
       return;
     }
 
     const bgColor = this.paperColor || '#ffffff';
     ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    ctx.fillRect(0, 0, width, height);
 
     if (this.backgroundImage) {
       if (!this._bgImgElement) {
@@ -818,7 +932,7 @@ export class CanvasEngine {
         this._bgImgElement = img;
       }
       if (this._bgImgElement.complete && this._bgImgElement.naturalWidth > 0) {
-        ctx.drawImage(this._bgImgElement, 0, 0, this.canvas.width, this.canvas.height);
+        ctx.drawImage(this._bgImgElement, 0, 0, width, height);
       }
       ctx.restore();
       return;
@@ -828,16 +942,16 @@ export class CanvasEngine {
     const isDarkPaper = bgColor === '#1e293b' || bgColor === '#0f172a';
 
     if (pattern === 'ruled') {
-      // Pauta rayada horizontal continua
+      // Pauta rayada horizontal continua con offset subpixel nítido
       ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.2)' : '#cbd5e1';
       ctx.lineWidth = 1;
       const lineGap = 32;
       const topMargin = 75;
 
-      for (let y = topMargin; y < this.canvas.height; y += lineGap) {
+      for (let y = topMargin; y < height; y += lineGap) {
         ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(this.canvas.width, y);
+        ctx.moveTo(0, y + 0.5);
+        ctx.lineTo(width, y + 0.5);
         ctx.stroke();
       }
 
@@ -845,8 +959,8 @@ export class CanvasEngine {
       ctx.strokeStyle = isDarkPaper ? 'rgba(248, 113, 113, 0.45)' : '#fca5a5';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(68, 0);
-      ctx.lineTo(68, this.canvas.height);
+      ctx.moveTo(68.5, 0);
+      ctx.lineTo(68.5, height);
       ctx.stroke();
 
     } else if (pattern === 'grid') {
@@ -855,17 +969,17 @@ export class CanvasEngine {
       ctx.lineWidth = 1;
       const gap = 20;
 
-      for (let x = 0; x <= this.canvas.width; x += gap) {
+      for (let x = 0; x <= width; x += gap) {
         ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, this.canvas.height);
+        ctx.moveTo(x + 0.5, 0);
+        ctx.lineTo(x + 0.5, height);
         ctx.stroke();
       }
 
-      for (let y = 0; y <= this.canvas.height; y += gap) {
+      for (let y = 0; y <= height; y += gap) {
         ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(this.canvas.width, y);
+        ctx.moveTo(0, y + 0.5);
+        ctx.lineTo(width, y + 0.5);
         ctx.stroke();
       }
 
@@ -873,8 +987,8 @@ export class CanvasEngine {
       // Trama de puntos (Bullet journal / Pizarra)
       ctx.fillStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.25)' : '#94a3b8';
       const gap = 24;
-      for (let x = gap; x < this.canvas.width; x += gap) {
-        for (let y = gap; y < this.canvas.height; y += gap) {
+      for (let x = gap; x < width; x += gap) {
+        for (let y = gap; y < height; y += gap) {
           ctx.beginPath();
           ctx.arc(x, y, 1.25, 0, Math.PI * 2);
           ctx.fill();
@@ -909,6 +1023,15 @@ export class CanvasEngine {
       if (shape.fillColor && shape.fillColor !== 'transparent') ctx.fill();
       ctx.stroke();
 
+    } else if (shape.type === 'square') {
+      ctx.beginPath();
+      const side = Math.min(Math.abs(shape.width), Math.abs(shape.height));
+      const sW = shape.width >= 0 ? side : -side;
+      const sH = shape.height >= 0 ? side : -side;
+      ctx.rect(shape.x, shape.y, sW, sH);
+      if (shape.fillColor && shape.fillColor !== 'transparent') ctx.fill();
+      ctx.stroke();
+
     } else if (shape.type === 'circle') {
       ctx.beginPath();
       const radiusX = Math.abs(shape.width) / 2;
@@ -916,6 +1039,21 @@ export class CanvasEngine {
       const centerX = shape.x + shape.width / 2;
       const centerY = shape.y + shape.height / 2;
       ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
+      if (shape.fillColor && shape.fillColor !== 'transparent') ctx.fill();
+      ctx.stroke();
+
+    } else if (shape.type === 'triangle') {
+      ctx.beginPath();
+      const topX = shape.x + shape.width / 2;
+      const topY = shape.y;
+      const rightX = shape.x + shape.width;
+      const rightY = shape.y + shape.height;
+      const leftX = shape.x;
+      const leftY = shape.y + shape.height;
+      ctx.moveTo(topX, topY);
+      ctx.lineTo(rightX, rightY);
+      ctx.lineTo(leftX, leftY);
+      ctx.closePath();
       if (shape.fillColor && shape.fillColor !== 'transparent') ctx.fill();
       ctx.stroke();
 
@@ -1061,15 +1199,15 @@ export class CanvasEngine {
     }
 
     if (!hasContent) {
-      return { minX: 0, minY: 0, maxX: this.canvas.width, maxY: this.canvas.height, width: this.canvas.width, height: this.canvas.height };
+      return { minX: 0, minY: 0, maxX: this.logicalWidth, maxY: this.logicalHeight, width: this.logicalWidth, height: this.logicalHeight };
     }
 
     // Margen de cortesía de 40 px
     const padding = 40;
     const cropMinX = Math.max(0, Math.floor(minX - padding));
     const cropMinY = Math.max(0, Math.floor(minY - padding));
-    const cropMaxX = Math.min(this.canvas.width, Math.ceil(maxX + padding));
-    const cropMaxY = Math.min(this.canvas.height, Math.ceil(maxY + padding));
+    const cropMaxX = Math.min(this.logicalWidth, Math.ceil(maxX + padding));
+    const cropMaxY = Math.min(this.logicalHeight, Math.ceil(maxY + padding));
 
     return {
       minX: cropMinX,
@@ -1091,9 +1229,9 @@ export class CanvasEngine {
     tCtx.fillStyle = '#ffffff';
     tCtx.fillRect(0, 0, thumbWidth, thumbHeight);
 
-    const scale = Math.min(thumbWidth / this.canvas.width, thumbHeight / this.canvas.height);
-    const offsetX = (thumbWidth - this.canvas.width * scale) / 2;
-    const offsetY = (thumbHeight - this.canvas.height * scale) / 2;
+    const scale = Math.min(thumbWidth / this.logicalWidth, thumbHeight / this.logicalHeight);
+    const offsetX = (thumbWidth - this.logicalWidth * scale) / 2;
+    const offsetY = (thumbHeight - this.logicalHeight * scale) / 2;
 
     tCtx.save();
     tCtx.translate(offsetX, offsetY);
@@ -1118,19 +1256,46 @@ export class CanvasEngine {
     return thumbCanvas.toDataURL('image/jpeg', 0.85);
   }
 
-  // Renderizar los datos de una página específica en cualquier elemento canvas
+  // Renderizar los datos de una página específica en cualquier elemento canvas con nitidez HiDPI
   renderPageToCanvas(canvasEl, pageData) {
     if (!canvasEl || !pageData) return;
+    const isNotebook = this.format === 'a4' || pageData.isCover || !pageData.format || pageData.format === 'a4';
+    const logicalW = isNotebook ? 794 : 1800;
+    const logicalH = isNotebook ? 1123 : 1200;
+    const isNodeEnv = typeof window === 'undefined';
+    const dpr = isNodeEnv ? 1 : (this.dpr || Math.min(Math.max(window.devicePixelRatio || 1, 2), 3));
+
+    const targetW = Math.round(logicalW * dpr);
+    const targetH = Math.round(logicalH * dpr);
+    if (canvasEl.width !== targetW || canvasEl.height !== targetH) {
+      canvasEl.width = targetW;
+      canvasEl.height = targetH;
+    }
+    if (canvasEl.style) {
+      canvasEl.style.width = `${logicalW}px`;
+      canvasEl.style.height = `${logicalH}px`;
+    }
+
     const ctx = canvasEl.getContext('2d');
+    if (typeof ctx.setTransform === 'function') {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
+    ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+
     ctx.save();
+    if (typeof ctx.scale === 'function' && dpr !== 1) {
+      ctx.scale(dpr, dpr);
+    }
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
     // 1. Fondo (Portada o Patrón de Hoja o Imagen PDF)
     if (pageData.isCover || pageData.template) {
-      CoverDesigner.renderCover(ctx, canvasEl.width, canvasEl.height, pageData.coverData || pageData);
+      CoverDesigner.renderCover(ctx, logicalW, logicalH, pageData.coverData || pageData);
     } else {
       const bgColor = pageData.paperColor || '#ffffff';
       ctx.fillStyle = bgColor;
-      ctx.fillRect(0, 0, canvasEl.width, canvasEl.height);
+      ctx.fillRect(0, 0, logicalW, logicalH);
 
       if (pageData.backgroundImage) {
         let bgImg = pageData._bgImgElement;
@@ -1143,7 +1308,7 @@ export class CanvasEngine {
           pageData._bgImgElement = bgImg;
         }
         if (bgImg.complete && bgImg.naturalWidth > 0) {
-          ctx.drawImage(bgImg, 0, 0, canvasEl.width, canvasEl.height);
+          ctx.drawImage(bgImg, 0, 0, logicalW, logicalH);
         }
       } else {
         const pattern = pageData.backgroundPattern || (this.format === 'a4' ? 'ruled' : 'dots');
@@ -1154,39 +1319,39 @@ export class CanvasEngine {
           ctx.lineWidth = 1;
           const lineGap = 32;
           const topMargin = 75;
-          for (let y = topMargin; y < canvasEl.height; y += lineGap) {
+          for (let y = topMargin; y < logicalH; y += lineGap) {
             ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(canvasEl.width, y);
+            ctx.moveTo(0, y + 0.5);
+            ctx.lineTo(logicalW, y + 0.5);
             ctx.stroke();
           }
           ctx.strokeStyle = isDarkPaper ? 'rgba(248, 113, 113, 0.45)' : '#fca5a5';
           ctx.lineWidth = 1.5;
           ctx.beginPath();
-          ctx.moveTo(68, 0);
-          ctx.lineTo(68, canvasEl.height);
+          ctx.moveTo(68.5, 0);
+          ctx.lineTo(68.5, logicalH);
           ctx.stroke();
         } else if (pattern === 'grid') {
           ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.15)' : '#e2e8f0';
           ctx.lineWidth = 1;
           const gap = 20;
-          for (let x = 0; x <= canvasEl.width; x += gap) {
+          for (let x = 0; x <= logicalW; x += gap) {
             ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, canvasEl.height);
+            ctx.moveTo(x + 0.5, 0);
+            ctx.lineTo(x + 0.5, logicalH);
             ctx.stroke();
           }
-          for (let y = 0; y <= canvasEl.height; y += gap) {
+          for (let y = 0; y <= logicalH; y += gap) {
             ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(canvasEl.width, y);
+            ctx.moveTo(0, y + 0.5);
+            ctx.lineTo(logicalW, y + 0.5);
             ctx.stroke();
           }
         } else if (pattern === 'dots') {
           ctx.fillStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.25)' : '#94a3b8';
           const gap = 24;
-          for (let x = gap; x < canvasEl.width; x += gap) {
-            for (let y = 0; y < canvasEl.height; y += gap) {
+          for (let x = gap; x < logicalW; x += gap) {
+            for (let y = 0; y < logicalH; y += gap) {
               ctx.beginPath();
               ctx.arc(x, y, 1.25, 0, Math.PI * 2);
               ctx.fill();

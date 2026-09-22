@@ -3422,6 +3422,12 @@ canvas#paintCanvas {
   display: block;
   touch-action: none;
   background: transparent;
+  width: 1800px;
+  height: 1200px;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Widget flotante de controles de zoom */
@@ -4785,6 +4791,19 @@ canvas#paintCanvas {
   height: 1123px;
   touch-action: none;
   cursor: crosshair;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.laser-canvas-overlay,
+.selection-overlay-canvas,
+.shape-overlay-canvas {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .notebook-stream-footer {
@@ -6487,4 +6506,399 @@ canvas#paintCanvas {
   font-size: 0.85rem;
   color: var(--text-muted);
   margin: 0;
+}
+
+/* Indicador visual de cursor de borrado en tiempo real */
+.eraser-cursor-indicator {
+  position: fixed;
+  border-radius: 50%;
+  border: 2px solid rgba(239, 68, 68, 0.85);
+  background-color: rgba(239, 68, 68, 0.18);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.6), inset 0 0 4px rgba(239, 68, 68, 0.35);
+  pointer-events: none;
+  z-index: 9999;
+  transition: width 0.08s ease, height 0.08s ease;
+  transform: translate(0, 0);
+}
+
+.eraser-cursor-indicator.hidden {
+  display: none !important;
+}
+
+/* Panel de Fijar / Desfijar Herramientas */
+.pinned-counter-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  background: var(--bg-hover, #f1f5f9);
+  color: var(--accent-primary, #3b82f6);
+  border-radius: 999px;
+  border: 1px solid var(--border-color, #e2e8f0);
+}
+
+.pin-tools-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.pin-tool-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: var(--bg-subtle, #f8fafc);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pin-tool-row:hover {
+  background: var(--bg-hover, #f1f5f9);
+  border-color: var(--border-color, #e2e8f0);
+}
+
+.pin-tool-row.pinned {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.25);
+}
+
+.pin-tool-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  color: var(--text-primary, #1e293b);
+}
+
+.pin-tool-name {
+  flex: 1;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-primary, #1e293b);
+}
+
+.pin-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #cbd5e1);
+  background: #ffffff;
+  color: var(--text-secondary, #64748b);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pin-toggle-btn:hover {
+  border-color: var(--accent-primary, #3b82f6);
+  color: var(--accent-primary, #3b82f6);
+}
+
+.pin-toggle-btn.active {
+  background: var(--accent-primary, #3b82f6);
+  border-color: var(--accent-primary, #3b82f6);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .pin-toggle-btn {
+  background: #1e293b;
+  border-color: #334155;
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .pin-toggle-btn.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .pin-tool-row {
+  background: #141e33;
+}
+
+[data-theme="dark"] .pin-tool-row:hover {
+  background: #1e293b;
+}
+
+[data-theme="dark"] .pin-tool-row.pinned {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+[data-theme="dark"] .pin-tool-icon,
+[data-theme="dark"] .pin-tool-name {
+  color: #f8fafc;
+}
+
+/* Selector de Figuras Geométricas */
+.shapes-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.shape-select-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  background: var(--bg-subtle, #f8fafc);
+  color: var(--text-primary, #1e293b);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.shape-select-btn:hover {
+  background: var(--bg-hover, #f1f5f9);
+  border-color: var(--accent-primary, #3b82f6);
+}
+
+.shape-select-btn.active {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: var(--accent-primary, #3b82f6);
+  color: var(--accent-primary, #3b82f6);
+}
+
+.shape-btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+}
+
+.shape-btn-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+[data-theme="dark"] .shape-select-btn {
+  background: #141e33;
+  border-color: #2e3c54;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .shape-select-btn:hover {
+  background: #1e293b;
+  border-color: #3b82f6;
+}
+
+[data-theme="dark"] .shape-select-btn.active {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: #3b82f6;
+  color: #60a5fa;
+}
+
+/* Multi-Instance Tool Groups & Chips */
+.pin-tool-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  background: var(--bg-subtle, #f8fafc);
+  border: 1px solid var(--border-color, #e2e8f0);
+}
+
+.pin-tool-row-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pin-add-instance-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #cbd5e1);
+  background: #ffffff;
+  color: var(--accent-primary, #3b82f6);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pin-add-instance-btn:hover {
+  background: var(--accent-primary, #3b82f6);
+  border-color: var(--accent-primary, #3b82f6);
+  color: #ffffff;
+}
+
+.pin-add-instance-btn svg {
+  width: 12px;
+  height: 12px;
+}
+
+.pin-tool-instances-sublist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-left: 28px;
+  margin-top: 2px;
+}
+
+.pin-instance-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--bg-hover, #f1f5f9);
+  border: 1px solid var(--border-color, #cbd5e1);
+  font-size: 0.72rem;
+  color: var(--text-primary, #1e293b);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pin-instance-chip:hover {
+  border-color: var(--accent-primary, #3b82f6);
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.pin-instance-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+.pin-instance-label {
+  font-weight: 500;
+}
+
+.pin-instance-remove-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #94a3b8);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.pin-instance-remove-btn:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.pin-instance-remove-btn svg {
+  width: 10px;
+  height: 10px;
+}
+
+.mini-action-chip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  font-size: 0.76rem;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #cbd5e1);
+  background: var(--bg-subtle, #f8fafc);
+  color: var(--text-primary, #1e293b);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mini-action-chip-btn:hover {
+  border-color: var(--accent-primary, #3b82f6);
+  background: rgba(59, 130, 246, 0.08);
+  color: var(--accent-primary, #3b82f6);
+}
+
+.mini-action-chip-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+.mini-action-chip-btn.danger {
+  color: #ef4444;
+}
+
+.mini-action-chip-btn.danger:hover {
+  background: #fee2e2;
+  border-color: #ef4444;
+  color: #b91c1c;
+}
+
+[data-theme="dark"] .pin-tool-group {
+  background: #141e33;
+  border-color: #2e3c54;
+}
+
+[data-theme="dark"] .pin-add-instance-btn {
+  background: #1e293b;
+  border-color: #334155;
+  color: #60a5fa;
+}
+
+[data-theme="dark"] .pin-add-instance-btn:hover {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .pin-instance-chip {
+  background: #1e293b;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .pin-instance-chip:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: #3b82f6;
+}
+
+[data-theme="dark"] .pin-instance-remove-btn {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .pin-instance-remove-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+  color: #fca5a5;
+}
+
+[data-theme="dark"] .mini-action-chip-btn {
+  background: #1e293b;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .mini-action-chip-btn:hover {
+  background: #2e3c54;
+  border-color: #3b82f6;
+  color: #60a5fa;
+}
+
+[data-theme="dark"] .mini-action-chip-btn.danger {
+  color: #f87171;
+}
+
+[data-theme="dark"] .mini-action-chip-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: #ef4444;
+  color: #fca5a5;
 }

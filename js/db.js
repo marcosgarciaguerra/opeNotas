@@ -447,16 +447,22 @@ class WhiteboardDB {
     };
 
     const jsonString = JSON.stringify(backupData, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `backup_pizarra_cuadernos_${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const filename = `backup_pizarra_cuadernos_${new Date().toISOString().slice(0, 10)}.json`;
+
+    if (typeof window !== 'undefined' && window.Android && typeof window.Android.saveTextFile === 'function') {
+      window.Android.saveTextFile(jsonString, filename, 'application/json');
+    } else if (typeof document !== 'undefined') {
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
 
     return { docsCount: documents.length, foldersCount: folders.length };
   }
