@@ -87,7 +87,7 @@ public class WebAppInterface {
                 ContentValues values = new ContentValues();
                 values.put(MediaStore.MediaColumns.DISPLAY_NAME, filename.endsWith(".pdf") ? filename : filename + ".pdf");
                 values.put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf");
-                values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/PizarraDigital");
+                values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/openotas");
 
                 Uri uri = mContext.getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
                 if (uri != null) {
@@ -97,18 +97,18 @@ public class WebAppInterface {
                             os.flush();
                         }
                     }
-                    showToast("PDF guardado en Descargas/PizarraDigital");
+                    showToast("PDF guardado en Descargas/openotas");
                     return true;
                 }
             } else {
-                File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "PizarraDigital");
+                File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "openotas");
                 if (!dir.exists()) dir.mkdirs();
                 File file = new File(dir, filename.endsWith(".pdf") ? filename : filename + ".pdf");
                 try (FileOutputStream fos = new FileOutputStream(file)) {
                     fos.write(pdfBytes);
                     fos.flush();
                 }
-                showToast("PDF guardado en Descargas");
+                showToast("PDF guardado en Descargas/openotas");
                 return true;
             }
         } catch (Exception e) {
@@ -138,7 +138,7 @@ public class WebAppInterface {
                 ContentValues values = new ContentValues();
                 values.put(MediaStore.MediaColumns.DISPLAY_NAME, filename);
                 values.put(MediaStore.MediaColumns.MIME_TYPE, mimeType);
-                values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/PizarraDigital");
+                values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/openotas");
 
                 Uri uri = mContext.getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
                 if (uri != null) {
@@ -148,18 +148,18 @@ public class WebAppInterface {
                             os.flush();
                         }
                     }
-                    showToast("Copia de seguridad guardada en Descargas/PizarraDigital");
+                    showToast("Copia de seguridad guardada en Descargas/openotas");
                     return true;
                 }
             } else {
-                File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "PizarraDigital");
+                File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "openotas");
                 if (!dir.exists()) dir.mkdirs();
                 File file = new File(dir, filename);
                 try (FileOutputStream fos = new FileOutputStream(file)) {
                     fos.write(fileBytes);
                     fos.flush();
                 }
-                showToast("Copia de seguridad guardada en Descargas");
+                showToast("Copia de seguridad guardada en Descargas/openotas");
                 return true;
             }
         } catch (Exception e) {
@@ -180,7 +180,7 @@ public class WebAppInterface {
                 ContentValues values = new ContentValues();
                 values.put(MediaStore.Images.Media.DISPLAY_NAME, filename.endsWith(".png") ? filename : filename + ".png");
                 values.put(MediaStore.Images.Media.MIME_TYPE, "image/png");
-                values.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/PizarraDigital");
+                values.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/openotas");
                 values.put(MediaStore.Images.Media.IS_PENDING, 1);
 
                 Uri uri = mContext.getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
@@ -194,18 +194,18 @@ public class WebAppInterface {
                     values.clear();
                     values.put(MediaStore.Images.Media.IS_PENDING, 0);
                     mContext.getContentResolver().update(uri, values, null, null);
-                    showToast("Imagen guardada en la Galería");
+                    showToast("Imagen guardada en la Galería (openotas)");
                     return true;
                 }
             } else {
-                File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "PizarraDigital");
+                File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "openotas");
                 if (!dir.exists()) dir.mkdirs();
                 File file = new File(dir, filename.endsWith(".png") ? filename : filename + ".png");
                 try (FileOutputStream fos = new FileOutputStream(file)) {
                     fos.write(imageBytes);
                     fos.flush();
                 }
-                showToast("Imagen guardada en Fotos");
+                showToast("Imagen guardada en Fotos (openotas)");
                 return true;
             }
         } catch (Exception e) {

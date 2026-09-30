@@ -58,7 +58,11 @@ class App {
 
     // 4. Inicializar Puntero Láser y Regla Interactiva
     this.laserPointer = new LaserPointer(this.canvasWrapper, this.paintCanvas);
-    this.ruler = new Ruler(this.canvasWrapper, this.canvasEngine);
+    this.ruler = new Ruler(this.canvasWrapper, this.canvasEngine, {
+      onClose: () => {
+        if (this.toolbar) this.toolbar.updateActiveButton();
+      }
+    });
     this.canvasEngine.setRuler(this.ruler);
     this.canvasEngine.setLaserPointer(this.laserPointer);
 
@@ -232,6 +236,7 @@ class App {
     this.textTool.setHost(this.paintCanvas, this.canvasWrapper);
     this.imageTool.setHost(this.paintCanvas, this.canvasWrapper);
     if (this.laserPointer) this.laserPointer.setHost(this.paintCanvas, this.canvasWrapper);
+    if (this.ruler) this.ruler.setHost(this.paintCanvas, this.canvasWrapper);
   }
 
   renderNotebookStream() {
@@ -384,6 +389,7 @@ class App {
         this.textTool.setHost(coverCanvas, coverHost);
         this.imageTool.setHost(coverCanvas, coverHost);
         if (this.laserPointer) this.laserPointer.setHost(coverCanvas, coverHost);
+        if (this.ruler) this.ruler.setHost(coverCanvas, this.canvasWrapper);
       }
       return;
     }
@@ -409,6 +415,7 @@ class App {
     this.textTool.setHost(activeCanvas, activeHost);
     this.imageTool.setHost(activeCanvas, activeHost);
     if (this.laserPointer) this.laserPointer.setHost(activeCanvas, activeHost);
+    if (this.ruler) this.ruler.setHost(activeCanvas, this.canvasWrapper);
   }
 
   getPatternLabel(pat) {

@@ -360,13 +360,23 @@ export class CanvasEngine {
   onPointerDown(e) {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
 
+    // Si se acaba de cerrar un menú o se tocó la barra del editor / popover, evitar pintar de primeras
+    if (this._suppressNextDraw) {
+      this._suppressNextDraw = false;
+      return;
+    }
+
+    if (e.target && e.target.closest && (e.target.closest('#editorToolbar') || e.target.closest('.tool-popover') || e.target.closest('.modal-overlay') || e.target.closest('.zoom-controls-widget') || e.target.closest('.pages-tray-container'))) {
+      return;
+    }
+
     // Rechazo de palma activo: Si está en modo Stylus y el evento es un toque táctil, ignorar para dibujo
     if (this.inputMode === 'stylus-first' && e.pointerType === 'touch') {
       return;
     }
 
     // Si la herramienta activa es navegación, láser o externa, delegar
-    if (this.tool === 'laser' || this.tool === 'lasso' || this.tool === 'hand' || this.tool === 'shape' || this.tool === 'text' || this.tool === 'image' || this.tool === 'ruler') {
+    if (this.tool === 'laser' || this.tool === 'lasso' || this.tool === 'hand' || this.tool === 'shape' || this.tool === 'text' || this.tool === 'image') {
       return;
     }
 
@@ -374,12 +384,16 @@ export class CanvasEngine {
 
     let pt = this.getCanvasCoordinates(e);
 
-    // Snapping con Regla si está activa
+    // Snapping y bloqueo con Regla si está activa
+    let isSnapped = false;
+    this._rulerLockedEdge = null;
     if (this.ruler && this.ruler.active) {
       const snap = this.ruler.snapPoint(pt.x, pt.y);
       if (snap.snapped) {
         pt.x = snap.x;
         pt.y = snap.y;
+        this._rulerLockedEdge = snap.edge;
+        isSnapped = true;
       }
     }
 
@@ -433,12 +447,17 @@ export class CanvasEngine {
     if (!this.isDrawing) return;
     let pt = this.getCanvasCoordinates(e);
 
-    // Snapping con Regla si está activa
+    // Snapping y bloqueo con Regla si está activa
+    let isSnapped = false;
     if (this.ruler && this.ruler.active) {
-      const snap = this.ruler.snapPoint(pt.x, pt.y);
+      const snap = this.ruler.snapPoint(pt.x, pt.y, { lockedEdge: this._rulerLockedEdge });
       if (snap.snapped) {
         pt.x = snap.x;
         pt.y = snap.y;
+        isSnapped = true;
+        if (!this._rulerLockedEdge && snap.edge) {
+          this._rulerLockedEdge = snap.edge;
+        }
       }
     }
 
@@ -452,7 +471,10 @@ export class CanvasEngine {
     // Filtro de Estabilización en tiempo real (Streamline smoothing)
     let targetPt;
     const stab = this.strokeStabilization !== undefined ? this.strokeStabilization : 0.5;
-    if (stab > 0.02 && this._stabilizedPoint) {
+    if (isSnapped) {
+      targetPt = { x: pt.x, y: pt.y, pressure: pt.pressure };
+      this._stabilizedPoint = targetPt;
+    } else if (stab > 0.02 && this._stabilizedPoint) {
       const alpha = Math.max(0.10, 1 - (stab * 0.84));
       const smoothX = this._stabilizedPoint.x + (pt.x - this._stabilizedPoint.x) * alpha;
       const smoothY = this._stabilizedPoint.y + (pt.y - this._stabilizedPoint.y) * alpha;
@@ -479,6 +501,7 @@ export class CanvasEngine {
   onPointerUp(e) {
     if (!this.isDrawing) return;
     this.isDrawing = false;
+    this._rulerLockedEdge = null;
 
     if (this.currentStroke) {
       if (this.currentStroke.points.length > 0) {

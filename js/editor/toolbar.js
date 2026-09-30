@@ -50,8 +50,8 @@ export class Toolbar {
     this.lastPenTool = 'pen';
     this.activeMenu = null; // 'pen' | 'highlighter' | 'eraser' | 'auxiliary' | 'width' | 'pages' | 'settings' | 'ruler' | 'presets' | null
 
-    // Cola dinámica de herramientas en la botonera principal (máximo 6 elementos)
-    this.MAX_DOCK_TOOLS = 6;
+    // Cola dinámica de herramientas en la botonera principal (máximo 8 elementos)
+    this.MAX_DOCK_TOOLS = 8;
     this.dockTools = ['pen', 'highlighter', 'eraser'];
     this.pinnedTools = new Set(['pen', 'highlighter', 'eraser']);
 
@@ -208,10 +208,10 @@ export class Toolbar {
         </button>
       </div>
 
-      <!-- SECCIÓN 2: CENTRO (Útiles de dibujo esenciales y selector de grosor) -->
+      <!-- SECCIÓN 2: CENTRO (Útiles de dibujo esenciales) -->
       <div class="toolbar-center">
         <div class="main-tool-dock" id="mainToolDock">
-          <!-- Cola dinámica de herramientas (máx 6) -->
+          <!-- Cola dinámica de herramientas (máx 8) -->
           <div class="dynamic-dock-tools" id="dynamicDockTools" style="display: inline-flex; align-items: center; gap: 3px;">
             ${this.renderDockToolsHtml()}
           </div>
@@ -224,20 +224,8 @@ export class Toolbar {
             <span class="dropdown-chevron">${Icons.chevronDown}</span>
           </button>
 
-          <!-- Conmutador HTR Toggle (Reconocimiento y Predicción de trazo manuscrito a texto) -->
-          <button class="dock-btn-compact ${isHtrActive ? 'active htr-toggle-active' : ''}" id="btnToggleHTR" data-tool="btnMenuInsert" title="Autocompletado HTR Manuscrito a Texto (IA Predictiva): Clic para activar/desactivar">
-            <span class="tool-icon-wrapper">${Icons.htr}</span>
-          </button>
-
           <!-- Botón de compatibilidad de imagen/media invisible para tests -->
           <button class="hidden" id="btnToolMedia" data-tool="btnMenuInsert"></button>
-
-          <div class="dock-divider"></div>
-
-          <!-- Píldora selectora de grosor -->
-          <button class="stroke-width-pill" id="btnStrokeWidthPill" title="Grosor de trazo (Clic para cambiar)">
-            <span id="strokeWidthLabel">${this.engine.strokeWidth}px</span>
-          </button>
         </div>
       </div>
 
@@ -439,6 +427,9 @@ export class Toolbar {
   createPopover() {
     this.popover = document.createElement('div');
     this.popover.className = 'tool-popover mini-menu-popover hidden';
+    this.popover.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+    });
     document.body.appendChild(this.popover);
   }
 
@@ -467,6 +458,11 @@ export class Toolbar {
   }
 
   bindEvents() {
+    // Aislar la barra del editor de eventos de puntero que puedan llegar al canvas
+    this.container?.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+    });
+
     // Volver a la biblioteca
     this.container?.querySelector('#btnBackToLibrary')?.addEventListener('click', () => {
       this.closeMenu();
@@ -488,28 +484,6 @@ export class Toolbar {
       btnAux.addEventListener('click', (e) => {
         e.stopPropagation();
         this.toggleMenu('auxiliary', btnAux);
-      });
-    }
-
-    // Botón Toggle HTR (Reconocimiento Inteligente a Texto)
-    const btnHTR = this.container?.querySelector('#btnToggleHTR');
-    if (btnHTR) {
-      btnHTR.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (this.htrPredictor) {
-          const isNowActive = this.htrPredictor.toggleHTR();
-          btnHTR.classList.toggle('active', isNowActive);
-          btnHTR.classList.toggle('htr-toggle-active', isNowActive);
-        }
-      });
-    }
-
-    // Píldora de grosor
-    const btnWidthPill = this.container?.querySelector('#btnStrokeWidthPill');
-    if (btnWidthPill) {
-      btnWidthPill.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.toggleMenu('width', btnWidthPill);
       });
     }
 
@@ -568,18 +542,24 @@ export class Toolbar {
       });
     }
 
-    // Cerrar menú al hacer clic fuera
+    // Cerrar menú al hacer clic fuera (evitando que ese toque pinte en el canvas)
     document.addEventListener('pointerdown', (e) => {
       if (
         this.popover &&
         !this.popover.contains(e.target) &&
         !e.target.closest('.dock-btn-compact') &&
         !e.target.closest('.tool-btn-compact') &&
-        !e.target.closest('.stroke-width-pill') &&
         !e.target.closest('#btnPagesMenu') &&
         !e.target.closest('#btnMenuSettings')
       ) {
-        this.closeMenu();
+        if (!this.popover.classList.contains('hidden')) {
+          this.closeMenu();
+          if (this.engine) {
+            this.engine.isDrawing = false;
+            this.engine._suppressNextDraw = true;
+            setTimeout(() => { if (this.engine) this.engine._suppressNextDraw = false; }, 120);
+          }
+        }
       }
     });
 
@@ -848,6 +828,7 @@ export class Toolbar {
           this.engine.setColor(color);
         }
         this.updatePenDotsColor();
+        this.updateActiveButton();
         this.renderStrokeSettingsMenu(toolKey);
       });
     });
@@ -865,6 +846,7 @@ export class Toolbar {
           this.engine.setColor(color);
         }
         this.updatePenDotsColor();
+        this.updateActiveButton();
         updatePreviewCircle();
       });
     }
@@ -968,7 +950,7 @@ export class Toolbar {
       <div class="popover-arrow"></div>
       <div class="mini-menu-title-row">
         <span class="mini-menu-title">Fijar / Desfijar Herramientas</span>
-        <span class="pinned-counter-badge">${pinnedCount}/6 fijadas</span>
+        <span class="pinned-counter-badge">${pinnedCount}/${this.MAX_DOCK_TOOLS} fijadas</span>
       </div>
       <p style="font-size:0.78rem; color:var(--text-secondary); margin:0 0 10px 0; line-height:1.35;">
         Añade múltiples útiles (ej: varios subrayadores o bolígrafos) con colores y grosores personalizados a la barra.
@@ -1305,12 +1287,14 @@ export class Toolbar {
   renderLaserMenu() {
     const isPinned = this.pinnedTools.has('laser');
     const color = (this.laserPointer && this.laserPointer.laserColor) || '#ef4444';
+    const durationMs = (this.laserPointer && this.laserPointer.getFadeDuration()) || 1000;
+    const durationSec = (durationMs / 1000).toFixed(1);
 
     this.popover.innerHTML = `
       <div class="popover-arrow"></div>
       <div class="mini-menu-title-row">
         <span class="mini-menu-title">Puntero Láser</span>
-        <button type="button" class="popover-title-pin-btn ${isPinned ? 'pinned' : ''}" data-pin-tool="laser" title="${isPinned ? 'Desfijar de la barra' : 'Fijar en la barra (máx 6)'}">
+        <button type="button" class="popover-title-pin-btn ${isPinned ? 'pinned' : ''}" data-pin-tool="laser" title="${isPinned ? 'Desfijar de la barra' : 'Fijar en la barra (máx 8)'}">
           ${isPinned ? Icons.pinFilled : Icons.pin}
           <span>${isPinned ? 'Fijado' : 'Fijar'}</span>
         </button>
@@ -1321,6 +1305,20 @@ export class Toolbar {
       <div class="color-palette-10">
         ${['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899'].map(c => `
           <button type="button" class="color-swatch ${c.toLowerCase() === color.toLowerCase() ? 'active' : ''}" data-laser-color="${c}" style="background-color: ${c}"></button>
+        `).join('')}
+      </div>
+
+      <div class="popover-divider"></div>
+
+      <!-- Duración de desvanecimiento -->
+      <div class="popover-row">
+        <span class="label-text">Tiempo de Duración</span>
+        <span class="value-text" id="laserDurationVal">${durationSec}s</span>
+      </div>
+      <input type="range" class="popover-slider" id="laserDurationSlider" min="300" max="5000" step="100" value="${durationMs}" />
+      <div class="stroke-presets-chips" id="laserDurationPresets">
+        ${[500, 1000, 2000, 3000, 5000].map(ms => `
+          <button type="button" class="stroke-preset-chip ${Math.abs(durationMs - ms) < 50 ? 'active' : ''}" data-duration="${ms}">${(ms / 1000).toFixed(1)}s</button>
         `).join('')}
       </div>
     `;
@@ -1337,6 +1335,151 @@ export class Toolbar {
           this.laserPointer.setColor(c);
         }
         this.renderLaserMenu();
+      });
+    });
+
+    const slider = this.popover.querySelector('#laserDurationSlider');
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const ms = Number(e.target.value);
+        if (this.laserPointer) {
+          this.laserPointer.setFadeDuration(ms);
+        }
+        const valText = this.popover.querySelector('#laserDurationVal');
+        if (valText) valText.textContent = `${(ms / 1000).toFixed(1)}s`;
+        this.popover.querySelectorAll('#laserDurationPresets .stroke-preset-chip').forEach(chip => {
+          chip.classList.toggle('active', Math.abs(Number(chip.dataset.duration) - ms) < 50);
+        });
+      });
+    }
+
+    this.popover.querySelectorAll('#laserDurationPresets .stroke-preset-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const ms = Number(chip.dataset.duration);
+        if (this.laserPointer) {
+          this.laserPointer.setFadeDuration(ms);
+        }
+        if (slider) slider.value = ms;
+        const valText = this.popover.querySelector('#laserDurationVal');
+        if (valText) valText.textContent = `${(ms / 1000).toFixed(1)}s`;
+        this.popover.querySelectorAll('#laserDurationPresets .stroke-preset-chip').forEach(c => {
+          c.classList.toggle('active', c === chip);
+        });
+      });
+    });
+  }
+
+  // Popover Regla Interactiva
+  renderRulerMenu() {
+    const isPinned = this.pinnedTools.has('ruler');
+    const isRulerActive = this.ruler ? this.ruler.active : false;
+    let normAngle = this.ruler ? Math.round(this.ruler.angle % 360) : 0;
+    if (normAngle < 0) normAngle += 360;
+
+    this.popover.innerHTML = `
+      <div class="popover-arrow"></div>
+      <div class="mini-menu-title-row">
+        <span class="mini-menu-title">Regla Interactiva</span>
+        <button type="button" class="popover-title-pin-btn ${isPinned ? 'pinned' : ''}" data-pin-tool="ruler" title="${isPinned ? 'Desfijar de la barra' : 'Fijar en la barra (máx 8)'}">
+          ${isPinned ? Icons.pinFilled : Icons.pin}
+          <span>${isPinned ? 'Fijado' : 'Fijar'}</span>
+        </button>
+      </div>
+      <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:10px;">
+        Guía milimétrica con imán de trazo para dibujar líneas perfectamente rectas con cualquier útil.
+      </div>
+
+      <div class="settings-mini-section" style="margin-bottom: 10px;">
+        <label class="settings-toggle-row">
+          <div class="toggle-text">
+            <strong>Mostrar Regla en Pantalla</strong>
+            <small>Activar regla y snapping magnético</small>
+          </div>
+          <input type="checkbox" id="chkRulerToggle" class="settings-switch" ${isRulerActive ? 'checked' : ''} />
+        </label>
+      </div>
+
+      <div class="popover-divider"></div>
+
+      <!-- Ángulo de Rotación -->
+      <div class="popover-row">
+        <span class="label-text">Ángulo de Inclinación</span>
+        <span class="value-text" id="rulerMenuAngleVal">${normAngle}°</span>
+      </div>
+      <input type="range" class="popover-slider" id="rulerAngleSlider" min="0" max="360" value="${normAngle}" />
+      <div class="stroke-presets-chips" id="rulerAnglePresets">
+        ${[0, 30, 45, 90, 180].map(a => `
+          <button type="button" class="stroke-preset-chip ${normAngle === a ? 'active' : ''}" data-angle="${a}">${a}°</button>
+        `).join('')}
+      </div>
+
+      <div class="popover-divider"></div>
+
+      <!-- Longitud de la Regla -->
+      <div class="popover-row">
+        <span class="label-text">Longitud</span>
+      </div>
+      <div class="stroke-presets-chips" id="rulerLengthPresets">
+        ${[15, 20, 24, 30, 35].map(cm => `
+          <button type="button" class="stroke-preset-chip ${(this.ruler && Math.round(this.ruler.width / 24) === cm) ? 'active' : ''}" data-len="${cm}">${cm}cm</button>
+        `).join('')}
+      </div>
+    `;
+
+    this.popover.querySelector('.popover-title-pin-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.togglePinTool('ruler');
+    });
+
+    const chk = this.popover.querySelector('#chkRulerToggle');
+    if (chk) {
+      chk.addEventListener('change', (e) => {
+        if (this.ruler) {
+          this.ruler.setActive(e.target.checked);
+          this.updateActiveButton();
+        }
+      });
+    }
+
+    const angleSlider = this.popover.querySelector('#rulerAngleSlider');
+    if (angleSlider) {
+      angleSlider.addEventListener('input', (e) => {
+        const val = Number(e.target.value);
+        if (this.ruler) {
+          this.ruler.setAngle(val);
+        }
+        const valText = this.popover.querySelector('#rulerMenuAngleVal');
+        if (valText) valText.textContent = `${val}°`;
+        this.popover.querySelectorAll('#rulerAnglePresets .stroke-preset-chip').forEach(chip => {
+          chip.classList.toggle('active', Number(chip.dataset.angle) === val);
+        });
+      });
+    }
+
+    this.popover.querySelectorAll('#rulerAnglePresets .stroke-preset-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const val = Number(chip.dataset.angle);
+        if (this.ruler) {
+          this.ruler.setAngle(val);
+        }
+        if (angleSlider) angleSlider.value = val;
+        const valText = this.popover.querySelector('#rulerMenuAngleVal');
+        if (valText) valText.textContent = `${val}°`;
+        this.popover.querySelectorAll('#rulerAnglePresets .stroke-preset-chip').forEach(c => {
+          c.classList.toggle('active', c === chip);
+        });
+      });
+    });
+
+    this.popover.querySelectorAll('#rulerLengthPresets .stroke-preset-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const len = Number(chip.dataset.len);
+        if (this.ruler) {
+          this.ruler.setLength(len);
+        }
+        this.popover.querySelectorAll('#rulerLengthPresets .stroke-preset-chip').forEach(c => {
+          c.classList.toggle('active', c === chip);
+        });
       });
     });
   }
@@ -1667,8 +1810,16 @@ export class Toolbar {
   }
 
   selectTool(slotId) {
-    this.activeTool = slotId;
     const base = slotId.split('_')[0];
+    if (base === 'ruler') {
+      if (this.ruler) {
+        this.ruler.toggle();
+      }
+      this.updateActiveButton();
+      return;
+    }
+
+    this.activeTool = slotId;
     if (['pen', 'pencil', 'marker', 'highlighter'].includes(base)) {
       this.lastPenTool = slotId;
     }
@@ -1697,11 +1848,28 @@ export class Toolbar {
   }
 
   updateActiveButton() {
+    const noColorTools = ['ruler', 'eraser', 'lasso', 'hand'];
+
     this.dockTools.forEach(slotId => {
       const def = this.getToolDefinition(slotId);
       const btn = this.container.querySelector(`#${def.btnId}`) || this.container.querySelector(`[data-tool="${slotId}"]`);
       if (btn) {
-        btn.classList.toggle('active', this.activeTool === slotId);
+        const isRuler = def.baseType === 'ruler';
+        const isActive = isRuler ? Boolean(this.ruler && this.ruler.active) : (this.activeTool === slotId);
+        btn.classList.toggle('active', isActive);
+
+        const isNoColor = noColorTools.includes(def.baseType);
+        if (isNoColor) {
+          btn.classList.add('no-color-tool');
+          btn.style.removeProperty('--tool-color');
+          btn.style.removeProperty('--tool-contrast-color');
+        } else {
+          btn.classList.remove('no-color-tool');
+          const col = this.getToolColor(slotId);
+          const contrast = this.getContrastColor(col);
+          btn.style.setProperty('--tool-color', col);
+          btn.style.setProperty('--tool-contrast-color', contrast);
+        }
       }
     });
 
@@ -1715,11 +1883,42 @@ export class Toolbar {
     if (label) label.textContent = `${this.engine.strokeWidth}px`;
   }
 
+  getContrastColor(hex) {
+    if (!hex || typeof hex !== 'string' || hex.startsWith('rgba')) return '#ffffff';
+    let c = hex.replace('#', '');
+    if (c.length === 3) c = c.split('').map(x => x + x).join('');
+    const num = parseInt(c, 16);
+    if (isNaN(num)) return '#ffffff';
+    const r = (num >> 16) & 255;
+    const g = (num >> 8) & 255;
+    const b = num & 255;
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    return brightness > 165 ? '#0f172a' : '#ffffff';
+  }
+
   updatePenDotsColor() {
+    const noColorTools = ['ruler', 'eraser', 'lasso', 'hand'];
+
     this.dockTools.forEach(slotId => {
       const dot = this.container.querySelector(`#dot_${slotId}`);
       if (dot) {
         dot.style.backgroundColor = this.getToolColor(slotId);
+      }
+      const def = this.getToolDefinition(slotId);
+      const btn = this.container.querySelector(`#${def.btnId}`) || this.container.querySelector(`[data-tool="${slotId}"]`);
+      if (btn) {
+        const isNoColor = noColorTools.includes(def.baseType);
+        if (isNoColor) {
+          btn.classList.add('no-color-tool');
+          btn.style.removeProperty('--tool-color');
+          btn.style.removeProperty('--tool-contrast-color');
+        } else {
+          btn.classList.remove('no-color-tool');
+          const col = this.getToolColor(slotId);
+          const contrast = this.getContrastColor(col);
+          btn.style.setProperty('--tool-color', col);
+          btn.style.setProperty('--tool-contrast-color', contrast);
+        }
       }
     });
   }

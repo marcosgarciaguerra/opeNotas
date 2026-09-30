@@ -8,15 +8,18 @@ export class Ruler {
     this.onClose = options.onClose || (() => {});
 
     this.active = false;
-    this.x = 200; // Posición central en px dentro de wrapper
+    this.x = 400; // Posición central en px dentro del workspace
     this.y = 300;
-    this.width = 540; // Longitud en px (aprox 20-25 cm)
+    this.width = 576; // Longitud en px (aprox 24 cm @ 24px/cm)
     this.height = 76; // Ancho de la regla
     this.angle = 0; // Ángulo en grados
 
     this.isDragging = false;
     this.isRotating = false;
-    this.dragOffset = { x: 0, y: 0 };
+    this.startPointerX = 0;
+    this.startPointerY = 0;
+    this.startRulerX = 0;
+    this.startRulerY = 0;
     this.startAngle = 0;
     this.startPointerAngle = 0;
 
@@ -25,12 +28,44 @@ export class Ruler {
     this.bindEvents();
   }
 
-  createElement() {
-    this.element = document.createElement('div');
-    this.element.className = 'interactive-ruler hidden';
-    this.element.id = 'interactiveRuler';
+  setHost(canvas, wrapper) {
+    if (wrapper) this.wrapper = wrapper;
+    this.ensureElement();
+  }
 
-    // Generar marcas métricas (mm y cm)
+  getContainer() {
+    return document.getElementById('editorWorkspace') || this.wrapper || document.body;
+  }
+
+  ensureElement() {
+    const container = this.getContainer();
+    if (!this.element) {
+      this.createElement();
+    } else if (container && !container.contains(this.element)) {
+      container.appendChild(this.element);
+      this.bindElementEvents();
+    }
+  }
+
+  createElement() {
+    let el = document.getElementById('interactiveRuler');
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'interactive-ruler hidden';
+      el.id = 'interactiveRuler';
+    }
+    this.element = el;
+
+    this.renderTicks();
+    const container = this.getContainer();
+    if (container && !container.contains(this.element)) {
+      container.appendChild(this.element);
+    }
+    this.updateTransform();
+  }
+
+  renderTicks() {
+    if (!this.element) return;
     const cmCount = Math.floor(this.width / 24); // ~24px por cm
     let ticksHtml = '';
     for (let cm = 0; cm <= cmCount; cm++) {
@@ -54,7 +89,7 @@ export class Ruler {
       <div class="ruler-body">
         <div class="ruler-drag-handle" title="Arrastrar regla">
           <span class="ruler-handle-icon">⠿</span>
-          <span class="ruler-title">REGLA 30cm</span>
+          <span class="ruler-title">REGLA ${cmCount}cm</span>
         </div>
         <div class="ruler-controls">
           <div class="ruler-angle-badge" id="rulerAngleBadge">0°</div>
@@ -68,13 +103,11 @@ export class Ruler {
       </div>
       <div class="ruler-scale bottom-scale">${ticksHtml}</div>
     `;
-
-    this.wrapper.appendChild(this.element);
-    this.updateTransform();
   }
 
   setActive(active) {
     this.active = Boolean(active);
+    this.ensureElement();
     if (this.element) {
       this.element.classList.toggle('hidden', !this.active);
       if (this.active) {
@@ -89,30 +122,47 @@ export class Ruler {
     return this.active;
   }
 
+  setAngle(degrees) {
+    this.angle = Number(degrees) || 0;
+    this.updateTransform();
+  }
+
+  setLength(cm) {
+    const cmVal = Math.max(10, Math.min(50, Number(cm) || 24));
+    this.width = cmVal * 24;
+    this.renderTicks();
+    this.bindElementEvents();
+    this.updateTransform();
+  }
+
   centerOnScreen() {
-    const rect = this.wrapper.getBoundingClientRect();
-    this.x = rect.width / 2;
-    this.y = rect.height / 2;
+    const ws = document.getElementById('editorWorkspace') || (this.engine && this.engine.viewport && this.engine.viewport.workspace) || window;
+    const wsWidth = ws.clientWidth || window.innerWidth || 800;
+    const wsHeight = ws.clientHeight || window.innerHeight || 600;
+
+    this.x = wsWidth / 2;
+    this.y = wsHeight / 2;
     this.updateTransform();
   }
 
   updateTransform() {
     if (!this.element) return;
+    this.element.style.left = '0px';
+    this.element.style.top = '0px';
     this.element.style.width = `${this.width}px`;
     this.element.style.height = `${this.height}px`;
-    this.element.style.transform = `translate(${this.x - this.width / 2}px, ${this.y - this.height / 2}px) rotate(${this.angle}deg)`;
+    this.element.style.transform = `translate3d(${Math.round(this.x - this.width / 2)}px, ${Math.round(this.y - this.height / 2)}px, 0) rotate(${this.angle}deg)`;
 
     const badge = this.element.querySelector('#rulerAngleBadge');
     if (badge) {
-      // Normalizar ángulo entre -180° y 180° o 0° y 360°
       let normAngle = Math.round(this.angle % 360);
       if (normAngle < 0) normAngle += 360;
       badge.textContent = `${normAngle}°`;
     }
   }
 
-  bindEvents() {
-    // Cerrar regla
+  bindElementEvents() {
+    if (!this.element) return;
     const btnClose = this.element.querySelector('#btnRulerClose');
     if (btnClose) {
       btnClose.addEventListener('click', (e) => {
@@ -122,21 +172,19 @@ export class Ruler {
       });
     }
 
-    // Arrastre (Move handle)
     const handle = this.element.querySelector('.ruler-drag-handle');
     if (handle) {
       handle.addEventListener('pointerdown', (e) => {
         e.stopPropagation();
         this.isDragging = true;
-        this.dragOffset = {
-          x: e.clientX - this.x,
-          y: e.clientY - this.y
-        };
-        handle.setPointerCapture(e.pointerId);
+        this.startPointerX = e.clientX;
+        this.startPointerY = e.clientY;
+        this.startRulerX = this.x;
+        this.startRulerY = this.y;
+        try { handle.setPointerCapture(e.pointerId); } catch (_) {}
       });
     }
 
-    // Rotación (Rotate button)
     const btnRotate = this.element.querySelector('#btnRulerRotate');
     if (btnRotate) {
       btnRotate.addEventListener('pointerdown', (e) => {
@@ -147,15 +195,21 @@ export class Ruler {
         const centerY = rect.top + rect.height / 2;
         this.startPointerAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
         this.startAngle = this.angle;
-        btnRotate.setPointerCapture(e.pointerId);
+        try { btnRotate.setPointerCapture(e.pointerId); } catch (_) {}
       });
     }
+  }
+
+  bindEvents() {
+    this.bindElementEvents();
 
     // Movimiento y rotación global
     window.addEventListener('pointermove', (e) => {
       if (this.isDragging) {
-        this.x = e.clientX - this.dragOffset.x;
-        this.y = e.clientY - this.dragOffset.y;
+        const dx = e.clientX - this.startPointerX;
+        const dy = e.clientY - this.startPointerY;
+        this.x = this.startRulerX + dx;
+        this.y = this.startRulerY + dy;
         this.updateTransform();
       } else if (this.isRotating) {
         const rect = this.element.getBoundingClientRect();
@@ -165,7 +219,7 @@ export class Ruler {
         let delta = currentPointerAngle - this.startPointerAngle;
         let newAngle = this.startAngle + delta;
 
-        // Snapping a múltiplos de 15° y 45° si está cerca (±2°)
+        // Snapping a múltiplos de 15° y 45° si está cerca (±2.5°)
         const snapStep = 15;
         const nearestSnap = Math.round(newAngle / snapStep) * snapStep;
         if (Math.abs(newAngle - nearestSnap) < 2.5) {
@@ -193,95 +247,123 @@ export class Ruler {
     }, { passive: false });
   }
 
-  // Snapping de coordenadas sobre el borde de la regla en el espacio del canvas
-  snapPoint(canvasX, canvasY, threshold = 28) {
+  // Proyección y restricción física para dibujar líneas perfectamente rectas sin atravesar la regla
+  snapPoint(canvasX, canvasY, options = {}) {
     if (!this.active || !this.element || !this.engine || !this.engine.canvas) {
-      return { snapped: false, x: canvasX, y: canvasY };
+      return { snapped: false, x: canvasX, y: canvasY, edge: null };
     }
 
     const mainCanvas = this.engine.canvas;
     const canvasRect = mainCanvas.getBoundingClientRect();
-    const rulerRect = this.element.getBoundingClientRect();
-
-    // Convertir centro de la regla al espacio del canvas
-    const scaleX = mainCanvas.width / canvasRect.width;
-    const scaleY = mainCanvas.height / canvasRect.height;
-
-    const rulerCenterX = (rulerRect.left + rulerRect.width / 2 - canvasRect.left) * scaleX;
-    const rulerCenterY = (rulerRect.top + rulerRect.height / 2 - canvasRect.top) * scaleY;
-
-    const rad = (this.angle * Math.PI) / 180;
-    const cos = Math.cos(rad);
-    const sin = Math.sin(rad);
-
-    const halfLength = (this.width / 2) * scaleX;
-    const halfThickness = (this.height / 2) * scaleY;
-
-    // Vector unitario a lo largo de la regla
-    const ux = cos;
-    const uy = sin;
-    // Vector unitario perpendicular (normal)
-    const nx = -sin;
-    const ny = cos;
-
-    // Borde superior
-    const topEdgeCenter = {
-      x: rulerCenterX + nx * (-halfThickness),
-      y: rulerCenterY + ny * (-halfThickness)
-    };
-    const topA = { x: topEdgeCenter.x - ux * halfLength, y: topEdgeCenter.y - uy * halfLength };
-    const topB = { x: topEdgeCenter.x + ux * halfLength, y: topEdgeCenter.y + uy * halfLength };
-
-    // Borde inferior
-    const bottomEdgeCenter = {
-      x: rulerCenterX + nx * halfThickness,
-      y: rulerCenterY + ny * halfThickness
-    };
-    const bottomA = { x: bottomEdgeCenter.x - ux * halfLength, y: bottomEdgeCenter.y - uy * halfLength };
-    const bottomB = { x: bottomEdgeCenter.x + ux * halfLength, y: bottomEdgeCenter.y + uy * halfLength };
-
-    // Proyección sobre borde superior
-    const projTop = this.projectOnSegment({ x: canvasX, y: canvasY }, topA, topB);
-    const distTop = Math.hypot(canvasX - projTop.x, canvasY - projTop.y);
-
-    // Proyección sobre borde inferior
-    const projBottom = this.projectOnSegment({ x: canvasX, y: canvasY }, bottomA, bottomB);
-    const distBottom = Math.hypot(canvasX - projBottom.x, canvasY - projBottom.y);
-
-    const scaledThreshold = threshold * scaleX;
-
-    if (distTop <= scaledThreshold && distTop <= distBottom) {
-      return { snapped: true, x: projTop.x, y: projTop.y, edge: 'top' };
-    } else if (distBottom <= scaledThreshold) {
-      return { snapped: true, x: projBottom.x, y: projBottom.y, edge: 'bottom' };
+    if (canvasRect.width === 0 || canvasRect.height === 0) {
+      return { snapped: false, x: canvasX, y: canvasY, edge: null };
     }
 
-    return { snapped: false, x: canvasX, y: canvasY };
+    const logicalWidth = this.engine.logicalWidth || 794;
+    const logicalHeight = this.engine.logicalHeight || 1123;
+
+    // Convertir de coordenadas lógicas de canvas a píxeles de pantalla
+    const screenX = canvasRect.left + canvasX * (canvasRect.width / logicalWidth);
+    const screenY = canvasRect.top + canvasY * (canvasRect.height / logicalHeight);
+
+    const rulerRect = this.element.getBoundingClientRect();
+    const cx = rulerRect.left + rulerRect.width / 2;
+    const cy = rulerRect.top + rulerRect.height / 2;
+
+    const rad = (this.angle * Math.PI) / 180;
+    const cosA = Math.cos(rad);
+    const sinA = Math.sin(rad);
+
+    // Vector relativo al centro de la regla en pantalla
+    const dx = screenX - cx;
+    const dy = screenY - cy;
+
+    // Coordenadas locales en la regla: u_dist (a lo largo), n_dist (a lo ancho)
+    const u_dist = dx * cosA + dy * sinA;
+    const n_dist = -dx * sinA + dy * cosA;
+
+    const halfL = this.width / 2; // e.g. 288px
+    const halfThickness = this.height / 2; // e.g. 38px
+
+    const lockedEdge = options.lockedEdge || null;
+    const snapMargin = options.snapMargin !== undefined ? options.snapMargin : 65; // Margen de captura magnética en px
+
+    // 1. Si el trazo ya está bloqueado a un borde, proyectar ESTRICTAMENTE recto sobre esa recta
+    if (lockedEdge === 'top') {
+      const clampedU = Math.max(-halfL, Math.min(halfL, u_dist));
+      const targetN = -halfThickness;
+      const sx = cx + clampedU * cosA - targetN * sinA;
+      const sy = cy + clampedU * sinA + targetN * cosA;
+      return {
+        snapped: true,
+        edge: 'top',
+        x: (sx - canvasRect.left) * (logicalWidth / canvasRect.width),
+        y: (sy - canvasRect.top) * (logicalHeight / canvasRect.height)
+      };
+    } else if (lockedEdge === 'bottom') {
+      const clampedU = Math.max(-halfL, Math.min(halfL, u_dist));
+      const targetN = halfThickness;
+      const sx = cx + clampedU * cosA - targetN * sinA;
+      const sy = cy + clampedU * sinA + targetN * cosA;
+      return {
+        snapped: true,
+        edge: 'bottom',
+        x: (sx - canvasRect.left) * (logicalWidth / canvasRect.width),
+        y: (sy - canvasRect.top) * (logicalHeight / canvasRect.height)
+      };
+    }
+
+    // 2. Si no hay bloqueo previo, comprobar proximidad a bordes superior e inferior
+    const isNearLength = u_dist >= -halfL - 30 && u_dist <= halfL + 30;
+    const distToTop = Math.abs(n_dist - (-halfThickness));
+    const distToBottom = Math.abs(n_dist - halfThickness);
+
+    if (isNearLength && (distToTop <= snapMargin || distToBottom <= snapMargin)) {
+      const isTop = distToTop <= distToBottom;
+      const edge = isTop ? 'top' : 'bottom';
+      const targetN = isTop ? -halfThickness : halfThickness;
+      const clampedU = Math.max(-halfL, Math.min(halfL, u_dist));
+
+      const sx = cx + clampedU * cosA - targetN * sinA;
+      const sy = cy + clampedU * sinA + targetN * cosA;
+
+      return {
+        snapped: true,
+        edge: edge,
+        x: (sx - canvasRect.left) * (logicalWidth / canvasRect.width),
+        y: (sy - canvasRect.top) * (logicalHeight / canvasRect.height)
+      };
+    }
+
+    // 3. Comprobar si el punto cae dentro del cuerpo físico de la regla (bloquear para no atravesar)
+    const isInside = Math.abs(u_dist) <= halfL && Math.abs(n_dist) < halfThickness;
+    if (isInside) {
+      const isTop = n_dist < 0;
+      const targetN = isTop ? -halfThickness : halfThickness;
+      const clampedU = Math.max(-halfL, Math.min(halfL, u_dist));
+      const sx = cx + clampedU * cosA - targetN * sinA;
+      const sy = cy + clampedU * sinA + targetN * cosA;
+      return {
+        snapped: true,
+        edge: isTop ? 'top' : 'bottom',
+        blockedInside: true,
+        x: (sx - canvasRect.left) * (logicalWidth / canvasRect.width),
+        y: (sy - canvasRect.top) * (logicalHeight / canvasRect.height)
+      };
+    }
+
+    return { snapped: false, x: canvasX, y: canvasY, edge: null };
   }
 
   projectOnSegment(p, a, b) {
     const abx = b.x - a.x;
     const aby = b.y - a.y;
-    const apx = p.x - a.x;
-    const apy = p.y - a.y;
-
-    const abLenSq = abx * abx + aby * aby;
-    if (abLenSq === 0) return { x: a.x, y: a.y };
-
-    let t = (apx * abx + apy * aby) / abLenSq;
-    t = Math.max(0, Math.min(1, t)); // Clamped al segmento de la regla
-
+    const lenSq = abx * abx + aby * aby;
+    if (lenSq === 0) return { x: a.x, y: a.y };
+    const t = Math.max(0, Math.min(1, ((p.x - a.x) * abx + (p.y - a.y) * aby) / lenSq));
     return {
       x: a.x + t * abx,
       y: a.y + t * aby
     };
   }
-
-  destroy() {
-    this.setActive(false);
-    if (this.element && this.element.parentNode) {
-      this.element.parentNode.removeChild(this.element);
-    }
-  }
 }
-

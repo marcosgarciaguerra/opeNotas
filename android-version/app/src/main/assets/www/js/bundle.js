@@ -1005,7 +1005,7 @@ class WhiteboardDB {
     const folders = await this.getAllFolders();
 
     const backupData = {
-      app: 'SuiteNotasPizarra',
+      app: 'openotas',
       version: '2.0.0',
       exportedAt: new Date().toISOString(),
       timestamp: Date.now(),
@@ -1014,7 +1014,7 @@ class WhiteboardDB {
     };
 
     const jsonString = JSON.stringify(backupData, null, 2);
-    const filename = `backup_pizarra_cuadernos_${new Date().toISOString().slice(0, 10)}.json`;
+    const filename = `backup_openotas_${new Date().toISOString().slice(0, 10)}.json`;
 
     if (typeof window !== 'undefined' && window.Android && typeof window.Android.saveTextFile === 'function') {
       window.Android.saveTextFile(jsonString, filename, 'application/json');
@@ -1480,7 +1480,13 @@ class LaserPointer {
     this.isPointerDown = false;
 
     this.points = []; // Array de { x, y, time, pressure }
-    this.FADE_DURATION_MS = 1000; // Desvanecimiento en ~1 segundo
+    this.FADE_DURATION_MS = 1000; // Desvanecimiento en ~1 segundo por defecto
+    try {
+      const savedDuration = localStorage.getItem('whiteboard_laser_fade_duration');
+      if (savedDuration) {
+        this.FADE_DURATION_MS = Number(savedDuration) || 1000;
+      }
+    } catch (_) {}
     this.animFrameId = null;
 
     this.laserColor = '#ef4444'; // Rojo láser
@@ -1569,6 +1575,17 @@ class LaserPointer {
     } else {
       this.laserGlow = color;
     }
+  }
+
+  setFadeDuration(ms) {
+    this.FADE_DURATION_MS = Math.max(200, Math.min(10000, Number(ms) || 1000));
+    try {
+      localStorage.setItem('whiteboard_laser_fade_duration', String(this.FADE_DURATION_MS));
+    } catch (_) {}
+  }
+
+  getFadeDuration() {
+    return this.FADE_DURATION_MS;
   }
 
   setActive(active) {
@@ -1809,15 +1826,18 @@ class Ruler {
     this.onClose = options.onClose || (() => {});
 
     this.active = false;
-    this.x = 200; // Posición central en px dentro de wrapper
+    this.x = 400; // Posición central en px dentro del workspace
     this.y = 300;
-    this.width = 540; // Longitud en px (aprox 20-25 cm)
+    this.width = 576; // Longitud en px (aprox 24 cm @ 24px/cm)
     this.height = 76; // Ancho de la regla
     this.angle = 0; // Ángulo en grados
 
     this.isDragging = false;
     this.isRotating = false;
-    this.dragOffset = { x: 0, y: 0 };
+    this.startPointerX = 0;
+    this.startPointerY = 0;
+    this.startRulerX = 0;
+    this.startRulerY = 0;
     this.startAngle = 0;
     this.startPointerAngle = 0;
 
@@ -1826,12 +1846,44 @@ class Ruler {
     this.bindEvents();
   }
 
-  createElement() {
-    this.element = document.createElement('div');
-    this.element.className = 'interactive-ruler hidden';
-    this.element.id = 'interactiveRuler';
+  setHost(canvas, wrapper) {
+    if (wrapper) this.wrapper = wrapper;
+    this.ensureElement();
+  }
 
-    // Generar marcas métricas (mm y cm)
+  getContainer() {
+    return document.getElementById('editorWorkspace') || this.wrapper || document.body;
+  }
+
+  ensureElement() {
+    const container = this.getContainer();
+    if (!this.element) {
+      this.createElement();
+    } else if (container && !container.contains(this.element)) {
+      container.appendChild(this.element);
+      this.bindElementEvents();
+    }
+  }
+
+  createElement() {
+    let el = document.getElementById('interactiveRuler');
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'interactive-ruler hidden';
+      el.id = 'interactiveRuler';
+    }
+    this.element = el;
+
+    this.renderTicks();
+    const container = this.getContainer();
+    if (container && !container.contains(this.element)) {
+      container.appendChild(this.element);
+    }
+    this.updateTransform();
+  }
+
+  renderTicks() {
+    if (!this.element) return;
     const cmCount = Math.floor(this.width / 24); // ~24px por cm
     let ticksHtml = '';
     for (let cm = 0; cm <= cmCount; cm++) {
@@ -1855,7 +1907,7 @@ class Ruler {
       <div class="ruler-body">
         <div class="ruler-drag-handle" title="Arrastrar regla">
           <span class="ruler-handle-icon">⠿</span>
-          <span class="ruler-title">REGLA 30cm</span>
+          <span class="ruler-title">REGLA ${cmCount}cm</span>
         </div>
         <div class="ruler-controls">
           <div class="ruler-angle-badge" id="rulerAngleBadge">0°</div>
@@ -1869,13 +1921,11 @@ class Ruler {
       </div>
       <div class="ruler-scale bottom-scale">${ticksHtml}</div>
     `;
-
-    this.wrapper.appendChild(this.element);
-    this.updateTransform();
   }
 
   setActive(active) {
     this.active = Boolean(active);
+    this.ensureElement();
     if (this.element) {
       this.element.classList.toggle('hidden', !this.active);
       if (this.active) {
@@ -1890,30 +1940,47 @@ class Ruler {
     return this.active;
   }
 
+  setAngle(degrees) {
+    this.angle = Number(degrees) || 0;
+    this.updateTransform();
+  }
+
+  setLength(cm) {
+    const cmVal = Math.max(10, Math.min(50, Number(cm) || 24));
+    this.width = cmVal * 24;
+    this.renderTicks();
+    this.bindElementEvents();
+    this.updateTransform();
+  }
+
   centerOnScreen() {
-    const rect = this.wrapper.getBoundingClientRect();
-    this.x = rect.width / 2;
-    this.y = rect.height / 2;
+    const ws = document.getElementById('editorWorkspace') || (this.engine && this.engine.viewport && this.engine.viewport.workspace) || window;
+    const wsWidth = ws.clientWidth || window.innerWidth || 800;
+    const wsHeight = ws.clientHeight || window.innerHeight || 600;
+
+    this.x = wsWidth / 2;
+    this.y = wsHeight / 2;
     this.updateTransform();
   }
 
   updateTransform() {
     if (!this.element) return;
+    this.element.style.left = '0px';
+    this.element.style.top = '0px';
     this.element.style.width = `${this.width}px`;
     this.element.style.height = `${this.height}px`;
-    this.element.style.transform = `translate(${this.x - this.width / 2}px, ${this.y - this.height / 2}px) rotate(${this.angle}deg)`;
+    this.element.style.transform = `translate3d(${Math.round(this.x - this.width / 2)}px, ${Math.round(this.y - this.height / 2)}px, 0) rotate(${this.angle}deg)`;
 
     const badge = this.element.querySelector('#rulerAngleBadge');
     if (badge) {
-      // Normalizar ángulo entre -180° y 180° o 0° y 360°
       let normAngle = Math.round(this.angle % 360);
       if (normAngle < 0) normAngle += 360;
       badge.textContent = `${normAngle}°`;
     }
   }
 
-  bindEvents() {
-    // Cerrar regla
+  bindElementEvents() {
+    if (!this.element) return;
     const btnClose = this.element.querySelector('#btnRulerClose');
     if (btnClose) {
       btnClose.addEventListener('click', (e) => {
@@ -1923,21 +1990,19 @@ class Ruler {
       });
     }
 
-    // Arrastre (Move handle)
     const handle = this.element.querySelector('.ruler-drag-handle');
     if (handle) {
       handle.addEventListener('pointerdown', (e) => {
         e.stopPropagation();
         this.isDragging = true;
-        this.dragOffset = {
-          x: e.clientX - this.x,
-          y: e.clientY - this.y
-        };
-        handle.setPointerCapture(e.pointerId);
+        this.startPointerX = e.clientX;
+        this.startPointerY = e.clientY;
+        this.startRulerX = this.x;
+        this.startRulerY = this.y;
+        try { handle.setPointerCapture(e.pointerId); } catch (_) {}
       });
     }
 
-    // Rotación (Rotate button)
     const btnRotate = this.element.querySelector('#btnRulerRotate');
     if (btnRotate) {
       btnRotate.addEventListener('pointerdown', (e) => {
@@ -1948,15 +2013,21 @@ class Ruler {
         const centerY = rect.top + rect.height / 2;
         this.startPointerAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
         this.startAngle = this.angle;
-        btnRotate.setPointerCapture(e.pointerId);
+        try { btnRotate.setPointerCapture(e.pointerId); } catch (_) {}
       });
     }
+  }
+
+  bindEvents() {
+    this.bindElementEvents();
 
     // Movimiento y rotación global
     window.addEventListener('pointermove', (e) => {
       if (this.isDragging) {
-        this.x = e.clientX - this.dragOffset.x;
-        this.y = e.clientY - this.dragOffset.y;
+        const dx = e.clientX - this.startPointerX;
+        const dy = e.clientY - this.startPointerY;
+        this.x = this.startRulerX + dx;
+        this.y = this.startRulerY + dy;
         this.updateTransform();
       } else if (this.isRotating) {
         const rect = this.element.getBoundingClientRect();
@@ -1966,7 +2037,7 @@ class Ruler {
         let delta = currentPointerAngle - this.startPointerAngle;
         let newAngle = this.startAngle + delta;
 
-        // Snapping a múltiplos de 15° y 45° si está cerca (±2°)
+        // Snapping a múltiplos de 15° y 45° si está cerca (±2.5°)
         const snapStep = 15;
         const nearestSnap = Math.round(newAngle / snapStep) * snapStep;
         if (Math.abs(newAngle - nearestSnap) < 2.5) {
@@ -1994,98 +2065,126 @@ class Ruler {
     }, { passive: false });
   }
 
-  // Snapping de coordenadas sobre el borde de la regla en el espacio del canvas
-  snapPoint(canvasX, canvasY, threshold = 28) {
+  // Proyección y restricción física para dibujar líneas perfectamente rectas sin atravesar la regla
+  snapPoint(canvasX, canvasY, options = {}) {
     if (!this.active || !this.element || !this.engine || !this.engine.canvas) {
-      return { snapped: false, x: canvasX, y: canvasY };
+      return { snapped: false, x: canvasX, y: canvasY, edge: null };
     }
 
     const mainCanvas = this.engine.canvas;
     const canvasRect = mainCanvas.getBoundingClientRect();
-    const rulerRect = this.element.getBoundingClientRect();
-
-    // Convertir centro de la regla al espacio del canvas
-    const scaleX = mainCanvas.width / canvasRect.width;
-    const scaleY = mainCanvas.height / canvasRect.height;
-
-    const rulerCenterX = (rulerRect.left + rulerRect.width / 2 - canvasRect.left) * scaleX;
-    const rulerCenterY = (rulerRect.top + rulerRect.height / 2 - canvasRect.top) * scaleY;
-
-    const rad = (this.angle * Math.PI) / 180;
-    const cos = Math.cos(rad);
-    const sin = Math.sin(rad);
-
-    const halfLength = (this.width / 2) * scaleX;
-    const halfThickness = (this.height / 2) * scaleY;
-
-    // Vector unitario a lo largo de la regla
-    const ux = cos;
-    const uy = sin;
-    // Vector unitario perpendicular (normal)
-    const nx = -sin;
-    const ny = cos;
-
-    // Borde superior
-    const topEdgeCenter = {
-      x: rulerCenterX + nx * (-halfThickness),
-      y: rulerCenterY + ny * (-halfThickness)
-    };
-    const topA = { x: topEdgeCenter.x - ux * halfLength, y: topEdgeCenter.y - uy * halfLength };
-    const topB = { x: topEdgeCenter.x + ux * halfLength, y: topEdgeCenter.y + uy * halfLength };
-
-    // Borde inferior
-    const bottomEdgeCenter = {
-      x: rulerCenterX + nx * halfThickness,
-      y: rulerCenterY + ny * halfThickness
-    };
-    const bottomA = { x: bottomEdgeCenter.x - ux * halfLength, y: bottomEdgeCenter.y - uy * halfLength };
-    const bottomB = { x: bottomEdgeCenter.x + ux * halfLength, y: bottomEdgeCenter.y + uy * halfLength };
-
-    // Proyección sobre borde superior
-    const projTop = this.projectOnSegment({ x: canvasX, y: canvasY }, topA, topB);
-    const distTop = Math.hypot(canvasX - projTop.x, canvasY - projTop.y);
-
-    // Proyección sobre borde inferior
-    const projBottom = this.projectOnSegment({ x: canvasX, y: canvasY }, bottomA, bottomB);
-    const distBottom = Math.hypot(canvasX - projBottom.x, canvasY - projBottom.y);
-
-    const scaledThreshold = threshold * scaleX;
-
-    if (distTop <= scaledThreshold && distTop <= distBottom) {
-      return { snapped: true, x: projTop.x, y: projTop.y, edge: 'top' };
-    } else if (distBottom <= scaledThreshold) {
-      return { snapped: true, x: projBottom.x, y: projBottom.y, edge: 'bottom' };
+    if (canvasRect.width === 0 || canvasRect.height === 0) {
+      return { snapped: false, x: canvasX, y: canvasY, edge: null };
     }
 
-    return { snapped: false, x: canvasX, y: canvasY };
+    const logicalWidth = this.engine.logicalWidth || 794;
+    const logicalHeight = this.engine.logicalHeight || 1123;
+
+    // Convertir de coordenadas lógicas de canvas a píxeles de pantalla
+    const screenX = canvasRect.left + canvasX * (canvasRect.width / logicalWidth);
+    const screenY = canvasRect.top + canvasY * (canvasRect.height / logicalHeight);
+
+    const rulerRect = this.element.getBoundingClientRect();
+    const cx = rulerRect.left + rulerRect.width / 2;
+    const cy = rulerRect.top + rulerRect.height / 2;
+
+    const rad = (this.angle * Math.PI) / 180;
+    const cosA = Math.cos(rad);
+    const sinA = Math.sin(rad);
+
+    // Vector relativo al centro de la regla en pantalla
+    const dx = screenX - cx;
+    const dy = screenY - cy;
+
+    // Coordenadas locales en la regla: u_dist (a lo largo), n_dist (a lo ancho)
+    const u_dist = dx * cosA + dy * sinA;
+    const n_dist = -dx * sinA + dy * cosA;
+
+    const halfL = this.width / 2; // e.g. 288px
+    const halfThickness = this.height / 2; // e.g. 38px
+
+    const lockedEdge = options.lockedEdge || null;
+    const snapMargin = options.snapMargin !== undefined ? options.snapMargin : 65; // Margen de captura magnética en px
+
+    // 1. Si el trazo ya está bloqueado a un borde, proyectar ESTRICTAMENTE recto sobre esa recta
+    if (lockedEdge === 'top') {
+      const clampedU = Math.max(-halfL, Math.min(halfL, u_dist));
+      const targetN = -halfThickness;
+      const sx = cx + clampedU * cosA - targetN * sinA;
+      const sy = cy + clampedU * sinA + targetN * cosA;
+      return {
+        snapped: true,
+        edge: 'top',
+        x: (sx - canvasRect.left) * (logicalWidth / canvasRect.width),
+        y: (sy - canvasRect.top) * (logicalHeight / canvasRect.height)
+      };
+    } else if (lockedEdge === 'bottom') {
+      const clampedU = Math.max(-halfL, Math.min(halfL, u_dist));
+      const targetN = halfThickness;
+      const sx = cx + clampedU * cosA - targetN * sinA;
+      const sy = cy + clampedU * sinA + targetN * cosA;
+      return {
+        snapped: true,
+        edge: 'bottom',
+        x: (sx - canvasRect.left) * (logicalWidth / canvasRect.width),
+        y: (sy - canvasRect.top) * (logicalHeight / canvasRect.height)
+      };
+    }
+
+    // 2. Si no hay bloqueo previo, comprobar proximidad a bordes superior e inferior
+    const isNearLength = u_dist >= -halfL - 30 && u_dist <= halfL + 30;
+    const distToTop = Math.abs(n_dist - (-halfThickness));
+    const distToBottom = Math.abs(n_dist - halfThickness);
+
+    if (isNearLength && (distToTop <= snapMargin || distToBottom <= snapMargin)) {
+      const isTop = distToTop <= distToBottom;
+      const edge = isTop ? 'top' : 'bottom';
+      const targetN = isTop ? -halfThickness : halfThickness;
+      const clampedU = Math.max(-halfL, Math.min(halfL, u_dist));
+
+      const sx = cx + clampedU * cosA - targetN * sinA;
+      const sy = cy + clampedU * sinA + targetN * cosA;
+
+      return {
+        snapped: true,
+        edge: edge,
+        x: (sx - canvasRect.left) * (logicalWidth / canvasRect.width),
+        y: (sy - canvasRect.top) * (logicalHeight / canvasRect.height)
+      };
+    }
+
+    // 3. Comprobar si el punto cae dentro del cuerpo físico de la regla (bloquear para no atravesar)
+    const isInside = Math.abs(u_dist) <= halfL && Math.abs(n_dist) < halfThickness;
+    if (isInside) {
+      const isTop = n_dist < 0;
+      const targetN = isTop ? -halfThickness : halfThickness;
+      const clampedU = Math.max(-halfL, Math.min(halfL, u_dist));
+      const sx = cx + clampedU * cosA - targetN * sinA;
+      const sy = cy + clampedU * sinA + targetN * cosA;
+      return {
+        snapped: true,
+        edge: isTop ? 'top' : 'bottom',
+        blockedInside: true,
+        x: (sx - canvasRect.left) * (logicalWidth / canvasRect.width),
+        y: (sy - canvasRect.top) * (logicalHeight / canvasRect.height)
+      };
+    }
+
+    return { snapped: false, x: canvasX, y: canvasY, edge: null };
   }
 
   projectOnSegment(p, a, b) {
     const abx = b.x - a.x;
     const aby = b.y - a.y;
-    const apx = p.x - a.x;
-    const apy = p.y - a.y;
-
-    const abLenSq = abx * abx + aby * aby;
-    if (abLenSq === 0) return { x: a.x, y: a.y };
-
-    let t = (apx * abx + apy * aby) / abLenSq;
-    t = Math.max(0, Math.min(1, t)); // Clamped al segmento de la regla
-
+    const lenSq = abx * abx + aby * aby;
+    if (lenSq === 0) return { x: a.x, y: a.y };
+    const t = Math.max(0, Math.min(1, ((p.x - a.x) * abx + (p.y - a.y) * aby) / lenSq));
     return {
       x: a.x + t * abx,
       y: a.y + t * aby
     };
   }
-
-  destroy() {
-    this.setActive(false);
-    if (this.element && this.element.parentNode) {
-      this.element.parentNode.removeChild(this.element);
-    }
-  }
 }
-
 
 
 // === File: js/editor/HandwritingPredictor.js ===
@@ -2756,13 +2855,23 @@ class CanvasEngine {
   onPointerDown(e) {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
 
+    // Si se acaba de cerrar un menú o se tocó la barra del editor / popover, evitar pintar de primeras
+    if (this._suppressNextDraw) {
+      this._suppressNextDraw = false;
+      return;
+    }
+
+    if (e.target && e.target.closest && (e.target.closest('#editorToolbar') || e.target.closest('.tool-popover') || e.target.closest('.modal-overlay') || e.target.closest('.zoom-controls-widget') || e.target.closest('.pages-tray-container'))) {
+      return;
+    }
+
     // Rechazo de palma activo: Si está en modo Stylus y el evento es un toque táctil, ignorar para dibujo
     if (this.inputMode === 'stylus-first' && e.pointerType === 'touch') {
       return;
     }
 
     // Si la herramienta activa es navegación, láser o externa, delegar
-    if (this.tool === 'laser' || this.tool === 'lasso' || this.tool === 'hand' || this.tool === 'shape' || this.tool === 'text' || this.tool === 'image' || this.tool === 'ruler') {
+    if (this.tool === 'laser' || this.tool === 'lasso' || this.tool === 'hand' || this.tool === 'shape' || this.tool === 'text' || this.tool === 'image') {
       return;
     }
 
@@ -2770,12 +2879,16 @@ class CanvasEngine {
 
     let pt = this.getCanvasCoordinates(e);
 
-    // Snapping con Regla si está activa
+    // Snapping y bloqueo con Regla si está activa
+    let isSnapped = false;
+    this._rulerLockedEdge = null;
     if (this.ruler && this.ruler.active) {
       const snap = this.ruler.snapPoint(pt.x, pt.y);
       if (snap.snapped) {
         pt.x = snap.x;
         pt.y = snap.y;
+        this._rulerLockedEdge = snap.edge;
+        isSnapped = true;
       }
     }
 
@@ -2829,12 +2942,17 @@ class CanvasEngine {
     if (!this.isDrawing) return;
     let pt = this.getCanvasCoordinates(e);
 
-    // Snapping con Regla si está activa
+    // Snapping y bloqueo con Regla si está activa
+    let isSnapped = false;
     if (this.ruler && this.ruler.active) {
-      const snap = this.ruler.snapPoint(pt.x, pt.y);
+      const snap = this.ruler.snapPoint(pt.x, pt.y, { lockedEdge: this._rulerLockedEdge });
       if (snap.snapped) {
         pt.x = snap.x;
         pt.y = snap.y;
+        isSnapped = true;
+        if (!this._rulerLockedEdge && snap.edge) {
+          this._rulerLockedEdge = snap.edge;
+        }
       }
     }
 
@@ -2848,7 +2966,10 @@ class CanvasEngine {
     // Filtro de Estabilización en tiempo real (Streamline smoothing)
     let targetPt;
     const stab = this.strokeStabilization !== undefined ? this.strokeStabilization : 0.5;
-    if (stab > 0.02 && this._stabilizedPoint) {
+    if (isSnapped) {
+      targetPt = { x: pt.x, y: pt.y, pressure: pt.pressure };
+      this._stabilizedPoint = targetPt;
+    } else if (stab > 0.02 && this._stabilizedPoint) {
       const alpha = Math.max(0.10, 1 - (stab * 0.84));
       const smoothX = this._stabilizedPoint.x + (pt.x - this._stabilizedPoint.x) * alpha;
       const smoothY = this._stabilizedPoint.y + (pt.y - this._stabilizedPoint.y) * alpha;
@@ -2875,6 +2996,7 @@ class CanvasEngine {
   onPointerUp(e) {
     if (!this.isDrawing) return;
     this.isDrawing = false;
+    this._rulerLockedEdge = null;
 
     if (this.currentStroke) {
       if (this.currentStroke.points.length > 0) {
@@ -4817,8 +4939,8 @@ class Toolbar {
     this.lastPenTool = 'pen';
     this.activeMenu = null; // 'pen' | 'highlighter' | 'eraser' | 'auxiliary' | 'width' | 'pages' | 'settings' | 'ruler' | 'presets' | null
 
-    // Cola dinámica de herramientas en la botonera principal (máximo 6 elementos)
-    this.MAX_DOCK_TOOLS = 6;
+    // Cola dinámica de herramientas en la botonera principal (máximo 8 elementos)
+    this.MAX_DOCK_TOOLS = 8;
     this.dockTools = ['pen', 'highlighter', 'eraser'];
     this.pinnedTools = new Set(['pen', 'highlighter', 'eraser']);
 
@@ -4975,10 +5097,10 @@ class Toolbar {
         </button>
       </div>
 
-      <!-- SECCIÓN 2: CENTRO (Útiles de dibujo esenciales y selector de grosor) -->
+      <!-- SECCIÓN 2: CENTRO (Útiles de dibujo esenciales) -->
       <div class="toolbar-center">
         <div class="main-tool-dock" id="mainToolDock">
-          <!-- Cola dinámica de herramientas (máx 6) -->
+          <!-- Cola dinámica de herramientas (máx 8) -->
           <div class="dynamic-dock-tools" id="dynamicDockTools" style="display: inline-flex; align-items: center; gap: 3px;">
             ${this.renderDockToolsHtml()}
           </div>
@@ -4991,20 +5113,8 @@ class Toolbar {
             <span class="dropdown-chevron">${Icons.chevronDown}</span>
           </button>
 
-          <!-- Conmutador HTR Toggle (Reconocimiento y Predicción de trazo manuscrito a texto) -->
-          <button class="dock-btn-compact ${isHtrActive ? 'active htr-toggle-active' : ''}" id="btnToggleHTR" data-tool="btnMenuInsert" title="Autocompletado HTR Manuscrito a Texto (IA Predictiva): Clic para activar/desactivar">
-            <span class="tool-icon-wrapper">${Icons.htr}</span>
-          </button>
-
           <!-- Botón de compatibilidad de imagen/media invisible para tests -->
           <button class="hidden" id="btnToolMedia" data-tool="btnMenuInsert"></button>
-
-          <div class="dock-divider"></div>
-
-          <!-- Píldora selectora de grosor -->
-          <button class="stroke-width-pill" id="btnStrokeWidthPill" title="Grosor de trazo (Clic para cambiar)">
-            <span id="strokeWidthLabel">${this.engine.strokeWidth}px</span>
-          </button>
         </div>
       </div>
 
@@ -5206,6 +5316,9 @@ class Toolbar {
   createPopover() {
     this.popover = document.createElement('div');
     this.popover.className = 'tool-popover mini-menu-popover hidden';
+    this.popover.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+    });
     document.body.appendChild(this.popover);
   }
 
@@ -5234,6 +5347,11 @@ class Toolbar {
   }
 
   bindEvents() {
+    // Aislar la barra del editor de eventos de puntero que puedan llegar al canvas
+    this.container?.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+    });
+
     // Volver a la biblioteca
     this.container?.querySelector('#btnBackToLibrary')?.addEventListener('click', () => {
       this.closeMenu();
@@ -5255,28 +5373,6 @@ class Toolbar {
       btnAux.addEventListener('click', (e) => {
         e.stopPropagation();
         this.toggleMenu('auxiliary', btnAux);
-      });
-    }
-
-    // Botón Toggle HTR (Reconocimiento Inteligente a Texto)
-    const btnHTR = this.container?.querySelector('#btnToggleHTR');
-    if (btnHTR) {
-      btnHTR.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (this.htrPredictor) {
-          const isNowActive = this.htrPredictor.toggleHTR();
-          btnHTR.classList.toggle('active', isNowActive);
-          btnHTR.classList.toggle('htr-toggle-active', isNowActive);
-        }
-      });
-    }
-
-    // Píldora de grosor
-    const btnWidthPill = this.container?.querySelector('#btnStrokeWidthPill');
-    if (btnWidthPill) {
-      btnWidthPill.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.toggleMenu('width', btnWidthPill);
       });
     }
 
@@ -5335,18 +5431,24 @@ class Toolbar {
       });
     }
 
-    // Cerrar menú al hacer clic fuera
+    // Cerrar menú al hacer clic fuera (evitando que ese toque pinte en el canvas)
     document.addEventListener('pointerdown', (e) => {
       if (
         this.popover &&
         !this.popover.contains(e.target) &&
         !e.target.closest('.dock-btn-compact') &&
         !e.target.closest('.tool-btn-compact') &&
-        !e.target.closest('.stroke-width-pill') &&
         !e.target.closest('#btnPagesMenu') &&
         !e.target.closest('#btnMenuSettings')
       ) {
-        this.closeMenu();
+        if (!this.popover.classList.contains('hidden')) {
+          this.closeMenu();
+          if (this.engine) {
+            this.engine.isDrawing = false;
+            this.engine._suppressNextDraw = true;
+            setTimeout(() => { if (this.engine) this.engine._suppressNextDraw = false; }, 120);
+          }
+        }
       }
     });
 
@@ -5615,6 +5717,7 @@ class Toolbar {
           this.engine.setColor(color);
         }
         this.updatePenDotsColor();
+        this.updateActiveButton();
         this.renderStrokeSettingsMenu(toolKey);
       });
     });
@@ -5632,6 +5735,7 @@ class Toolbar {
           this.engine.setColor(color);
         }
         this.updatePenDotsColor();
+        this.updateActiveButton();
         updatePreviewCircle();
       });
     }
@@ -5735,7 +5839,7 @@ class Toolbar {
       <div class="popover-arrow"></div>
       <div class="mini-menu-title-row">
         <span class="mini-menu-title">Fijar / Desfijar Herramientas</span>
-        <span class="pinned-counter-badge">${pinnedCount}/6 fijadas</span>
+        <span class="pinned-counter-badge">${pinnedCount}/${this.MAX_DOCK_TOOLS} fijadas</span>
       </div>
       <p style="font-size:0.78rem; color:var(--text-secondary); margin:0 0 10px 0; line-height:1.35;">
         Añade múltiples útiles (ej: varios subrayadores o bolígrafos) con colores y grosores personalizados a la barra.
@@ -6072,12 +6176,14 @@ class Toolbar {
   renderLaserMenu() {
     const isPinned = this.pinnedTools.has('laser');
     const color = (this.laserPointer && this.laserPointer.laserColor) || '#ef4444';
+    const durationMs = (this.laserPointer && this.laserPointer.getFadeDuration()) || 1000;
+    const durationSec = (durationMs / 1000).toFixed(1);
 
     this.popover.innerHTML = `
       <div class="popover-arrow"></div>
       <div class="mini-menu-title-row">
         <span class="mini-menu-title">Puntero Láser</span>
-        <button type="button" class="popover-title-pin-btn ${isPinned ? 'pinned' : ''}" data-pin-tool="laser" title="${isPinned ? 'Desfijar de la barra' : 'Fijar en la barra (máx 6)'}">
+        <button type="button" class="popover-title-pin-btn ${isPinned ? 'pinned' : ''}" data-pin-tool="laser" title="${isPinned ? 'Desfijar de la barra' : 'Fijar en la barra (máx 8)'}">
           ${isPinned ? Icons.pinFilled : Icons.pin}
           <span>${isPinned ? 'Fijado' : 'Fijar'}</span>
         </button>
@@ -6088,6 +6194,20 @@ class Toolbar {
       <div class="color-palette-10">
         ${['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899'].map(c => `
           <button type="button" class="color-swatch ${c.toLowerCase() === color.toLowerCase() ? 'active' : ''}" data-laser-color="${c}" style="background-color: ${c}"></button>
+        `).join('')}
+      </div>
+
+      <div class="popover-divider"></div>
+
+      <!-- Duración de desvanecimiento -->
+      <div class="popover-row">
+        <span class="label-text">Tiempo de Duración</span>
+        <span class="value-text" id="laserDurationVal">${durationSec}s</span>
+      </div>
+      <input type="range" class="popover-slider" id="laserDurationSlider" min="300" max="5000" step="100" value="${durationMs}" />
+      <div class="stroke-presets-chips" id="laserDurationPresets">
+        ${[500, 1000, 2000, 3000, 5000].map(ms => `
+          <button type="button" class="stroke-preset-chip ${Math.abs(durationMs - ms) < 50 ? 'active' : ''}" data-duration="${ms}">${(ms / 1000).toFixed(1)}s</button>
         `).join('')}
       </div>
     `;
@@ -6104,6 +6224,151 @@ class Toolbar {
           this.laserPointer.setColor(c);
         }
         this.renderLaserMenu();
+      });
+    });
+
+    const slider = this.popover.querySelector('#laserDurationSlider');
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const ms = Number(e.target.value);
+        if (this.laserPointer) {
+          this.laserPointer.setFadeDuration(ms);
+        }
+        const valText = this.popover.querySelector('#laserDurationVal');
+        if (valText) valText.textContent = `${(ms / 1000).toFixed(1)}s`;
+        this.popover.querySelectorAll('#laserDurationPresets .stroke-preset-chip').forEach(chip => {
+          chip.classList.toggle('active', Math.abs(Number(chip.dataset.duration) - ms) < 50);
+        });
+      });
+    }
+
+    this.popover.querySelectorAll('#laserDurationPresets .stroke-preset-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const ms = Number(chip.dataset.duration);
+        if (this.laserPointer) {
+          this.laserPointer.setFadeDuration(ms);
+        }
+        if (slider) slider.value = ms;
+        const valText = this.popover.querySelector('#laserDurationVal');
+        if (valText) valText.textContent = `${(ms / 1000).toFixed(1)}s`;
+        this.popover.querySelectorAll('#laserDurationPresets .stroke-preset-chip').forEach(c => {
+          c.classList.toggle('active', c === chip);
+        });
+      });
+    });
+  }
+
+  // Popover Regla Interactiva
+  renderRulerMenu() {
+    const isPinned = this.pinnedTools.has('ruler');
+    const isRulerActive = this.ruler ? this.ruler.active : false;
+    let normAngle = this.ruler ? Math.round(this.ruler.angle % 360) : 0;
+    if (normAngle < 0) normAngle += 360;
+
+    this.popover.innerHTML = `
+      <div class="popover-arrow"></div>
+      <div class="mini-menu-title-row">
+        <span class="mini-menu-title">Regla Interactiva</span>
+        <button type="button" class="popover-title-pin-btn ${isPinned ? 'pinned' : ''}" data-pin-tool="ruler" title="${isPinned ? 'Desfijar de la barra' : 'Fijar en la barra (máx 8)'}">
+          ${isPinned ? Icons.pinFilled : Icons.pin}
+          <span>${isPinned ? 'Fijado' : 'Fijar'}</span>
+        </button>
+      </div>
+      <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:10px;">
+        Guía milimétrica con imán de trazo para dibujar líneas perfectamente rectas con cualquier útil.
+      </div>
+
+      <div class="settings-mini-section" style="margin-bottom: 10px;">
+        <label class="settings-toggle-row">
+          <div class="toggle-text">
+            <strong>Mostrar Regla en Pantalla</strong>
+            <small>Activar regla y snapping magnético</small>
+          </div>
+          <input type="checkbox" id="chkRulerToggle" class="settings-switch" ${isRulerActive ? 'checked' : ''} />
+        </label>
+      </div>
+
+      <div class="popover-divider"></div>
+
+      <!-- Ángulo de Rotación -->
+      <div class="popover-row">
+        <span class="label-text">Ángulo de Inclinación</span>
+        <span class="value-text" id="rulerMenuAngleVal">${normAngle}°</span>
+      </div>
+      <input type="range" class="popover-slider" id="rulerAngleSlider" min="0" max="360" value="${normAngle}" />
+      <div class="stroke-presets-chips" id="rulerAnglePresets">
+        ${[0, 30, 45, 90, 180].map(a => `
+          <button type="button" class="stroke-preset-chip ${normAngle === a ? 'active' : ''}" data-angle="${a}">${a}°</button>
+        `).join('')}
+      </div>
+
+      <div class="popover-divider"></div>
+
+      <!-- Longitud de la Regla -->
+      <div class="popover-row">
+        <span class="label-text">Longitud</span>
+      </div>
+      <div class="stroke-presets-chips" id="rulerLengthPresets">
+        ${[15, 20, 24, 30, 35].map(cm => `
+          <button type="button" class="stroke-preset-chip ${(this.ruler && Math.round(this.ruler.width / 24) === cm) ? 'active' : ''}" data-len="${cm}">${cm}cm</button>
+        `).join('')}
+      </div>
+    `;
+
+    this.popover.querySelector('.popover-title-pin-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.togglePinTool('ruler');
+    });
+
+    const chk = this.popover.querySelector('#chkRulerToggle');
+    if (chk) {
+      chk.addEventListener('change', (e) => {
+        if (this.ruler) {
+          this.ruler.setActive(e.target.checked);
+          this.updateActiveButton();
+        }
+      });
+    }
+
+    const angleSlider = this.popover.querySelector('#rulerAngleSlider');
+    if (angleSlider) {
+      angleSlider.addEventListener('input', (e) => {
+        const val = Number(e.target.value);
+        if (this.ruler) {
+          this.ruler.setAngle(val);
+        }
+        const valText = this.popover.querySelector('#rulerMenuAngleVal');
+        if (valText) valText.textContent = `${val}°`;
+        this.popover.querySelectorAll('#rulerAnglePresets .stroke-preset-chip').forEach(chip => {
+          chip.classList.toggle('active', Number(chip.dataset.angle) === val);
+        });
+      });
+    }
+
+    this.popover.querySelectorAll('#rulerAnglePresets .stroke-preset-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const val = Number(chip.dataset.angle);
+        if (this.ruler) {
+          this.ruler.setAngle(val);
+        }
+        if (angleSlider) angleSlider.value = val;
+        const valText = this.popover.querySelector('#rulerMenuAngleVal');
+        if (valText) valText.textContent = `${val}°`;
+        this.popover.querySelectorAll('#rulerAnglePresets .stroke-preset-chip').forEach(c => {
+          c.classList.toggle('active', c === chip);
+        });
+      });
+    });
+
+    this.popover.querySelectorAll('#rulerLengthPresets .stroke-preset-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const len = Number(chip.dataset.len);
+        if (this.ruler) {
+          this.ruler.setLength(len);
+        }
+        this.popover.querySelectorAll('#rulerLengthPresets .stroke-preset-chip').forEach(c => {
+          c.classList.toggle('active', c === chip);
+        });
       });
     });
   }
@@ -6434,8 +6699,16 @@ class Toolbar {
   }
 
   selectTool(slotId) {
-    this.activeTool = slotId;
     const base = slotId.split('_')[0];
+    if (base === 'ruler') {
+      if (this.ruler) {
+        this.ruler.toggle();
+      }
+      this.updateActiveButton();
+      return;
+    }
+
+    this.activeTool = slotId;
     if (['pen', 'pencil', 'marker', 'highlighter'].includes(base)) {
       this.lastPenTool = slotId;
     }
@@ -6464,11 +6737,28 @@ class Toolbar {
   }
 
   updateActiveButton() {
+    const noColorTools = ['ruler', 'eraser', 'lasso', 'hand'];
+
     this.dockTools.forEach(slotId => {
       const def = this.getToolDefinition(slotId);
       const btn = this.container.querySelector(`#${def.btnId}`) || this.container.querySelector(`[data-tool="${slotId}"]`);
       if (btn) {
-        btn.classList.toggle('active', this.activeTool === slotId);
+        const isRuler = def.baseType === 'ruler';
+        const isActive = isRuler ? Boolean(this.ruler && this.ruler.active) : (this.activeTool === slotId);
+        btn.classList.toggle('active', isActive);
+
+        const isNoColor = noColorTools.includes(def.baseType);
+        if (isNoColor) {
+          btn.classList.add('no-color-tool');
+          btn.style.removeProperty('--tool-color');
+          btn.style.removeProperty('--tool-contrast-color');
+        } else {
+          btn.classList.remove('no-color-tool');
+          const col = this.getToolColor(slotId);
+          const contrast = this.getContrastColor(col);
+          btn.style.setProperty('--tool-color', col);
+          btn.style.setProperty('--tool-contrast-color', contrast);
+        }
       }
     });
 
@@ -6482,11 +6772,42 @@ class Toolbar {
     if (label) label.textContent = `${this.engine.strokeWidth}px`;
   }
 
+  getContrastColor(hex) {
+    if (!hex || typeof hex !== 'string' || hex.startsWith('rgba')) return '#ffffff';
+    let c = hex.replace('#', '');
+    if (c.length === 3) c = c.split('').map(x => x + x).join('');
+    const num = parseInt(c, 16);
+    if (isNaN(num)) return '#ffffff';
+    const r = (num >> 16) & 255;
+    const g = (num >> 8) & 255;
+    const b = num & 255;
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    return brightness > 165 ? '#0f172a' : '#ffffff';
+  }
+
   updatePenDotsColor() {
+    const noColorTools = ['ruler', 'eraser', 'lasso', 'hand'];
+
     this.dockTools.forEach(slotId => {
       const dot = this.container.querySelector(`#dot_${slotId}`);
       if (dot) {
         dot.style.backgroundColor = this.getToolColor(slotId);
+      }
+      const def = this.getToolDefinition(slotId);
+      const btn = this.container.querySelector(`#${def.btnId}`) || this.container.querySelector(`[data-tool="${slotId}"]`);
+      if (btn) {
+        const isNoColor = noColorTools.includes(def.baseType);
+        if (isNoColor) {
+          btn.classList.add('no-color-tool');
+          btn.style.removeProperty('--tool-color');
+          btn.style.removeProperty('--tool-contrast-color');
+        } else {
+          btn.classList.remove('no-color-tool');
+          const col = this.getToolColor(slotId);
+          const contrast = this.getContrastColor(col);
+          btn.style.setProperty('--tool-color', col);
+          btn.style.setProperty('--tool-contrast-color', contrast);
+        }
       }
     });
   }
@@ -6752,6 +7073,11 @@ class ViewportController {
       }
     }
 
+    // Si el toque o clic es directamente sobre la regla interactiva o sus controles, delegar
+    if (e.target && e.target.closest && e.target.closest('.interactive-ruler')) {
+      return;
+    }
+
     // Paneo con botón central del ratón, manteniendo Espacio, con herramienta mano ('hand')
     // O toque táctil si está en modo Stylus (rechazo de palma activo para scroll con dedo)
     const isMiddleClick = e.button === 1;
@@ -6860,9 +7186,11 @@ class ViewportController {
 
   resetZoom() {
     const wsWidth = this.workspace.clientWidth || window.innerWidth;
-    const canvasWidth = this.engine.canvas.width;
+    const targetWidth = this.engine.format === 'a4' ? 794 : this.engine.canvas.width;
     this.zoom = 1.0;
-    this.panX = (wsWidth - canvasWidth) / 2;
+    const extraSpace = Math.max(0, wsWidth - targetWidth);
+    const shiftRight = wsWidth > 768 && extraSpace > 30 ? Math.min(180, Math.max(50, Math.round(extraSpace * 0.25))) : 0;
+    this.panX = Math.round((wsWidth - targetWidth) / 2) + shiftRight;
     this.panY = 30;
     this.applyTransform();
   }
@@ -6872,7 +7200,10 @@ class ViewportController {
     const targetWidth = this.engine.format === 'a4' ? 794 : this.engine.canvas.width;
     const fitScale = (wsWidth - padding * 2) / targetWidth;
     this.zoom = Math.max(this.minZoom, Math.min(2.0, fitScale));
-    this.panX = (wsWidth - targetWidth * this.zoom) / 2;
+    const contentWidth = targetWidth * this.zoom;
+    const extraSpace = Math.max(0, wsWidth - contentWidth);
+    const shiftRight = wsWidth > 768 && extraSpace > 60 ? Math.min(120, Math.round(extraSpace * 0.15)) : 0;
+    this.panX = Math.round((wsWidth - contentWidth) / 2) + shiftRight;
     this.panY = 16;
     this.applyTransform();
   }
@@ -6896,7 +7227,10 @@ class ViewportController {
     );
 
     this.zoom = Math.max(this.minZoom, Math.min(2.0, fitScale));
-    this.panX = (wsWidth - canvasWidth * this.zoom) / 2;
+    const contentWidth = canvasWidth * this.zoom;
+    const extraSpace = Math.max(0, wsWidth - contentWidth);
+    const shiftRight = wsWidth > 768 && extraSpace > 60 ? Math.min(120, Math.round(extraSpace * 0.15)) : 0;
+    this.panX = Math.round((wsWidth - contentWidth) / 2) + shiftRight;
     this.panY = Math.max(16, (wsHeight - canvasHeight * this.zoom) / 2);
 
     this.applyTransform();
@@ -6912,8 +7246,10 @@ class ViewportController {
         this.fitWidth(isMobile ? 12 : 32);
       } else {
         this.zoom = 1.0;
-        // Centrar con ligero desplazamiento óptico a la derecha (+24px)
-        this.panX = Math.round((wsWidth - 794) / 2) + 24;
+        // Desplazamiento del cuaderno hacia la derecha para mayor comodidad y espacio lateral
+        const extraSpace = Math.max(0, wsWidth - 794);
+        const shiftRight = Math.min(180, Math.max(60, Math.round(extraSpace * 0.25)));
+        this.panX = Math.round((wsWidth - 794) / 2) + shiftRight;
         this.panY = 24;
         this.applyTransform();
       }
@@ -6927,7 +7263,9 @@ class ViewportController {
       this.fitToScreen();
     } else {
       this.zoom = 1.0;
-      this.panX = Math.round((wsWidth - canvasWidth) / 2);
+      const extraSpace = Math.max(0, wsWidth - canvasWidth);
+      const shiftRight = wsWidth > 768 && extraSpace > 40 ? Math.min(150, Math.max(40, Math.round(extraSpace * 0.2))) : 0;
+      this.panX = Math.round((wsWidth - canvasWidth) / 2) + shiftRight;
       this.panY = Math.max(24, (wsHeight - canvasHeight) / 2);
       this.applyTransform();
     }
@@ -9594,7 +9932,11 @@ class App {
 
     // 4. Inicializar Puntero Láser y Regla Interactiva
     this.laserPointer = new LaserPointer(this.canvasWrapper, this.paintCanvas);
-    this.ruler = new Ruler(this.canvasWrapper, this.canvasEngine);
+    this.ruler = new Ruler(this.canvasWrapper, this.canvasEngine, {
+      onClose: () => {
+        if (this.toolbar) this.toolbar.updateActiveButton();
+      }
+    });
     this.canvasEngine.setRuler(this.ruler);
     this.canvasEngine.setLaserPointer(this.laserPointer);
 
@@ -9768,6 +10110,7 @@ class App {
     this.textTool.setHost(this.paintCanvas, this.canvasWrapper);
     this.imageTool.setHost(this.paintCanvas, this.canvasWrapper);
     if (this.laserPointer) this.laserPointer.setHost(this.paintCanvas, this.canvasWrapper);
+    if (this.ruler) this.ruler.setHost(this.paintCanvas, this.canvasWrapper);
   }
 
   renderNotebookStream() {
@@ -9920,6 +10263,7 @@ class App {
         this.textTool.setHost(coverCanvas, coverHost);
         this.imageTool.setHost(coverCanvas, coverHost);
         if (this.laserPointer) this.laserPointer.setHost(coverCanvas, coverHost);
+        if (this.ruler) this.ruler.setHost(coverCanvas, this.canvasWrapper);
       }
       return;
     }
@@ -9945,6 +10289,7 @@ class App {
     this.textTool.setHost(activeCanvas, activeHost);
     this.imageTool.setHost(activeCanvas, activeHost);
     if (this.laserPointer) this.laserPointer.setHost(activeCanvas, activeHost);
+    if (this.ruler) this.ruler.setHost(activeCanvas, this.canvasWrapper);
   }
 
   getPatternLabel(pat) {

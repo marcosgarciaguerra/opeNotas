@@ -209,6 +209,11 @@ export class ViewportController {
       }
     }
 
+    // Si el toque o clic es directamente sobre la regla interactiva o sus controles, delegar
+    if (e.target && e.target.closest && e.target.closest('.interactive-ruler')) {
+      return;
+    }
+
     // Paneo con botón central del ratón, manteniendo Espacio, con herramienta mano ('hand')
     // O toque táctil si está en modo Stylus (rechazo de palma activo para scroll con dedo)
     const isMiddleClick = e.button === 1;
@@ -317,9 +322,11 @@ export class ViewportController {
 
   resetZoom() {
     const wsWidth = this.workspace.clientWidth || window.innerWidth;
-    const canvasWidth = this.engine.canvas.width;
+    const targetWidth = this.engine.format === 'a4' ? 794 : this.engine.canvas.width;
     this.zoom = 1.0;
-    this.panX = (wsWidth - canvasWidth) / 2;
+    const extraSpace = Math.max(0, wsWidth - targetWidth);
+    const shiftRight = wsWidth > 768 && extraSpace > 30 ? Math.min(180, Math.max(50, Math.round(extraSpace * 0.25))) : 0;
+    this.panX = Math.round((wsWidth - targetWidth) / 2) + shiftRight;
     this.panY = 30;
     this.applyTransform();
   }
@@ -329,7 +336,10 @@ export class ViewportController {
     const targetWidth = this.engine.format === 'a4' ? 794 : this.engine.canvas.width;
     const fitScale = (wsWidth - padding * 2) / targetWidth;
     this.zoom = Math.max(this.minZoom, Math.min(2.0, fitScale));
-    this.panX = (wsWidth - targetWidth * this.zoom) / 2;
+    const contentWidth = targetWidth * this.zoom;
+    const extraSpace = Math.max(0, wsWidth - contentWidth);
+    const shiftRight = wsWidth > 768 && extraSpace > 60 ? Math.min(120, Math.round(extraSpace * 0.15)) : 0;
+    this.panX = Math.round((wsWidth - contentWidth) / 2) + shiftRight;
     this.panY = 16;
     this.applyTransform();
   }
@@ -353,7 +363,10 @@ export class ViewportController {
     );
 
     this.zoom = Math.max(this.minZoom, Math.min(2.0, fitScale));
-    this.panX = (wsWidth - canvasWidth * this.zoom) / 2;
+    const contentWidth = canvasWidth * this.zoom;
+    const extraSpace = Math.max(0, wsWidth - contentWidth);
+    const shiftRight = wsWidth > 768 && extraSpace > 60 ? Math.min(120, Math.round(extraSpace * 0.15)) : 0;
+    this.panX = Math.round((wsWidth - contentWidth) / 2) + shiftRight;
     this.panY = Math.max(16, (wsHeight - canvasHeight * this.zoom) / 2);
 
     this.applyTransform();
@@ -369,8 +382,10 @@ export class ViewportController {
         this.fitWidth(isMobile ? 12 : 32);
       } else {
         this.zoom = 1.0;
-        // Centrar con ligero desplazamiento óptico a la derecha (+24px)
-        this.panX = Math.round((wsWidth - 794) / 2) + 24;
+        // Desplazamiento del cuaderno hacia la derecha para mayor comodidad y espacio lateral
+        const extraSpace = Math.max(0, wsWidth - 794);
+        const shiftRight = Math.min(180, Math.max(60, Math.round(extraSpace * 0.25)));
+        this.panX = Math.round((wsWidth - 794) / 2) + shiftRight;
         this.panY = 24;
         this.applyTransform();
       }
@@ -384,7 +399,9 @@ export class ViewportController {
       this.fitToScreen();
     } else {
       this.zoom = 1.0;
-      this.panX = Math.round((wsWidth - canvasWidth) / 2);
+      const extraSpace = Math.max(0, wsWidth - canvasWidth);
+      const shiftRight = wsWidth > 768 && extraSpace > 40 ? Math.min(150, Math.max(40, Math.round(extraSpace * 0.2))) : 0;
+      this.panX = Math.round((wsWidth - canvasWidth) / 2) + shiftRight;
       this.panY = Math.max(24, (wsHeight - canvasHeight) / 2);
       this.applyTransform();
     }

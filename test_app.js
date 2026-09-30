@@ -343,6 +343,38 @@ async function runTests() {
   assert(toolbarSource.includes('pin-instance-chip'), 'Toolbar y styles.css incluyen chips para gestionar instancias');
   assert(stylesSrc.includes('.pin-instance-chip'), 'styles.css incluye estilos para los chips de instancias de herramientas');
 
+  // Test 22: Regla Interactiva y Snapping Preciso en Canvas
+  console.log('\n📐 Test 22: Verificación de Regla Interactiva Mejorada...');
+  assert(toolbarSource.includes('renderRulerMenu'), 'Toolbar implementa renderRulerMenu para configurar regla');
+  assert(rulerSource.includes('screenToCanvas'), 'Ruler implementa proyección de coordenadas exacta en pantalla/canvas');
+  assert(stylesSrc.includes('.interactive-ruler') && stylesSrc.includes('pointer-events: none;'), 'styles.css configura pointer-events: none en interactive-ruler para no bloquear el canvas');
+  assert(stylesSrc.includes('.ruler-body') && stylesSrc.includes('pointer-events: auto;'), 'styles.css permite interacción fluida en el cuerpo y controles de la regla');
+
+  // Test 23: Selector de Tiempo de Duración en Puntero Láser
+  console.log('\n⚡ Test 23: Verificación de Selector de Tiempo de Duración en Puntero Láser...');
+  assert(laserSource.includes('setFadeDuration(ms)'), 'LaserPointer implementa método setFadeDuration');
+  assert(laserSource.includes('getFadeDuration()'), 'LaserPointer implementa método getFadeDuration');
+  assert(toolbarSource.includes('laserDurationSlider'), 'Toolbar renderiza slider de duración del láser');
+  assert(toolbarSource.includes('laserDurationPresets'), 'Toolbar renderiza presets de duración del láser');
+
+  // Test 24: Límite de 8 Herramientas en Dock, Retiro de Botón de Grosor y Color Activo
+  console.log('\n🛠️ Test 24: Verificación de 8 Herramientas Máximas, Color Activo y Retiro de Botón de Grosor...');
+  assert(toolbarSource.includes('this.MAX_DOCK_TOOLS = 8'), 'Toolbar configura MAX_DOCK_TOOLS = 8');
+  assert(!toolbarSource.includes('id="btnStrokeWidthPill"'), 'Toolbar retira el botón de grosor global del dock');
+  assert(toolbarSource.includes('--tool-color'), 'Toolbar actualiza la variable CSS --tool-color del útil seleccionado');
+  assert(stylesSrc.includes('var(--tool-color'), 'styles.css aplica --tool-color en el icono del botón activo');
+
+  // Test 25: Retiro de HTR, Backup a openotas, Aislamiento de Toques en Toolbar y Cuaderno Desplazado a la Derecha
+  console.log('\n✨ Test 25: Verificación de Retiro de HTR, Carpeta openotas, Aislamiento de Toque y Cuaderno Desplazado...');
+  assert(!toolbarSource.includes('id="btnToggleHTR"'), 'Toolbar retira completamente el botón de autocompletado HTR');
+  assert(webAppInterfaceSrc.includes('openotas'), 'WebAppInterface.java guarda backups en la carpeta openotas');
+  assert(dbSrc.includes('backup_openotas_'), 'db.js genera nombres de archivo backup_openotas_*.json');
+  assert(canvasEngineSource.includes('_suppressNextDraw'), 'CanvasEngine implementa flag _suppressNextDraw para evitar pintar al tocar la barra');
+  assert(toolbarSource.includes('_suppressNextDraw'), 'Toolbar activa supresión de trazos al cerrar popovers');
+  assert(stylesSrc.includes('.toolbar-center') && stylesSrc.includes('justify-content: center'), 'styles.css mantiene la botonera de la barra centrada');
+  const viewportSrc = fs.readFileSync(path.join(__dirname, 'js/editor/viewport.js'), 'utf8');
+  assert(viewportSrc.includes('shiftRight') && viewportSrc.includes('centerContent'), 'ViewportController desplaza el cuaderno/lienzo hacia la derecha');
+
   console.log('\n====================================================');
   console.log(`🎉 RESULTADOS: ${passedTests}/${totalTests} PRUEBAS SUPERADAS CON ÉXITO (100%)`);
   console.log('====================================================\n');

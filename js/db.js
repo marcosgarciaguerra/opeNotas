@@ -438,7 +438,7 @@ class WhiteboardDB {
     const folders = await this.getAllFolders();
 
     const backupData = {
-      app: 'SuiteNotasPizarra',
+      app: 'openotas',
       version: '2.0.0',
       exportedAt: new Date().toISOString(),
       timestamp: Date.now(),
@@ -447,7 +447,7 @@ class WhiteboardDB {
     };
 
     const jsonString = JSON.stringify(backupData, null, 2);
-    const filename = `backup_pizarra_cuadernos_${new Date().toISOString().slice(0, 10)}.json`;
+    const filename = `backup_openotas_${new Date().toISOString().slice(0, 10)}.json`;
 
     if (typeof window !== 'undefined' && window.Android && typeof window.Android.saveTextFile === 'function') {
       window.Android.saveTextFile(jsonString, filename, 'application/json');

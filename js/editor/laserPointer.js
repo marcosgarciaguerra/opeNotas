@@ -7,7 +7,13 @@ export class LaserPointer {
     this.isPointerDown = false;
 
     this.points = []; // Array de { x, y, time, pressure }
-    this.FADE_DURATION_MS = 1000; // Desvanecimiento en ~1 segundo
+    this.FADE_DURATION_MS = 1000; // Desvanecimiento en ~1 segundo por defecto
+    try {
+      const savedDuration = localStorage.getItem('whiteboard_laser_fade_duration');
+      if (savedDuration) {
+        this.FADE_DURATION_MS = Number(savedDuration) || 1000;
+      }
+    } catch (_) {}
     this.animFrameId = null;
 
     this.laserColor = '#ef4444'; // Rojo láser
@@ -96,6 +102,17 @@ export class LaserPointer {
     } else {
       this.laserGlow = color;
     }
+  }
+
+  setFadeDuration(ms) {
+    this.FADE_DURATION_MS = Math.max(200, Math.min(10000, Number(ms) || 1000));
+    try {
+      localStorage.setItem('whiteboard_laser_fade_duration', String(this.FADE_DURATION_MS));
+    } catch (_) {}
+  }
+
+  getFadeDuration() {
+    return this.FADE_DURATION_MS;
   }
 
   setActive(active) {
