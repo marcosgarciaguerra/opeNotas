@@ -18,6 +18,7 @@ export class DashboardView {
     this.currentNav = 'all'; // 'all' | 'recent' | 'favorites' | 'folder_{id}' | 'trash'
     this.currentFilter = 'all'; // 'all' | 'notebook' | 'whiteboard'
     this.currentViewMode = 'grid'; // 'grid' | 'list'
+    this.currentSort = 'date-desc'; // 'date-desc' | 'date-asc' | 'name-asc' | 'name-desc' | 'pages-desc'
     this.searchQuery = '';
 
     this.documents = [];
@@ -199,6 +200,19 @@ export class DashboardView {
                 <button class="pill active" data-filter="all">Todos</button>
                 <button class="pill" data-filter="notebook">Cuadernos</button>
                 <button class="pill" data-filter="whiteboard">Pizarras</button>
+              </div>
+
+              <div class="header-divider"></div>
+
+              <!-- Selector de Ordenación (Fecha, Nombre, Páginas) -->
+              <div class="sort-selector-dropdown">
+                <select id="sortSelect" class="sort-select" title="Criterio de ordenación">
+                  <option value="date-desc" ${this.currentSort === 'date-desc' ? 'selected' : ''}>Recientes</option>
+                  <option value="date-asc" ${this.currentSort === 'date-asc' ? 'selected' : ''}>Antiguos</option>
+                  <option value="name-asc" ${this.currentSort === 'name-asc' ? 'selected' : ''}>Nombre (A - Z)</option>
+                  <option value="name-desc" ${this.currentSort === 'name-desc' ? 'selected' : ''}>Nombre (Z - A)</option>
+                  <option value="pages-desc" ${this.currentSort === 'pages-desc' ? 'selected' : ''}>Más páginas</option>
+                </select>
               </div>
 
               <div class="header-divider"></div>
@@ -436,10 +450,20 @@ export class DashboardView {
       this.renderDocuments();
     });
 
-    // Buscador
+    // Selector de Ordenación
+    const sortSelect = this.container.querySelector('#sortSelect');
+    if (sortSelect) {
+      sortSelect.addEventListener('change', (e) => {
+        this.currentSort = e.target.value;
+        this.renderDocuments();
+      });
+    }
+
+    // Buscador instantáneo
     const searchInput = this.container.querySelector('#searchInput');
     searchInput.addEventListener('input', (e) => {
       this.searchQuery = e.target.value.trim().toLowerCase();
+      this.updateSectionHeader();
       this.renderDocuments();
     });
 
@@ -715,6 +739,12 @@ export class DashboardView {
     const actionContainer = this.container.querySelector('#sectionActionContainer');
     actionContainer.innerHTML = '';
 
+    if (this.searchQuery) {
+      heading.textContent = 'Resultados de búsqueda';
+      subtext.textContent = `Buscando "${this.searchQuery}" en títulos y contenido`;
+      return;
+    }
+
     if (this.currentNav === 'all') {
       heading.textContent = 'Todos los archivos';
       subtext.textContent = 'Todos los cuadernos y pizarras disponibles';
@@ -845,9 +875,49 @@ export class DashboardView {
       list = list.filter(d => d.type === this.currentFilter);
     }
 
-    // Filtro por buscador de texto
+    // Filtro por buscador de texto (en títulos, subtítulo de portada y textos de páginas)
     if (this.searchQuery) {
-      list = list.filter(d => d.title.toLowerCase().includes(this.searchQuery));
+      const q = this.searchQuery;
+      list = list.filter(d => {
+        if (d.title && d.title.toLowerCase().includes(q)) return true;
+        if (d.cover && d.cover.subtitle && d.cover.subtitle.toLowerCase().includes(q)) return true;
+        if (Array.isArray(d.pages)) {
+          for (const page of d.pages) {
+            if (Array.isArray(page.texts)) {
+              for (const t of page.texts) {
+                if (t.text && t.text.toLowerCase().includes(q)) return true;
+              }
+            }
+          }
+        }
+        return false;
+      });
+    }
+
+    // Ordenación según criterio seleccionado
+    if (this.currentNav === 'recent' && this.currentSort === 'date-desc') {
+      list.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
+    } else {
+      switch (this.currentSort) {
+        case 'date-desc':
+          list.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
+          break;
+        case 'date-asc':
+          list.sort((a, b) => (a.updatedAt || a.createdAt || 0) - (b.updatedAt || b.createdAt || 0));
+          break;
+        case 'name-asc':
+          list.sort((a, b) => (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base' }));
+          break;
+        case 'name-desc':
+          list.sort((a, b) => (b.title || '').localeCompare(a.title || '', undefined, { sensitivity: 'base' }));
+          break;
+        case 'pages-desc':
+          list.sort((a, b) => ((b.pages ? b.pages.length : 1) - (a.pages ? a.pages.length : 1)));
+          break;
+        default:
+          list.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
+          break;
+      }
     }
 
     return list;
@@ -918,6 +988,7 @@ export class DashboardView {
           <div class="list-header-row">
             <div class="col-name">Nombre</div>
             <div class="col-type">Tipo</div>
+            <div class="col-pages">Páginas</div>
             <div class="col-date">Modificado</div>
             <div class="col-actions"></div>
           </div>
@@ -1009,6 +1080,7 @@ export class DashboardView {
     const typeLabel = isNotebook ? 'Cuaderno' : 'Pizarra';
     const typeBadgeClass = isNotebook ? 'badge-notebook' : 'badge-board';
     const cardDesignClass = isNotebook ? 'card-notebook' : 'card-whiteboard';
+    const pageCount = isNotebook && doc.pages ? doc.pages.length : 1;
     const formattedDate = new Date(doc.updatedAt || doc.createdAt).toLocaleDateString('es-ES', {
       day: 'numeric',
       month: 'short',
@@ -1038,6 +1110,7 @@ export class DashboardView {
             ${isNotebook ? Icons.notebook : Icons.whiteboard}
             ${typeLabel}
           </span>
+          ${isNotebook ? `<span class="card-page-count-badge">${pageCount} pág${pageCount === 1 ? '' : 's'}</span>` : ''}
           <button class="btn-fav-star ${doc.isFavorite ? 'active' : ''}" title="Marcar favorito">
             ${doc.isFavorite ? Icons.starFilled : Icons.star}
           </button>
@@ -1058,29 +1131,48 @@ export class DashboardView {
 
   renderListRowHtml(doc) {
     const isNotebook = doc.type === 'notebook';
+    const pageCount = isNotebook && doc.pages ? doc.pages.length : 1;
     const formattedDate = new Date(doc.updatedAt || doc.createdAt).toLocaleDateString('es-ES', {
       day: 'numeric',
       month: 'short',
+      year: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
     });
 
+    let thumbHtml = '';
+    if (isNotebook && doc.cover) {
+      const thumb = doc.thumbnail || CoverDesigner.generateCoverThumbnail(doc.cover);
+      thumbHtml = `<img src="${thumb}" class="list-thumb-img" alt="Miniatura" />`;
+    } else if (doc.thumbnail) {
+      thumbHtml = `<img src="${doc.thumbnail}" class="list-thumb-img" alt="Miniatura" />`;
+    } else {
+      thumbHtml = `<div class="list-empty-thumb">${isNotebook ? Icons.notebook : Icons.whiteboard}</div>`;
+    }
+
+    const subtitle = (isNotebook && doc.cover && doc.cover.subtitle) ? `<span class="list-subtitle">${this.escapeHtml(doc.cover.subtitle)}</span>` : '';
+
     return `
       <div class="doc-list-row" data-doc-id="${doc.id}">
         <div class="col-name">
-          <span class="row-icon ${isNotebook ? 'notebook-color' : 'board-color'}">
-            ${isNotebook ? Icons.notebook : Icons.whiteboard}
-          </span>
-          <span class="row-title">${this.escapeHtml(doc.title)}</span>
-          ${doc.isFavorite ? `<span class="row-fav">${Icons.starFilled}</span>` : ''}
+          ${thumbHtml}
+          <div class="list-title-group">
+            <span class="row-title" title="${this.escapeHtml(doc.title)}">${this.escapeHtml(doc.title)}</span>
+            ${subtitle}
+          </div>
         </div>
         <div class="col-type">
           <span class="card-type-badge ${isNotebook ? 'badge-notebook' : 'badge-board'}">
+            ${isNotebook ? Icons.notebook : Icons.whiteboard}
             ${isNotebook ? 'Cuaderno' : 'Pizarra'}
           </span>
         </div>
+        <div class="col-pages">${isNotebook ? `${pageCount} pág${pageCount === 1 ? '' : 's'}` : 'Lienzo'}</div>
         <div class="col-date">${formattedDate}</div>
         <div class="col-actions">
+          <button class="btn-fav-star ${doc.isFavorite ? 'active' : ''}" title="Marcar favorito">
+            ${doc.isFavorite ? Icons.starFilled : Icons.star}
+          </button>
           <button class="card-menu-btn" title="Opciones">
             ${Icons.moreVertical}
           </button>

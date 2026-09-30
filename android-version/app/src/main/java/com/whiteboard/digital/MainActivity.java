@@ -15,11 +15,15 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.content.res.Configuration;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.webkit.WebSettingsCompat;
+import androidx.webkit.WebViewFeature;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -44,8 +48,8 @@ public class MainActivity extends AppCompatActivity {
         settings.setDatabaseEnabled(true);
         settings.setAllowFileAccess(true);
         settings.setAllowContentAccess(true);
-        settings.setAllowFileAccessFromFileURLs(true);
-        settings.setAllowUniversalAccessFromFileURLs(true);
+        settings.setAllowFileAccessFromFileURLs(false);
+        settings.setAllowUniversalAccessFromFileURLs(false);
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setSupportZoom(false);
         settings.setBuiltInZoomControls(false);
@@ -53,6 +57,16 @@ public class MainActivity extends AppCompatActivity {
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+
+        // Habilitar compatibilidad con Modo Oscuro nativo del sistema
+        try {
+            if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
+                WebSettingsCompat.setForceDark(settings, WebSettingsCompat.FORCE_DARK_AUTO);
+            }
+            if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK_STRATEGY)) {
+                WebSettingsCompat.setForceDarkStrategy(settings, WebSettingsCompat.DARK_STRATEGY_WEB_THEME_DARKENING_ONLY);
+            }
+        } catch (Exception ignored) {}
 
         // Registro de la interfaz nativa puente JavaScript
         mWebView.addJavascriptInterface(new WebAppInterface(this), "Android");
@@ -199,6 +213,18 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         setupFullscreen();
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        boolean isDark = (newConfig.uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+        if (mWebView != null) {
+            mWebView.post(() -> mWebView.evaluateJavascript(
+                "if (typeof window !== 'undefined' && typeof window.onAndroidNightModeChanged === 'function') { window.onAndroidNightModeChanged(" + isDark + "); }",
+                null
+            ));
+        }
     }
 }
 

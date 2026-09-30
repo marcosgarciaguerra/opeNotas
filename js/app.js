@@ -105,6 +105,11 @@ class App {
           this.changePagePattern(this.currentPageIndex, pattern);
         }
       },
+      onPaperColorChange: (color) => {
+        if (this.currentDoc && this.currentDoc.pages) {
+          this.changePaperColor(color);
+        }
+      },
       onPrevPage: () => this.goToPrevPage(),
       onNextPage: () => this.goToNextPage(),
       onAddPage: () => this.addNewPage(),
@@ -263,6 +268,12 @@ class App {
           <div class="page-top-bar">
             <span class="page-top-pill">Página ${pageNum} de ${totalPages}</span>
             <div class="page-top-actions">
+              <button type="button" class="page-top-btn btn-move-up-page" data-page-idx="${idx}" title="Mover página arriba" ${idx === 0 ? 'disabled style="opacity:0.35; cursor:not-allowed;"' : ''}>
+                ▲
+              </button>
+              <button type="button" class="page-top-btn btn-move-down-page" data-page-idx="${idx}" title="Mover página abajo" ${idx === this.currentDoc.pages.length - 1 ? 'disabled style="opacity:0.35; cursor:not-allowed;"' : ''}>
+                ▼
+              </button>
               <button type="button" class="page-top-btn btn-pattern-page" data-page-idx="${idx}" title="Cambiar pauta de todo el cuaderno">
                 Pauta: ${this.getPatternLabel(this.currentDoc.defaultPattern || p.backgroundPattern)}
               </button>
@@ -336,6 +347,26 @@ class App {
     });
 
     // Eventos en botones de cabecera de página
+    this.canvasWrapper.querySelectorAll('.btn-move-up-page').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const pIdx = Number(btn.dataset.pageIdx);
+        if (pIdx > 0) {
+          this.movePage(pIdx, pIdx - 1);
+        }
+      });
+    });
+
+    this.canvasWrapper.querySelectorAll('.btn-move-down-page').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const pIdx = Number(btn.dataset.pageIdx);
+        if (this.currentDoc && this.currentDoc.pages && pIdx < this.currentDoc.pages.length - 1) {
+          this.movePage(pIdx, pIdx + 1);
+        }
+      });
+    });
+
     this.canvasWrapper.querySelectorAll('.btn-pattern-page').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -423,6 +454,9 @@ class App {
       case 'grid': return 'Cuadrícula 5mm';
       case 'ruled': return 'Rayado';
       case 'dots': return 'Puntos';
+      case 'music': return 'Partitura';
+      case 'millimeter': return 'Milimetrado';
+      case 'cornell': return 'Cornell';
       case 'blank': return 'Liso';
       default: return 'Rayado';
     }
@@ -708,6 +742,38 @@ class App {
     }
   }
 
+  movePage(fromIndex, toIndex) {
+    if (!this.currentDoc || !this.currentDoc.pages) return;
+    if (fromIndex < 0 || fromIndex >= this.currentDoc.pages.length) return;
+    if (toIndex < 0 || toIndex >= this.currentDoc.pages.length) return;
+    if (fromIndex === toIndex) return;
+
+    if (this.currentPageIndex === fromIndex) {
+      this.currentDoc.pages[this.currentPageIndex] = this.canvasEngine.getPageData();
+    }
+
+    const [moved] = this.currentDoc.pages.splice(fromIndex, 1);
+    this.currentDoc.pages.splice(toIndex, 0, moved);
+
+    if (this.currentPageIndex === fromIndex) {
+      this.currentPageIndex = toIndex;
+    } else if (this.currentPageIndex > fromIndex && this.currentPageIndex <= toIndex) {
+      this.currentPageIndex--;
+    } else if (this.currentPageIndex < fromIndex && this.currentPageIndex >= toIndex) {
+      this.currentPageIndex++;
+    }
+
+    if (this.currentDoc.type === 'notebook') {
+      this.renderNotebookStream();
+      this.scrollToPage(this.currentPageIndex);
+    } else {
+      this.switchPage(this.currentPageIndex, true);
+    }
+
+    this.toolbar.updatePageCounter(this.currentPageIndex, this.currentDoc.pages.length);
+    this.scheduleAutoSave();
+  }
+
   promptChangePagePattern(idx, triggerBtn) {
     const patterns = [
       { id: 'grid', name: 'Cuadrícula 5mm' },
@@ -747,6 +813,30 @@ class App {
         const pBtn = this.canvasWrapper.querySelector(`.btn-pattern-page[data-page-idx="${i}"]`);
         if (pBtn) {
           pBtn.textContent = `Pauta: ${this.getPatternLabel(pattern)}`;
+        }
+      });
+    }
+
+    this.scheduleAutoSave();
+  }
+
+  changePaperColor(color) {
+    if (!this.currentDoc) return;
+
+    this.currentDoc.defaultPaperColor = color;
+    if (this.currentDoc.pages) {
+      this.currentDoc.pages.forEach(p => {
+        p.paperColor = color;
+      });
+    }
+
+    this.canvasEngine.setPaperColor(color);
+
+    if (this.currentDoc.pages) {
+      this.currentDoc.pages.forEach((pData, i) => {
+        const cEl = this.canvasWrapper.querySelector(`#pageCanvas_${i}`);
+        if (cEl) {
+          this.canvasEngine.renderPageToCanvas(cEl, pData);
         }
       });
     }

@@ -7,6 +7,9 @@ export class ViewportController {
     this.wrapper = wrapperEl;
     this.canvas = canvasEngine.canvas;
     this.engine = canvasEngine;
+    if (canvasEngine) {
+      canvasEngine.viewport = this;
+    }
 
     // Estado del Viewport
     this.zoom = 1.0;
@@ -463,6 +466,20 @@ export class ViewportController {
     }
 
     this.onZoomChange(this.zoom);
+  }
+
+  getVisibleRect() {
+    if (!this.workspace) return null;
+    const wsWidth = this.workspace.clientWidth || window.innerWidth || 800;
+    const wsHeight = this.workspace.clientHeight || (window.innerHeight - 60) || 600;
+    const z = this.zoom || 1.0;
+
+    return {
+      minX: -this.panX / z,
+      minY: -this.panY / z,
+      maxX: (wsWidth - this.panX) / z,
+      maxY: (wsHeight - this.panY) / z
+    };
   }
 }
 

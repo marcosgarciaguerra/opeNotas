@@ -375,6 +375,96 @@ async function runTests() {
   const viewportSrc = fs.readFileSync(path.join(__dirname, 'js/editor/viewport.js'), 'utf8');
   assert(viewportSrc.includes('shiftRight') && viewportSrc.includes('centerContent'), 'ViewportController desplaza el cuaderno/lienzo hacia la derecha');
 
+  // Test 26: Interpolación matemática con Splines Catmull-Rom a Bézier cúbica
+  console.log('\n〰️ Test 26: Verificación de Splines Catmull-Rom y Curvas Bézier Cúbicas...');
+  assert(canvasEngineSource.includes('computeCatmullRomBezier'), 'CanvasEngine implementa método computeCatmullRomBezier');
+  assert(canvasEngineSource.includes('bezierCurveTo'), 'CanvasEngine utiliza bezierCurveTo para interpolación cúbica fluida');
+  assert(canvasEngineSource.includes('desynchronized: true'), 'CanvasEngine inicializa el contexto 2D en modo desincronizado de baja latencia');
+  assert(canvasEngineSource.includes('tiltX') && canvasEngineSource.includes('tiltY'), 'CanvasEngine rastrea la inclinación del Stylus para sombreado dinámico');
+
+  // Test 27: Detección y Sincronización Automática de Modo Oscuro con el Sistema
+  console.log('\n🌙 Test 27: Verificación de Detección de Modo Oscuro con el Sistema Android...');
+  assert(webAppInterfaceSrc.includes('isSystemDarkMode'), 'WebAppInterface.java implementa isSystemDarkMode');
+  assert(mainActivitySrc.includes('FORCE_DARK'), 'MainActivity.java configura FORCE_DARK para soporte nativo de tema oscuro');
+  assert(mainActivitySrc.includes('onConfigurationChanged'), 'MainActivity.java notifica cambios de tema del sistema en caliente');
+  const manifestSrc = fs.readFileSync(path.join(__dirname, 'android-version/app/src/main/AndroidManifest.xml'), 'utf8');
+  assert(manifestSrc.includes('uiMode'), 'AndroidManifest.xml incluye uiMode en configChanges');
+  const settingsSource = fs.readFileSync(path.join(__dirname, 'js/settings.js'), 'utf8');
+  assert(settingsSource.includes('onAndroidNightModeChanged'), 'SettingsManager escucha eventos de cambio de modo oscuro de Android');
+  assert(settingsSource.includes('isSystemDarkMode'), 'SettingsManager consulta isSystemDarkMode desde el puente Android');
+
+  // Test 28: Viewport Culling, Optimización de Miniaturas y Límite de Memoria en Historial
+  console.log('\n🚀 Test 28: Verificación de Culling, Carga Lazy en Miniaturas y Límite de Historial...');
+  assert(viewportSrc.includes('getVisibleRect()'), 'ViewportController implementa cálculo de getVisibleRect para culling');
+  assert(canvasEngineSource.includes('isElementVisible'), 'CanvasEngine implementa isElementVisible para descartar trazos fuera de pantalla');
+  assert(canvasEngineSource.includes('maxUndoSteps'), 'CanvasEngine implementa maxUndoSteps para proteger el consumo de memoria');
+  assert(canvasEngineSource.includes('_pushToUndo'), 'CanvasEngine centraliza el límite de la pila de historial en _pushToUndo');
+  const pagesTraySrc = fs.readFileSync(path.join(__dirname, 'js/editor/pagesTray.js'), 'utf8');
+  assert(pagesTraySrc.includes('loading="lazy"'), 'PagesTray implementa carga lazy para miniaturas en cuadernos extensos');
+
+  // Test 29: Gestos Táctiles (2/3 dedos), Smart Shapes, Gesto de Tachar y Modo Zen
+  console.log('\n✨ Test 29: Verificación de Gestualidad Natural, Smart Shapes, Scratch-out y Modo Zen...');
+  assert(canvasEngineSource.includes('initTouchGestures'), 'CanvasEngine implementa gestos multitáctiles');
+  assert(canvasEngineSource.includes('triggerHaptic'), 'CanvasEngine implementa feedback háptico sensorial');
+  assert(canvasEngineSource.includes('tryConvertToSmartShape'), 'CanvasEngine implementa Smart Shapes automáticos');
+  assert(canvasEngineSource.includes('detectScratchOut'), 'CanvasEngine detecta gestos de tachar (Scratch-out)');
+  assert(canvasEngineSource.includes('handleScratchOutErase'), 'CanvasEngine implementa borrado automático por tachado');
+  assert(toolbarSource.includes('toggleZenMode'), 'Toolbar implementa toggleZenMode');
+  assert(toolbarSource.includes('id="btnZenMode"'), 'Toolbar incluye botón de acceso rápido a Modo Zen');
+  assert(stylesSrc.includes('.zen-mode #editorToolbar'), 'styles.css incluye animación de ocultamiento para Modo Zen');
+  assert(stylesSrc.includes('.zen-exit-pill'), 'styles.css incluye estilos para el botón flotante de salida de Modo Zen');
+
+  // Test 30: Plantillas de Papel Ricas, Personalización de Tonos y Accesos Rápidos de Favoritos
+  console.log('\n📄 Test 30: Verificación de Plantillas Ricas, Tonos de Papel y Accesos Rápidos...');
+  assert(canvasEngineSource.includes('drawPatternBackground'), 'CanvasEngine implementa drawPatternBackground modular');
+  assert(canvasEngineSource.includes("pattern === 'music'"), 'CanvasEngine soporta patrón de partitura musical');
+  assert(canvasEngineSource.includes("pattern === 'millimeter'"), 'CanvasEngine soporta patrón milimetrado técnico de ingeniería');
+  assert(canvasEngineSource.includes("pattern === 'cornell'"), 'CanvasEngine soporta plantilla de apuntes método Cornell');
+  assert(canvasEngineSource.includes('isDarkPaper'), 'CanvasEngine adapta dinámicamente el contraste de líneas según el tono de papel');
+  
+  const iconsSource = fs.readFileSync(path.join(__dirname, 'js/icons.js'), 'utf8');
+  assert(iconsSource.includes('patternMusic:') && iconsSource.includes('patternMillimeter:') && iconsSource.includes('patternCornell:'), 'Icons contiene iconos vectoriales para partitura, milimetrado y cornell');
+  
+  assert(!toolbarSource.includes('id="quickFavoritesBar"'), 'Toolbar ha eliminado la barra de accesos rápidos quickFavoritesBar');
+  assert(typeof PaletteManager.saveCustomColor === 'function', 'PaletteManager implementa método saveCustomColor');
+  PaletteManager.saveCustomColor('#abcdef');
+  assert(PaletteManager.getPalette()[0] === '#abcdef', 'saveCustomColor guarda y persiste el color personalizado en la paleta');
+  assert(typeof PaletteManager.setSlotColor === 'function', 'PaletteManager implementa método setSlotColor para modificar casillas específicas');
+  PaletteManager.setSlotColor(2, '#33aa55');
+  assert(PaletteManager.getPalette()[2] === '#33aa55', 'setSlotColor modifica una casilla fija sin desplazar las demás en cola');
+  assert(typeof PaletteManager.resetDefaultPalette === 'function', 'PaletteManager implementa resetDefaultPalette para restaurar los colores originales');
+  PaletteManager.resetDefaultPalette();
+  assert(PaletteManager.getPalette()[2] === '#06b6d4', 'resetDefaultPalette restaura la paleta predeterminada');
+  assert(toolbarSource.includes('PaletteManager.saveCustomColor'), 'Toolbar invoca PaletteManager.saveCustomColor al seleccionar color personalizado');
+  assert(toolbarSource.includes('btnTogglePaletteEdit'), 'Toolbar incluye botón para alternar Modo de Edición de paleta');
+  assert(toolbarSource.includes('slot-color-picker'), 'Toolbar incluye selectores de color por casilla en modo edición');
+  assert(toolbarSource.includes('data-paper-color'), 'Toolbar permite seleccionar tonos de papel (Blanco, Marfil, Sepia, Pizarra, OLED)');
+  assert(toolbarSource.includes('onPaperColorChange'), 'Toolbar notifica cambios de tono de papel a la aplicación');
+
+  const appSource = fs.readFileSync(path.join(__dirname, 'js/app.js'), 'utf8');
+  assert(appSource.includes('changePaperColor('), 'App implementa cambio unificado de tono de papel para el documento');
+  assert(appSource.includes('onPaperColorChange:'), 'App conecta evento de cambio de tono con Toolbar');
+
+  assert(stylesSrc.includes('.paper-color-grid'), 'styles.css define estilos para la cuadrícula de tonos de papel');
+  assert(stylesSrc.includes('.paper-color-btn'), 'styles.css incluye estilos para los botones de tono de papel');
+
+  // Test 31: Organización de la Biblioteca y Navegación de Páginas
+  console.log('\n📚 Test 31: Verificación de Organización de Biblioteca y Navegación...');
+  const dashboardSrc = fs.readFileSync(path.join(__dirname, 'js/dashboard/dashboardView.js'), 'utf8');
+  assert(dashboardSrc.includes('id="sortSelect"'), 'DashboardView implementa selector de ordenación en la cabecera');
+  assert(dashboardSrc.includes('currentSort'), 'DashboardView gestiona el estado de ordenación de documentos');
+  assert(dashboardSrc.includes('page.texts'), 'DashboardView filtra búsquedas tanto en títulos como en contenido de páginas');
+  assert(dashboardSrc.includes('col-pages'), 'DashboardView muestra el número de páginas en la vista detallada de lista');
+  assert(dashboardSrc.includes('list-thumb-img'), 'DashboardView incluye miniaturas en las filas de la vista en lista');
+  assert(dashboardSrc.includes('card-page-count-badge'), 'DashboardView muestra distintivo de páginas en la vista de cuadrícula');
+
+  assert(appSource.includes('btn-move-up-page') && appSource.includes('btn-move-down-page'), 'App incluye botones de reordenación de páginas en el flujo del cuaderno');
+  assert(appSource.includes('movePage('), 'App implementa método movePage para cambiar orden de páginas');
+
+  assert(stylesSrc.includes('.sort-select'), 'styles.css define estilos para el desplegable de ordenación');
+  assert(stylesSrc.includes('.col-pages'), 'styles.css define estilos para la columna de páginas en lista');
+  assert(stylesSrc.includes('.card-page-count-badge'), 'styles.css define estilos para el distintivo de páginas en cuadrícula');
+
   console.log('\n====================================================');
   console.log(`🎉 RESULTADOS: ${passedTests}/${totalTests} PRUEBAS SUPERADAS CON ÉXITO (100%)`);
   console.log('====================================================\n');

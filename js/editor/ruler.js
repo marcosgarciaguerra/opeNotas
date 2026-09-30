@@ -247,24 +247,41 @@ export class Ruler {
     }, { passive: false });
   }
 
+  canvasToScreen(canvasX, canvasY) {
+    if (!this.engine || !this.engine.canvas) return { x: canvasX, y: canvasY };
+    const mainCanvas = this.engine.canvas;
+    const canvasRect = mainCanvas.getBoundingClientRect();
+    if (canvasRect.width === 0 || canvasRect.height === 0) return { x: canvasX, y: canvasY };
+    const logicalWidth = this.engine.logicalWidth || 794;
+    const logicalHeight = this.engine.logicalHeight || 1123;
+    return {
+      x: canvasRect.left + canvasX * (canvasRect.width / logicalWidth),
+      y: canvasRect.top + canvasY * (canvasRect.height / logicalHeight)
+    };
+  }
+
+  screenToCanvas(screenX, screenY) {
+    if (!this.engine || !this.engine.canvas) return { x: screenX, y: screenY };
+    const mainCanvas = this.engine.canvas;
+    const canvasRect = mainCanvas.getBoundingClientRect();
+    if (canvasRect.width === 0 || canvasRect.height === 0) return { x: screenX, y: screenY };
+    const logicalWidth = this.engine.logicalWidth || 794;
+    const logicalHeight = this.engine.logicalHeight || 1123;
+    return {
+      x: (screenX - canvasRect.left) * (logicalWidth / canvasRect.width),
+      y: (screenY - canvasRect.top) * (logicalHeight / canvasRect.height)
+    };
+  }
+
   // Proyección y restricción física para dibujar líneas perfectamente rectas sin atravesar la regla
   snapPoint(canvasX, canvasY, options = {}) {
     if (!this.active || !this.element || !this.engine || !this.engine.canvas) {
       return { snapped: false, x: canvasX, y: canvasY, edge: null };
     }
 
-    const mainCanvas = this.engine.canvas;
-    const canvasRect = mainCanvas.getBoundingClientRect();
-    if (canvasRect.width === 0 || canvasRect.height === 0) {
-      return { snapped: false, x: canvasX, y: canvasY, edge: null };
-    }
-
-    const logicalWidth = this.engine.logicalWidth || 794;
-    const logicalHeight = this.engine.logicalHeight || 1123;
-
-    // Convertir de coordenadas lógicas de canvas a píxeles de pantalla
-    const screenX = canvasRect.left + canvasX * (canvasRect.width / logicalWidth);
-    const screenY = canvasRect.top + canvasY * (canvasRect.height / logicalHeight);
+    const screenPos = this.canvasToScreen(canvasX, canvasY);
+    const screenX = screenPos.x;
+    const screenY = screenPos.y;
 
     const rulerRect = this.element.getBoundingClientRect();
     const cx = rulerRect.left + rulerRect.width / 2;
@@ -294,22 +311,24 @@ export class Ruler {
       const targetN = -halfThickness;
       const sx = cx + clampedU * cosA - targetN * sinA;
       const sy = cy + clampedU * sinA + targetN * cosA;
+      const cPos = this.screenToCanvas(sx, sy);
       return {
         snapped: true,
         edge: 'top',
-        x: (sx - canvasRect.left) * (logicalWidth / canvasRect.width),
-        y: (sy - canvasRect.top) * (logicalHeight / canvasRect.height)
+        x: cPos.x,
+        y: cPos.y
       };
     } else if (lockedEdge === 'bottom') {
       const clampedU = Math.max(-halfL, Math.min(halfL, u_dist));
       const targetN = halfThickness;
       const sx = cx + clampedU * cosA - targetN * sinA;
       const sy = cy + clampedU * sinA + targetN * cosA;
+      const cPos = this.screenToCanvas(sx, sy);
       return {
         snapped: true,
         edge: 'bottom',
-        x: (sx - canvasRect.left) * (logicalWidth / canvasRect.width),
-        y: (sy - canvasRect.top) * (logicalHeight / canvasRect.height)
+        x: cPos.x,
+        y: cPos.y
       };
     }
 
@@ -326,12 +345,13 @@ export class Ruler {
 
       const sx = cx + clampedU * cosA - targetN * sinA;
       const sy = cy + clampedU * sinA + targetN * cosA;
+      const cPos = this.screenToCanvas(sx, sy);
 
       return {
         snapped: true,
         edge: edge,
-        x: (sx - canvasRect.left) * (logicalWidth / canvasRect.width),
-        y: (sy - canvasRect.top) * (logicalHeight / canvasRect.height)
+        x: cPos.x,
+        y: cPos.y
       };
     }
 
@@ -343,12 +363,13 @@ export class Ruler {
       const clampedU = Math.max(-halfL, Math.min(halfL, u_dist));
       const sx = cx + clampedU * cosA - targetN * sinA;
       const sy = cy + clampedU * sinA + targetN * cosA;
+      const cPos = this.screenToCanvas(sx, sy);
       return {
         snapped: true,
         edge: isTop ? 'top' : 'bottom',
         blockedInside: true,
-        x: (sx - canvasRect.left) * (logicalWidth / canvasRect.width),
-        y: (sy - canvasRect.top) * (logicalHeight / canvasRect.height)
+        x: cPos.x,
+        y: cPos.y
       };
     }
 

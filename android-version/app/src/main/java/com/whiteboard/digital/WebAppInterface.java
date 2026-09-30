@@ -59,6 +59,19 @@ public class WebAppInterface {
     }
 
     /**
+     * Comprueba si el sistema operativo Android tiene activado el tema oscuro.
+     */
+    @JavascriptInterface
+    public boolean isSystemDarkMode() {
+        try {
+            int nightModeFlags = mContext.getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK;
+            return nightModeFlags == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
      * Produce vibración háptica al pulsar herramientas o al enderezar trazos.
      */
     @JavascriptInterface
@@ -76,16 +89,37 @@ public class WebAppInterface {
     }
 
     /**
+     * Sanitiza el nombre de archivo para evitar vulnerabilidades de Path Traversal (../) y caracteres no permitidos.
+     */
+    private String sanitizeFilename(String filename, String defaultExt) {
+        if (filename == null || filename.trim().isEmpty()) {
+            filename = "documento" + defaultExt;
+        }
+        // Extraer únicamente el nombre base descartando cualquier ruta o directorio
+        filename = new File(filename).getName();
+        // Filtrar caracteres potencialmente inseguros
+        filename = filename.replaceAll("[^a-zA-Z0-9._-]", "_");
+        if (filename.isEmpty() || filename.equals(".") || filename.equals("..")) {
+            filename = "documento" + defaultExt;
+        }
+        if (!filename.toLowerCase().endsWith(defaultExt.toLowerCase())) {
+            filename = filename + defaultExt;
+        }
+        return filename;
+    }
+
+    /**
      * Guarda un archivo PDF generado en la carpeta Descargas de Android (Scoped Storage compatible).
      */
     @JavascriptInterface
     public boolean savePdfToStorage(String base64Data, String filename) {
         try {
+            filename = sanitizeFilename(filename, ".pdf");
             byte[] pdfBytes = Base64.decode(base64Data.contains(",") ? base64Data.split(",")[1] : base64Data, Base64.DEFAULT);
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ContentValues values = new ContentValues();
-                values.put(MediaStore.MediaColumns.DISPLAY_NAME, filename.endsWith(".pdf") ? filename : filename + ".pdf");
+                values.put(MediaStore.MediaColumns.DISPLAY_NAME, filename);
                 values.put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf");
                 values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/openotas");
 
@@ -103,7 +137,7 @@ public class WebAppInterface {
             } else {
                 File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "openotas");
                 if (!dir.exists()) dir.mkdirs();
-                File file = new File(dir, filename.endsWith(".pdf") ? filename : filename + ".pdf");
+                File file = new File(dir, filename);
                 try (FileOutputStream fos = new FileOutputStream(file)) {
                     fos.write(pdfBytes);
                     fos.flush();
@@ -123,6 +157,8 @@ public class WebAppInterface {
     @JavascriptInterface
     public boolean saveTextFile(String content, String filename, String mimeType) {
         try {
+            String ext = (mimeType != null && mimeType.contains("json")) ? ".json" : ".txt";
+            filename = sanitizeFilename(filename, ext);
             byte[] fileBytes;
             if (content.startsWith("data:") && content.contains(",")) {
                 fileBytes = Base64.decode(content.split(",")[1], Base64.DEFAULT);
@@ -174,11 +210,12 @@ public class WebAppInterface {
     @JavascriptInterface
     public boolean saveImageToGallery(String base64Data, String filename) {
         try {
+            filename = sanitizeFilename(filename, ".png");
             byte[] imageBytes = Base64.decode(base64Data.contains(",") ? base64Data.split(",")[1] : base64Data, Base64.DEFAULT);
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ContentValues values = new ContentValues();
-                values.put(MediaStore.Images.Media.DISPLAY_NAME, filename.endsWith(".png") ? filename : filename + ".png");
+                values.put(MediaStore.Images.Media.DISPLAY_NAME, filename);
                 values.put(MediaStore.Images.Media.MIME_TYPE, "image/png");
                 values.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/openotas");
                 values.put(MediaStore.Images.Media.IS_PENDING, 1);
@@ -200,7 +237,7 @@ public class WebAppInterface {
             } else {
                 File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "openotas");
                 if (!dir.exists()) dir.mkdirs();
-                File file = new File(dir, filename.endsWith(".png") ? filename : filename + ".png");
+                File file = new File(dir, filename);
                 try (FileOutputStream fos = new FileOutputStream(file)) {
                     fos.write(imageBytes);
                     fos.flush();
@@ -220,6 +257,8 @@ public class WebAppInterface {
     @JavascriptInterface
     public void shareFile(String base64Data, String filename, String mimeType) {
         try {
+            String ext = (mimeType != null && mimeType.contains("pdf")) ? ".pdf" : ".png";
+            filename = sanitizeFilename(filename, ext);
             byte[] fileBytes = Base64.decode(base64Data.contains(",") ? base64Data.split(",")[1] : base64Data, Base64.DEFAULT);
             File cacheDir = new File(mContext.getCacheDir(), "shared");
             if (!cacheDir.exists()) cacheDir.mkdirs();

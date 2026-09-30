@@ -39,6 +39,7 @@ export class Toolbar {
     this.onExport = options.onExport || (() => {});
     this.onOpenCover = options.onOpenCover || (() => {});
     this.onPatternChange = options.onPatternChange || (() => {});
+    this.onPaperColorChange = options.onPaperColorChange || (() => {});
     this.onPrevPage = options.onPrevPage || (() => {});
     this.onNextPage = options.onNextPage || (() => {});
     this.onAddPage = options.onAddPage || (() => {});
@@ -66,6 +67,7 @@ export class Toolbar {
     this.totalContentPages = 1;
 
     this._unsubscribePalette = null;
+    this.isEditingPalette = false;
 
     this.init();
   }
@@ -247,6 +249,16 @@ export class Toolbar {
         <!-- Botón Añadir Página (+) -->
         <button class="tool-btn-compact ${isNotebook ? '' : 'hidden'}" id="btnAddPageIcon" title="Añadir nueva página">
           ${Icons.plus}
+        </button>
+
+        <!-- Botón Modo Zen / Pantalla Completa -->
+        <button class="tool-btn-compact" id="btnZenMode" title="Modo Zen (Pantalla Completa)">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <polyline points="9 21 3 21 3 15"></polyline>
+            <line x1="21" y1="3" x2="14" y2="10"></line>
+            <line x1="3" y1="21" x2="10" y2="14"></line>
+          </svg>
         </button>
 
         <!-- Botón de Configuración (⚙) -->
@@ -433,9 +445,17 @@ export class Toolbar {
     document.body.appendChild(this.popover);
   }
 
-  renderQuickColors() {
-    // Los colores rápidos del dock han sido reemplazados por colores independientes por útil
+  renderQuickColorsHtml() {
+    return '';
   }
+
+  renderQuickWidthsHtml() {
+    return '';
+  }
+
+  bindQuickFavoritesEvents() {}
+
+  updateQuickFavorites() {}
 
   bindDockToolEvents() {
     this.dockTools.forEach(slotId => {
@@ -530,6 +550,16 @@ export class Toolbar {
         e.stopPropagation();
         this.closeMenu();
         this.onAddPage();
+      });
+    }
+
+    // Modo Zen / Pantalla Completa
+    const btnZenMode = this.container?.querySelector('#btnZenMode');
+    if (btnZenMode) {
+      btnZenMode.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.closeMenu();
+        this.toggleZenMode();
       });
     }
 
@@ -716,16 +746,44 @@ export class Toolbar {
         </button>
       </div>
 
-      <!-- Paleta de 10 colores con selector personalizado persistente -->
-      <div class="color-palette-10">
-        ${palette.map(c => `
-          <button type="button" class="color-swatch ${c.toLowerCase() === currentColor.toLowerCase() ? 'active' : ''}" data-color="${c}" style="background-color: ${c}"></button>
-        `).join('')}
-        <label class="color-picker-label" title="Añadir color personalizado">
-          <input type="color" id="popoverColorPicker" value="${currentColor}" />
-          <span class="picker-icon">${Icons.edit}</span>
-        </label>
+      <!-- Cabecera de la Paleta con botón Modo de Edición -->
+      <div class="palette-header-row">
+        <span class="label-text" style="font-size: 0.78rem; font-weight: 600; color: ${this.isEditingPalette ? 'var(--primary)' : 'var(--text-secondary)'};">
+          ${this.isEditingPalette ? 'Editar Muestras de Color' : 'Paleta de Colores'}
+        </span>
+        <div style="display: flex; gap: 4px; align-items: center;">
+          ${this.isEditingPalette ? `
+            <button type="button" class="mini-text-action-btn danger" id="btnResetPalette" title="Restablecer los 10 colores originales">Restablecer</button>
+          ` : ''}
+          <button type="button" class="mini-text-action-btn ${this.isEditingPalette ? 'primary' : ''}" id="btnTogglePaletteEdit" title="${this.isEditingPalette ? 'Terminar edición' : 'Modificar muestras de color'}">
+            ${this.isEditingPalette ? 'Listo' : `${Icons.edit}<span>Editar</span>`}
+          </button>
+        </div>
       </div>
+
+      ${this.isEditingPalette ? `
+        <div class="palette-edit-notice">
+          Toca cualquier casilla para cambiar su color:
+        </div>
+        <div class="color-palette-10 edit-mode">
+          ${palette.map((c, idx) => `
+            <label class="color-swatch in-edit-mode" style="background-color: ${c};" title="Cambiar color de la casilla ${idx + 1}">
+              <input type="color" class="slot-color-picker" data-slot-index="${idx}" value="${c}" />
+              <span class="edit-swatch-badge">${Icons.edit}</span>
+            </label>
+          `).join('')}
+        </div>
+      ` : `
+        <div class="color-palette-10">
+          ${palette.map((c, idx) => `
+            <button type="button" class="color-swatch ${c.toLowerCase() === currentColor.toLowerCase() ? 'active' : ''}" data-color="${c}" data-slot-index="${idx}" style="background-color: ${c}" title="Color ${c}"></button>
+          `).join('')}
+          <label class="color-picker-label" title="Añadir color personalizado">
+            <input type="color" id="popoverColorPicker" value="${/^#[0-9a-fA-F]{6}$/.test(currentColor) ? currentColor : (typeof PaletteManager !== 'undefined' && PaletteManager.getCustomColor ? PaletteManager.getCustomColor() : '#2563eb')}" />
+            <span class="picker-icon">${Icons.edit}</span>
+          </label>
+        </div>
+      `}
 
       <div class="popover-divider"></div>
 
@@ -816,14 +874,61 @@ export class Toolbar {
       this.closeMenu();
     });
 
-    // Paleta de 10 colores
-    this.popover.querySelectorAll('.color-swatch').forEach(sw => {
+    // Alternar Modo Edición de Paleta
+    this.popover.querySelector('#btnTogglePaletteEdit')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.isEditingPalette = !this.isEditingPalette;
+      this.renderStrokeSettingsMenu(toolKey);
+    });
+
+    // Restablecer paleta original
+    this.popover.querySelector('#btnResetPalette')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      PaletteManager.resetDefaultPalette();
+      this.renderStrokeSettingsMenu(toolKey);
+    });
+
+    // En Modo Edición: cambiar color de una casilla específica
+    this.popover.querySelectorAll('.slot-color-picker').forEach(slotInput => {
+      const handleSlotChange = (e) => {
+        const slotIdx = Number(e.target.dataset.slotIndex);
+        const newColor = e.target.value;
+        PaletteManager.setSlotColor(slotIdx, newColor);
+        const s = this.getToolSettings(toolKey);
+        if (s) {
+          s.color = newColor;
+          this.saveToolSettings();
+        }
+        if (this.activeTool === toolKey) {
+          this.engine.setColor(newColor);
+        }
+        this.updatePenDotsColor();
+        this.updateActiveButton();
+        this.renderStrokeSettingsMenu(toolKey);
+      };
+
+      slotInput.addEventListener('input', (e) => {
+        e.stopPropagation();
+        const slotIdx = Number(e.target.dataset.slotIndex);
+        const newColor = e.target.value;
+        PaletteManager.setSlotColor(slotIdx, newColor);
+      });
+      slotInput.addEventListener('change', (e) => {
+        e.stopPropagation();
+        handleSlotChange(e);
+      });
+    });
+
+    // Paleta de 10 colores en modo normal
+    this.popover.querySelectorAll('.color-swatch:not(.in-edit-mode)').forEach(sw => {
       sw.addEventListener('click', (e) => {
         e.stopPropagation();
         const color = sw.dataset.color;
         const s = this.getToolSettings(toolKey);
-        s.color = color;
-        this.saveToolSettings();
+        if (s) {
+          s.color = color;
+          this.saveToolSettings();
+        }
         if (this.activeTool === toolKey) {
           this.engine.setColor(color);
         }
@@ -836,18 +941,30 @@ export class Toolbar {
     // Selector de color personalizado nativo
     const picker = this.popover.querySelector('#popoverColorPicker');
     if (picker) {
-      picker.addEventListener('input', (e) => {
-        const color = e.target.value;
+      const applyCustomColor = (color, shouldRerender = false) => {
         PaletteManager.saveCustomColor(color);
         const s = this.getToolSettings(toolKey);
-        s.color = color;
-        this.saveToolSettings();
+        if (s) {
+          s.color = color;
+          this.saveToolSettings();
+        }
         if (this.activeTool === toolKey) {
           this.engine.setColor(color);
         }
         this.updatePenDotsColor();
         this.updateActiveButton();
-        updatePreviewCircle();
+        if (shouldRerender) {
+          this.renderStrokeSettingsMenu(toolKey);
+        } else {
+          updatePreviewCircle();
+        }
+      };
+
+      picker.addEventListener('input', (e) => {
+        applyCustomColor(e.target.value, false);
+      });
+      picker.addEventListener('change', (e) => {
+        applyCustomColor(e.target.value, true);
       });
     }
 
@@ -1166,19 +1283,44 @@ export class Toolbar {
 
       <div class="popover-divider"></div>
 
-      <!-- Color de Trazo -->
-      <div class="popover-row">
-        <span class="label-text">Color de Trazo</span>
+      <!-- Cabecera de Color de Trazo con botón Modo de Edición -->
+      <div class="palette-header-row">
+        <span class="label-text" style="font-size: 0.78rem; font-weight: 600; color: ${this.isEditingPalette ? 'var(--primary)' : 'var(--text-secondary)'};">
+          ${this.isEditingPalette ? 'Editar Muestras de Color' : 'Color de Trazo'}
+        </span>
+        <div style="display: flex; gap: 4px; align-items: center;">
+          ${this.isEditingPalette ? `
+            <button type="button" class="mini-text-action-btn danger" id="btnResetShapePalette" title="Restablecer los 10 colores originales">Restablecer</button>
+          ` : ''}
+          <button type="button" class="mini-text-action-btn ${this.isEditingPalette ? 'primary' : ''}" id="btnToggleShapePaletteEdit" title="${this.isEditingPalette ? 'Terminar edición' : 'Modificar muestras de color'}">
+            ${this.isEditingPalette ? 'Listo' : `${Icons.edit}<span>Editar</span>`}
+          </button>
+        </div>
       </div>
-      <div class="color-palette-10">
-        ${palette.map(c => `
-          <button type="button" class="color-swatch ${c.toLowerCase() === currentColor.toLowerCase() ? 'active' : ''}" data-shape-color="${c}" style="background-color: ${c}"></button>
-        `).join('')}
-        <label class="color-picker-label" title="Color personalizado">
-          <input type="color" id="popoverShapeColorPicker" value="${currentColor}" />
-          <span class="picker-icon">${Icons.edit}</span>
-        </label>
-      </div>
+
+      ${this.isEditingPalette ? `
+        <div class="palette-edit-notice">
+          Toca cualquier casilla para cambiar su color:
+        </div>
+        <div class="color-palette-10 edit-mode">
+          ${palette.map((c, idx) => `
+            <label class="color-swatch in-edit-mode" style="background-color: ${c};" title="Cambiar color de la casilla ${idx + 1}">
+              <input type="color" class="slot-shape-color-picker" data-slot-index="${idx}" value="${c}" />
+              <span class="edit-swatch-badge">${Icons.edit}</span>
+            </label>
+          `).join('')}
+        </div>
+      ` : `
+        <div class="color-palette-10">
+          ${palette.map((c, idx) => `
+            <button type="button" class="color-swatch ${c.toLowerCase() === currentColor.toLowerCase() ? 'active' : ''}" data-shape-color="${c}" data-slot-index="${idx}" style="background-color: ${c}"></button>
+          `).join('')}
+          <label class="color-picker-label" title="Color personalizado">
+            <input type="color" id="popoverShapeColorPicker" value="${/^#[0-9a-fA-F]{6}$/.test(currentColor) ? currentColor : (typeof PaletteManager !== 'undefined' && PaletteManager.getCustomColor ? PaletteManager.getCustomColor() : '#2563eb')}" />
+            <span class="picker-icon">${Icons.edit}</span>
+          </label>
+        </div>
+      `}
 
       <div class="popover-divider"></div>
 
@@ -1219,7 +1361,46 @@ export class Toolbar {
       });
     });
 
-    // Colores
+    // Alternar Modo Edición de Paleta en figuras
+    this.popover.querySelector('#btnToggleShapePaletteEdit')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.isEditingPalette = !this.isEditingPalette;
+      this.renderShapeMenu();
+    });
+
+    this.popover.querySelector('#btnResetShapePalette')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      PaletteManager.resetDefaultPalette();
+      this.renderShapeMenu();
+    });
+
+    this.popover.querySelectorAll('.slot-shape-color-picker').forEach(slotInput => {
+      const handleShapeSlotChange = (e) => {
+        const slotIdx = Number(e.target.dataset.slotIndex);
+        const newColor = e.target.value;
+        PaletteManager.setSlotColor(slotIdx, newColor);
+        if (this.shapeTool) {
+          this.shapeTool.setStrokeColor(newColor);
+          if (this.shapeTool.fillColor && this.shapeTool.fillColor !== 'transparent') {
+            this.shapeTool.setFillColor(newColor + '26');
+          }
+        }
+        this.renderShapeMenu();
+      };
+
+      slotInput.addEventListener('input', (e) => {
+        e.stopPropagation();
+        const slotIdx = Number(e.target.dataset.slotIndex);
+        const newColor = e.target.value;
+        PaletteManager.setSlotColor(slotIdx, newColor);
+      });
+      slotInput.addEventListener('change', (e) => {
+        e.stopPropagation();
+        handleShapeSlotChange(e);
+      });
+    });
+
+    // Colores de figura en modo normal
     this.popover.querySelectorAll('[data-shape-color]').forEach(sw => {
       sw.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1236,8 +1417,7 @@ export class Toolbar {
 
     const picker = this.popover.querySelector('#popoverShapeColorPicker');
     if (picker) {
-      picker.addEventListener('input', (e) => {
-        const color = e.target.value;
+      const applyShapeColor = (color) => {
         PaletteManager.saveCustomColor(color);
         if (this.shapeTool) {
           this.shapeTool.setStrokeColor(color);
@@ -1246,6 +1426,12 @@ export class Toolbar {
           }
         }
         this.renderShapeMenu();
+      };
+      picker.addEventListener('input', (e) => {
+        applyShapeColor(e.target.value);
+      });
+      picker.addEventListener('change', (e) => {
+        applyShapeColor(e.target.value);
       });
     }
 
@@ -1609,17 +1795,28 @@ export class Toolbar {
     });
   }
 
-  // Popover Páginas y Fondo
   renderPagesMenu() {
     const isNotebook = this.engine.format === 'a4';
     const isCover = this.currentPageIndex === -1;
     const currentPattern = this.engine.backgroundPattern;
+    const currentPaperColor = (this.engine.paperColor || '#ffffff').toLowerCase();
 
     const patterns = [
       { id: 'blank', name: 'Liso', icon: Icons.patternBlank },
       { id: 'ruled', name: 'Rayado', icon: Icons.patternRuled },
       { id: 'grid', name: 'Cuadrícula', icon: Icons.patternGrid },
-      { id: 'dots', name: 'Puntos', icon: Icons.patternDots }
+      { id: 'dots', name: 'Puntos', icon: Icons.patternDots },
+      { id: 'music', name: 'Partitura', icon: Icons.patternMusic },
+      { id: 'millimeter', name: 'Milimetrado', icon: Icons.patternMillimeter },
+      { id: 'cornell', name: 'Cornell', icon: Icons.patternCornell }
+    ];
+
+    const paperColors = [
+      { color: '#ffffff', name: 'Blanco', border: '#cbd5e1' },
+      { color: '#fffbf0', name: 'Marfil', border: '#fde68a' },
+      { color: '#f5eedc', name: 'Sepia', border: '#d6c7a1' },
+      { color: '#1e293b', name: 'Pizarra', border: '#475569' },
+      { color: '#000000', name: 'OLED', border: '#334155' }
     ];
 
     this.popover.innerHTML = `
@@ -1671,6 +1868,18 @@ export class Toolbar {
           </button>
         `).join('')}
       </div>
+
+      <div class="popover-divider"></div>
+
+      <div class="mini-menu-title">Tono de Papel</div>
+      <div class="paper-color-grid">
+        ${paperColors.map(c => `
+          <button type="button" class="paper-color-btn ${currentPaperColor === c.color.toLowerCase() ? 'active' : ''}" data-paper-color="${c.color}" title="${c.name}">
+            <span class="paper-color-circle" style="background-color: ${c.color}; border: 1.5px solid ${c.border};"></span>
+            <span class="paper-color-name">${c.name}</span>
+          </button>
+        `).join('')}
+      </div>
     `;
 
     this.popover.querySelector('#btnMenuCover')?.addEventListener('click', () => {
@@ -1704,6 +1913,15 @@ export class Toolbar {
         const pat = btn.dataset.pattern;
         this.engine.setBackgroundPattern(pat);
         this.onPatternChange(pat);
+        this.renderPagesMenu();
+      });
+    });
+
+    this.popover.querySelectorAll('[data-paper-color]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const color = btn.dataset.paperColor;
+        this.engine.setPaperColor(color);
+        this.onPaperColorChange(color);
         this.renderPagesMenu();
       });
     });
@@ -1969,6 +2187,33 @@ export class Toolbar {
       setTimeout(() => {
         status.style.opacity = '0.5';
       }, 1500);
+    }
+  }
+
+  toggleZenMode(forceState = null) {
+    const editor = document.getElementById('editorView') || document.body;
+    const isZen = forceState !== null ? forceState : !editor.classList.contains('zen-mode');
+    editor.classList.toggle('zen-mode', isZen);
+
+    let exitPill = document.getElementById('btnExitZenMode');
+    if (!exitPill) {
+      exitPill = document.createElement('button');
+      exitPill.id = 'btnExitZenMode';
+      exitPill.className = 'zen-exit-pill';
+      exitPill.setAttribute('type', 'button');
+      exitPill.innerHTML = `
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 14 10 14 10 20"></polyline><polyline points="20 10 14 10 14 4"></polyline><line x1="14" y1="10" x2="21" y2="3"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+        <span>Salir de Zen</span>
+      `;
+      exitPill.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleZenMode(false);
+      });
+      document.body.appendChild(exitPill);
+    }
+    exitPill.classList.toggle('hidden', !isZen);
+    if (this.engine && typeof this.engine.triggerHaptic === 'function') {
+      this.engine.triggerHaptic(15);
     }
   }
 }

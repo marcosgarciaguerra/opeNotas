@@ -120,7 +120,7 @@ export class PagesTray {
     html += `
       <div class="tray-card ${isCoverActive ? 'active' : ''}" data-index="-1">
         <div class="tray-thumb-box">
-          <img src="${coverThumb}" class="tray-thumb-img" alt="Portada" />
+          <img src="${coverThumb}" class="tray-thumb-img" alt="Portada" loading="lazy" decoding="async" />
           <span class="tray-page-num">1</span>
           <span class="tray-pattern-badge">Portada</span>
         </div>
@@ -146,7 +146,7 @@ export class PagesTray {
       html += `
         <div class="tray-card ${isActive ? 'active' : ''}" data-index="${index}">
           <div class="tray-thumb-box">
-            ${thumb ? `<img src="${thumb}" class="tray-thumb-img" alt="Pág ${index + 2}" />` : `<div class="tray-empty-thumb">${Icons.notebook}</div>`}
+            ${thumb ? `<img src="${thumb}" class="tray-thumb-img" alt="Pág ${index + 2}" loading="lazy" decoding="async" />` : `<div class="tray-empty-thumb">${Icons.notebook}</div>`}
             <span class="tray-page-num">${index + 2}</span>
             <span class="tray-pattern-badge">${patternName}</span>
           </div>

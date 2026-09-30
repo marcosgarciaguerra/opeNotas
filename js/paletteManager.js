@@ -67,6 +67,50 @@ export class PaletteManager {
     return palette;
   }
 
+  static setSlotColor(index, hexColor) {
+    if (index < 0 || index >= 10 || !hexColor) return;
+    const normalized = hexColor.trim().toLowerCase();
+    if (!/^#[0-9a-fA-F]{6}$/.test(normalized)) return;
+
+    let palette = this.getPalette();
+    palette[index] = normalized;
+    this.savePalette(palette);
+    try {
+      localStorage.setItem('opeNotas_last_custom_color', normalized);
+      localStorage.setItem('opeNotas_custom_color_v1', normalized);
+    } catch (_) {}
+    return palette;
+  }
+
+  static resetDefaultPalette() {
+    const defaultCopy = [...this.DEFAULT_PALETTE];
+    this.savePalette(defaultCopy);
+    return defaultCopy;
+  }
+
+  static saveCustomColor(hexColor, targetSlot = null) {
+    if (!hexColor || typeof hexColor !== 'string') return;
+    const normalized = hexColor.trim().toLowerCase();
+    if (!/^#[0-9a-fA-F]{6}$/.test(normalized)) return;
+    try {
+      localStorage.setItem('opeNotas_custom_color_v1', normalized);
+      localStorage.setItem('opeNotas_last_custom_color', normalized);
+    } catch (_) {}
+
+    if (targetSlot !== null && targetSlot >= 0 && targetSlot < 10) {
+      return this.setSlotColor(targetSlot, normalized);
+    }
+    return this.addColor(normalized);
+  }
+
+  static getCustomColor() {
+    try {
+      return localStorage.getItem('opeNotas_custom_color_v1') || localStorage.getItem('opeNotas_last_custom_color') || '#2563eb';
+    } catch (_) {
+      return '#2563eb';
+    }
+  }
+
   static getQuickColors() {
     try {
       const stored = localStorage.getItem(this.QUICK_KEY);

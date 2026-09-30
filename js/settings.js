@@ -78,7 +78,12 @@ export class SettingsManager {
   static getEffectiveTheme() {
     const theme = this.settings?.theme || 'light';
     if (theme === 'system') {
-      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+      if (typeof window !== 'undefined' && window.Android && typeof window.Android.isSystemDarkMode === 'function') {
+        try {
+          return window.Android.isSystemDarkMode() ? 'dark' : 'light';
+        } catch (_) {}
+      }
+      return (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
         ? 'dark'
         : 'light';
     }
@@ -102,13 +107,34 @@ export class SettingsManager {
   }
 
   static listenSystemThemeChange() {
-    if (window.matchMedia) {
-      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if (typeof window !== 'undefined') {
+      // Notificación nativa desde Android MainActivity.java
+      window.onAndroidNightModeChanged = (isDark) => {
         if (this.settings?.theme === 'system') {
           this.applyCurrentTheme();
           this.applyDarkPaper();
+          this.notifyChange(this.settings);
         }
-      });
+      };
+
+      // Notificación estándar Web prefers-color-scheme
+      if (window.matchMedia) {
+        try {
+          const mql = window.matchMedia('(prefers-color-scheme: dark)');
+          const onChange = () => {
+            if (this.settings?.theme === 'system') {
+              this.applyCurrentTheme();
+              this.applyDarkPaper();
+              this.notifyChange(this.settings);
+            }
+          };
+          if (mql.addEventListener) {
+            mql.addEventListener('change', onChange);
+          } else if (mql.addListener) {
+            mql.addListener(onChange);
+          }
+        } catch (_) {}
+      }
     }
   }
 

@@ -4,7 +4,11 @@ import { CoverDesigner } from './coverDesigner.js';
 export class CanvasEngine {
   constructor(canvasElement, options = {}) {
     this.canvas = canvasElement;
-    this.ctx = this.canvas.getContext('2d');
+    try {
+      this.ctx = this.canvas ? (this.canvas.getContext('2d', { desynchronized: true, alpha: true }) || this.canvas.getContext('2d')) : null;
+    } catch (_) {
+      this.ctx = this.canvas ? this.canvas.getContext('2d') : null;
+    }
 
     this.format = options.format || 'a4'; // 'a4' o 'board'
     this.backgroundPattern = this.format === 'a4' ? 'ruled' : 'dots'; // 'blank' | 'ruled' | 'grid' | 'dots'
@@ -24,6 +28,9 @@ export class CanvasEngine {
 
     this.undoStack = [];
     this.redoStack = [];
+    this.maxUndoSteps = options.maxUndoSteps || 60;
+    this.viewport = options.viewport || null;
+    this.enableCulling = options.enableCulling !== undefined ? options.enableCulling : true;
 
     // Estado del puntero y herramienta activa
     this.tool = 'pen'; // 'pen' | 'pencil' | 'marker' | 'brush' | 'highlighter' | 'eraser' | 'lasso' | 'hand' | 'shape' | 'text' | 'image'
@@ -55,6 +62,10 @@ export class CanvasEngine {
     // Callbacks
     this.onStrokeEnd = options.onStrokeEnd || null;
 
+    this._holdTimer = null;
+    this._shapeConverted = false;
+    this._prevToolBeforeStylusButton = null;
+
     this._pointerDownHandler = null;
     this._pointerMoveHandler = null;
     if (typeof window !== 'undefined') {
@@ -63,6 +74,7 @@ export class CanvasEngine {
     }
 
     this.attachCanvas(this.canvas);
+    this.initTouchGestures();
     this.initDimensions();
   }
 
@@ -80,6 +92,72 @@ export class CanvasEngine {
       canvas.style.width = `${this.logicalWidth}px`;
       canvas.style.height = `${this.logicalHeight}px`;
     }
+  }
+
+  // Respuesta háptica táctil sensorial (Nativa en Android o Web Vibration API)
+  triggerHaptic(duration = 15) {
+    if (typeof window !== 'undefined') {
+      if (window.Android && typeof window.Android.triggerHapticFeedback === 'function') {
+        try { window.Android.triggerHapticFeedback(); } catch (_) {}
+      } else if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+        try { navigator.vibrate(duration); } catch (_) {}
+      }
+    }
+  }
+
+  // Gestos táctiles universales de 2 y 3 dedos (Undo / Redo rápido)
+  initTouchGestures() {
+    if (typeof window === 'undefined' || !this.canvas || typeof this.canvas.addEventListener !== 'function') return;
+
+    let touchStartTime = 0;
+    let gestureFingerCount = 0;
+    let initialTouchPositions = [];
+
+    const onTouchStart = (e) => {
+      const count = e.touches.length;
+      if (count === 2 || count === 3) {
+        touchStartTime = Date.now();
+        gestureFingerCount = count;
+        initialTouchPositions = Array.from(e.touches).map(t => ({ x: t.clientX, y: t.clientY }));
+      } else {
+        gestureFingerCount = 0;
+      }
+    };
+
+    const onTouchMove = (e) => {
+      if (gestureFingerCount === 2 || gestureFingerCount === 3) {
+        for (let i = 0; i < e.touches.length && i < initialTouchPositions.length; i++) {
+          const dist = Math.hypot(
+            e.touches[i].clientX - initialTouchPositions[i].x,
+            e.touches[i].clientY - initialTouchPositions[i].y
+          );
+          if (dist > 18) {
+            gestureFingerCount = 0; // Se convirtió en paneo o pinch zoom
+            break;
+          }
+        }
+      }
+    };
+
+    const onTouchEnd = (e) => {
+      if (gestureFingerCount === 2 || gestureFingerCount === 3) {
+        const dt = Date.now() - touchStartTime;
+        if (dt > 35 && dt < 450 && e.touches.length === 0) {
+          if (gestureFingerCount === 2) {
+            this.undo();
+            this.triggerHaptic(20);
+          } else if (gestureFingerCount === 3) {
+            this.redo();
+            this.triggerHaptic(20);
+          }
+        }
+        gestureFingerCount = 0;
+      }
+    };
+
+    this.canvas.addEventListener('touchstart', onTouchStart, { passive: true });
+    this.canvas.addEventListener('touchmove', onTouchMove, { passive: true });
+    this.canvas.addEventListener('touchend', onTouchEnd, { passive: true });
   }
 
   initEraserIndicator() {
@@ -134,7 +212,11 @@ export class CanvasEngine {
     this.canvas = canvasElement;
     if (this.canvas) {
       this.setupHiDPI(this.canvas);
-      this.ctx = this.canvas.getContext('2d');
+      try {
+        this.ctx = this.canvas.getContext('2d', { desynchronized: true, alpha: true }) || this.canvas.getContext('2d');
+      } catch (_) {
+        this.ctx = this.canvas.getContext('2d');
+      }
 
       this._pointerDownHandler = (e) => {
         if (this.tool === 'eraser') this.updateEraserIndicator(e);
@@ -226,6 +308,30 @@ export class CanvasEngine {
     if (this.laserPointer) {
       this.laserPointer.setActive(this.tool === 'laser');
     }
+  }
+
+  setViewport(viewport) {
+    this.viewport = viewport;
+  }
+
+  getVisibleRect() {
+    if (this.viewport && typeof this.viewport.getVisibleRect === 'function') {
+      return this.viewport.getVisibleRect();
+    }
+    return null;
+  }
+
+  isElementVisible(box, margin = 40) {
+    if (!this.enableCulling) return true;
+    if (this.format === 'a4') return true;
+    const vr = this.getVisibleRect();
+    if (!vr || !box) return true;
+    return !(
+      box.maxX + margin < vr.minX ||
+      box.minX - margin > vr.maxX ||
+      box.maxY + margin < vr.minY ||
+      box.minY - margin > vr.maxY
+    );
   }
 
   setColor(color) {
@@ -344,17 +450,294 @@ export class CanvasEngine {
     return this.strokes;
   }
 
-  // Conversión precisa de coordenadas de puntero al espacio del canvas
+  // Conversión precisa de coordenadas de puntero al espacio del canvas con soporte de Stylus (presión e inclinación)
   getCanvasCoordinates(e) {
     const rect = this.canvas.getBoundingClientRect();
-    if (!rect.width || !rect.height) return { x: 0, y: 0, pressure: 0.5 };
+    if (!rect.width || !rect.height) return { x: 0, y: 0, pressure: 0.5, tiltX: 0, tiltY: 0, pointerType: 'mouse' };
     const scaleX = this.logicalWidth / rect.width;
     const scaleY = this.logicalHeight / rect.height;
     return {
       x: (e.clientX - rect.left) * scaleX,
       y: (e.clientY - rect.top) * scaleY,
-      pressure: e.pressure > 0 ? e.pressure : 0.5
+      pressure: (e.pressure !== undefined && e.pressure > 0) ? e.pressure : 0.5,
+      tiltX: e.tiltX || 0,
+      tiltY: e.tiltY || 0,
+      pointerType: e.pointerType || 'mouse'
     };
+  }
+
+  // Soporte para botón físico del Stylus / S-Pen (alternar temporalmente a borrador)
+  handleStylusButton(e) {
+    if (e.pointerType === 'pen') {
+      if (e.buttons === 2 || e.button === 2 || e.button === 5) {
+        if (this.tool !== 'eraser') {
+          this._prevToolBeforeStylusButton = this.tool;
+          this.setTool('eraser');
+          this.triggerHaptic(15);
+        }
+      }
+    }
+  }
+
+  // Detección y conversión de trazos manuales en formas geométricas perfectas (Dibujar y Mantener)
+  tryConvertToSmartShape() {
+    if (!this.currentStroke || !this.currentStroke.points || this.currentStroke.points.length < 8) return false;
+    const pts = this.currentStroke.points;
+    const p0 = pts[0];
+    const pEnd = pts[pts.length - 1];
+    const rb = this.currentStroke.roughBox;
+    const w = rb.maxX - rb.minX;
+    const h = rb.maxY - rb.minY;
+    const diag = Math.hypot(w, h);
+
+    if (diag < 20) return false;
+
+    // Distancia directa y longitud del recorrido
+    const directDist = Math.hypot(pEnd.x - p0.x, pEnd.y - p0.y);
+    let totalPathLen = 0;
+    for (let i = 1; i < pts.length; i++) {
+      totalPathLen += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+    }
+    if (totalPathLen === 0) return false;
+
+    const isClosed = directDist < Math.max(35, diag * 0.28);
+
+    // 1. Detección de Línea Recta (alta linealidad y trazo no cerrado)
+    if (!isClosed && directDist / totalPathLen > 0.86) {
+      let maxDev = 0;
+      for (const p of pts) {
+        const dev = Math.sqrt(this.distToSegmentSquared(p, p0, pEnd));
+        if (dev > maxDev) maxDev = dev;
+      }
+      if (maxDev < Math.max(16, directDist * 0.12)) {
+        this.currentStroke.isStraight = true;
+        this.currentStroke.points = [{ ...p0 }, { ...pEnd }];
+        this._shapeConverted = true;
+        this.triggerHaptic(25);
+        this.render();
+        return true;
+      }
+    }
+
+    // 2. Detección de Círculo, Cuadrado, Rectángulo o Triángulo (formas cerradas)
+    if (isClosed && pts.length >= 12) {
+      const cx = (rb.minX + rb.maxX) / 2;
+      const cy = (rb.minY + rb.maxY) / 2;
+      const rx = w / 2;
+      const ry = h / 2;
+
+      // Desviación de ajuste elíptico / circular
+      let ellipseDevSum = 0;
+      for (const p of pts) {
+        const dx = (p.x - cx) / (rx || 1);
+        const dy = (p.y - cy) / (ry || 1);
+        ellipseDevSum += Math.abs(Math.hypot(dx, dy) - 1);
+      }
+      const meanEllipseDev = ellipseDevSum / pts.length;
+
+      if (meanEllipseDev < 0.22) {
+        const isCircle = Math.abs(w - h) / Math.max(w, h) < 0.20;
+        const radius = isCircle ? (w + h) / 4 : null;
+        const shape = {
+          id: 'smart_shape_' + Date.now(),
+          type: 'circle',
+          x: isCircle ? cx - radius : rb.minX,
+          y: isCircle ? cy - radius : rb.minY,
+          width: isCircle ? radius * 2 : w,
+          height: isCircle ? radius * 2 : h,
+          strokeColor: this.currentStroke.color,
+          strokeWidth: this.currentStroke.width,
+          fillColor: 'transparent'
+        };
+        this.currentStroke = null;
+        this._shapeConverted = true;
+        this.addShape(shape);
+        this.triggerHaptic(30);
+        return true;
+      }
+
+      // Desviación rectangular (puntos cerca de los 4 bordes exteriores)
+      let nearEdgeCount = 0;
+      const edgeTol = Math.max(10, Math.min(w, h) * 0.20);
+      for (const p of pts) {
+        if (
+          Math.abs(p.x - rb.minX) < edgeTol ||
+          Math.abs(p.x - rb.maxX) < edgeTol ||
+          Math.abs(p.y - rb.minY) < edgeTol ||
+          Math.abs(p.y - rb.maxY) < edgeTol
+        ) {
+          nearEdgeCount++;
+        }
+      }
+
+      if (nearEdgeCount / pts.length > 0.74) {
+        const isSquare = Math.abs(w - h) / Math.max(w, h) < 0.18;
+        const side = isSquare ? (w + h) / 2 : null;
+        const shape = {
+          id: 'smart_shape_' + Date.now(),
+          type: isSquare ? 'square' : 'rectangle',
+          x: rb.minX,
+          y: rb.minY,
+          width: isSquare ? side : w,
+          height: isSquare ? side : h,
+          strokeColor: this.currentStroke.color,
+          strokeWidth: this.currentStroke.width,
+          fillColor: 'transparent'
+        };
+        this.currentStroke = null;
+        this._shapeConverted = true;
+        this.addShape(shape);
+        this.triggerHaptic(30);
+        return true;
+      }
+
+      // Triángulo (puntos superiores concentrados hacia un vértice)
+      const topPts = pts.filter(p => p.y < rb.minY + h * 0.35);
+      const bottomPts = pts.filter(p => p.y > rb.maxY - h * 0.35);
+      if (topPts.length > 0 && bottomPts.length > 0) {
+        const topCenter = topPts.reduce((acc, p) => acc + p.x, 0) / topPts.length;
+        if (Math.abs(topCenter - cx) < w * 0.25) {
+          const shape = {
+            id: 'smart_shape_' + Date.now(),
+            type: 'triangle',
+            x: rb.minX,
+            y: rb.minY,
+            width: w,
+            height: h,
+            strokeColor: this.currentStroke.color,
+            strokeWidth: this.currentStroke.width,
+            fillColor: 'transparent'
+          };
+          this.currentStroke = null;
+          this._shapeConverted = true;
+          this.addShape(shape);
+          this.triggerHaptic(30);
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  // Detección del gesto de tachar para borrar (Scratch-out zigzag)
+  detectScratchOut(stroke) {
+    if (!stroke || !stroke.points || stroke.points.length < 16) return false;
+    const pts = stroke.points;
+    const rb = stroke.roughBox;
+    const w = rb.maxX - rb.minX;
+    const h = rb.maxY - rb.minY;
+    const diag = Math.hypot(w, h);
+    if (diag < 20 || diag > 350) return false;
+
+    let totalLen = 0;
+    let reversals = 0;
+    let prevDir = null;
+
+    for (let i = 1; i < pts.length; i++) {
+      const dx = pts[i].x - pts[i - 1].x;
+      const dy = pts[i].y - pts[i - 1].y;
+      totalLen += Math.hypot(dx, dy);
+
+      const mainDelta = w >= h ? dx : dy;
+      if (Math.abs(mainDelta) > 5) {
+        const curDir = mainDelta > 0 ? 1 : -1;
+        if (prevDir !== null && curDir !== prevDir) {
+          reversals++;
+        }
+        prevDir = curDir;
+      }
+    }
+
+    return reversals >= 6 && totalLen > diag * 3.0;
+  }
+
+  handleScratchOutErase(stroke) {
+    const rb = stroke.roughBox;
+    const margin = 12;
+    const targetBox = {
+      minX: rb.minX - margin,
+      minY: rb.minY - margin,
+      maxX: rb.maxX + margin,
+      maxY: rb.maxY + margin
+    };
+
+    const deletedStrokes = [];
+    const remainingStrokes = [];
+    for (let i = 0; i < this.strokes.length; i++) {
+      const s = this.strokes[i];
+      if (s.id === stroke.id) continue;
+      const sBox = s.roughBox || { minX: s.points[0].x, minY: s.points[0].y, maxX: s.points[0].x, maxY: s.points[0].y };
+      const overlaps = !(
+        sBox.maxX < targetBox.minX ||
+        sBox.minX > targetBox.maxX ||
+        sBox.maxY < targetBox.minY ||
+        sBox.minY > targetBox.maxY
+      );
+      if (overlaps) {
+        deletedStrokes.push({ stroke: s, index: i });
+      } else {
+        remainingStrokes.push(s);
+      }
+    }
+
+    const deletedShapes = [];
+    const remainingShapes = [];
+    for (let i = 0; i < this.shapes.length; i++) {
+      const sh = this.shapes[i];
+      const shBox = {
+        minX: Math.min(sh.x, sh.x + sh.width),
+        minY: Math.min(sh.y, sh.y + sh.height),
+        maxX: Math.max(sh.x, sh.x + sh.width),
+        maxY: Math.max(sh.y, sh.y + sh.height)
+      };
+      const overlaps = !(
+        shBox.maxX < targetBox.minX ||
+        shBox.minX > targetBox.maxX ||
+        shBox.maxY < targetBox.minY ||
+        shBox.minY > targetBox.maxY
+      );
+      if (overlaps) {
+        deletedShapes.push({ shape: sh, index: i });
+      } else {
+        remainingShapes.push(sh);
+      }
+    }
+
+    const deletedTexts = [];
+    const remainingTexts = [];
+    for (let i = 0; i < this.texts.length; i++) {
+      const tx = this.texts[i];
+      const txBox = this.getTextBoundingBox(tx);
+      const overlaps = !(
+        txBox.maxX < targetBox.minX ||
+        txBox.minX > targetBox.maxX ||
+        txBox.maxY < targetBox.minY ||
+        txBox.minY > targetBox.maxY
+      );
+      if (overlaps) {
+        deletedTexts.push({ text: tx, index: i });
+      } else {
+        remainingTexts.push(tx);
+      }
+    }
+
+    if (deletedStrokes.length > 0 || deletedShapes.length > 0 || deletedTexts.length > 0) {
+      this.pushAction({
+        type: 'delete_multiple_elements',
+        strokes: deletedStrokes,
+        shapes: deletedShapes,
+        texts: deletedTexts
+      });
+      this.strokes = remainingStrokes;
+      this.shapes = remainingShapes;
+      this.texts = remainingTexts;
+      this.triggerHaptic(35);
+      this.render();
+      if (this.onStrokeEnd) this.onStrokeEnd();
+      return true;
+    }
+    return false;
   }
 
   onPointerDown(e) {
@@ -382,6 +765,13 @@ export class CanvasEngine {
 
     this.canvas.setPointerCapture(e.pointerId);
 
+    this._shapeConverted = false;
+    if (this._holdTimer) {
+      clearTimeout(this._holdTimer);
+      this._holdTimer = null;
+    }
+    this.handleStylusButton(e);
+
     let pt = this.getCanvasCoordinates(e);
 
     // Snapping y bloqueo con Regla si está activa
@@ -406,25 +796,28 @@ export class CanvasEngine {
       return;
     }
 
-    // Inicializar nuevo trazo vectorial
+    // Inicializar nuevo trazo vectorial con modulación por presión e inclinación (tilt)
     const isHighlighter = this.tool === 'highlighter';
     const isPencil = this.tool === 'pencil';
     const isBrush = this.tool === 'brush';
     const isMarker = this.tool === 'marker';
+
+    const tiltMag = Math.hypot(pt.tiltX || 0, pt.tiltY || 0);
+    const tiltMultiplier = tiltMag > 15 ? (1 + (tiltMag / 90) * 0.75) : 1.0;
     
     // Modulación de grosor por presión si procede
     let initialWidth = this.strokeWidth;
     if (isHighlighter) {
       initialWidth = Math.max(16, this.strokeWidth * 3.2);
     } else if (isPencil) {
-      initialWidth = Math.max(1.5, this.strokeWidth * (0.6 + pt.pressure * 0.7));
+      initialWidth = Math.max(1.5, this.strokeWidth * (0.6 + pt.pressure * 0.7) * tiltMultiplier);
     } else if (isBrush) {
-      initialWidth = Math.max(1.5, this.strokeWidth * (0.4 + pt.pressure * 1.2));
+      initialWidth = Math.max(1.5, this.strokeWidth * (0.4 + pt.pressure * 1.2) * tiltMultiplier);
     } else {
       initialWidth = Math.max(1, this.strokeWidth * (0.7 + pt.pressure * 0.6));
     }
 
-    this._stabilizedPoint = { x: pt.x, y: pt.y, pressure: pt.pressure };
+    this._stabilizedPoint = { x: pt.x, y: pt.y, pressure: pt.pressure, tiltX: pt.tiltX, tiltY: pt.tiltY };
 
     this.currentStroke = {
       id: 'stroke_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
@@ -472,17 +865,17 @@ export class CanvasEngine {
     let targetPt;
     const stab = this.strokeStabilization !== undefined ? this.strokeStabilization : 0.5;
     if (isSnapped) {
-      targetPt = { x: pt.x, y: pt.y, pressure: pt.pressure };
+      targetPt = { x: pt.x, y: pt.y, pressure: pt.pressure, tiltX: pt.tiltX, tiltY: pt.tiltY };
       this._stabilizedPoint = targetPt;
     } else if (stab > 0.02 && this._stabilizedPoint) {
       const alpha = Math.max(0.10, 1 - (stab * 0.84));
       const smoothX = this._stabilizedPoint.x + (pt.x - this._stabilizedPoint.x) * alpha;
       const smoothY = this._stabilizedPoint.y + (pt.y - this._stabilizedPoint.y) * alpha;
       const smoothPressure = this._stabilizedPoint.pressure + (pt.pressure - this._stabilizedPoint.pressure) * alpha;
-      this._stabilizedPoint = { x: smoothX, y: smoothY, pressure: smoothPressure };
-      targetPt = { x: smoothX, y: smoothY, pressure: smoothPressure };
+      this._stabilizedPoint = { x: smoothX, y: smoothY, pressure: smoothPressure, tiltX: pt.tiltX, tiltY: pt.tiltY };
+      targetPt = { x: smoothX, y: smoothY, pressure: smoothPressure, tiltX: pt.tiltX, tiltY: pt.tiltY };
     } else {
-      this._stabilizedPoint = { x: pt.x, y: pt.y, pressure: pt.pressure };
+      this._stabilizedPoint = { x: pt.x, y: pt.y, pressure: pt.pressure, tiltX: pt.tiltX, tiltY: pt.tiltY };
       targetPt = pt;
     }
 
@@ -495,6 +888,26 @@ export class CanvasEngine {
 
     this.lastPointerX = pt.x;
     this.lastPointerY = pt.y;
+
+    // Detección de trazo quieto al final para convertir a Smart Shape (Hold to snap)
+    if (!isSnapped && !this._shapeConverted && this.currentStroke && this.currentStroke.points.length >= 8 && (!this.ruler || !this.ruler.active)) {
+      const moveDist = Math.hypot(pt.x - (this.lastPointerX || pt.x), pt.y - (this.lastPointerY || pt.y));
+      if (moveDist < 4) {
+        if (!this._holdTimer) {
+          this._holdTimer = setTimeout(() => {
+            if (this.isDrawing && this.currentStroke && !this._shapeConverted) {
+              this.tryConvertToSmartShape();
+            }
+          }, 500);
+        }
+      } else {
+        if (this._holdTimer) {
+          clearTimeout(this._holdTimer);
+          this._holdTimer = null;
+        }
+      }
+    }
+
     this.render();
   }
 
@@ -503,8 +916,37 @@ export class CanvasEngine {
     this.isDrawing = false;
     this._rulerLockedEdge = null;
 
+    if (this._holdTimer) {
+      clearTimeout(this._holdTimer);
+      this._holdTimer = null;
+    }
+
+    if (this._prevToolBeforeStylusButton) {
+      this.setTool(this._prevToolBeforeStylusButton);
+      this._prevToolBeforeStylusButton = null;
+    }
+
+    if (this._shapeConverted) {
+      this._shapeConverted = false;
+      this.currentStroke = null;
+      this._stabilizedPoint = null;
+      this.render();
+      if (this.onStrokeEnd) this.onStrokeEnd();
+      return;
+    }
+
     if (this.currentStroke) {
-      if (this.currentStroke.points.length > 0) {
+      // Gesto de Tachar para Borrar (Scratch-out to erase)
+      if (this.tool !== 'eraser' && this.detectScratchOut(this.currentStroke)) {
+        const erased = this.handleScratchOutErase(this.currentStroke);
+        if (erased) {
+          this.currentStroke = null;
+          this._stabilizedPoint = null;
+          return;
+        }
+      }
+
+      if (this.currentStroke && this.currentStroke.points && this.currentStroke.points.length > 0) {
         if (this.strokeStabilization > 0.05 && this.lastPointerX && this.lastPointerY) {
           const lastPt = this.currentStroke.points[this.currentStroke.points.length - 1];
           const dist = Math.hypot(this.lastPointerX - lastPt.x, this.lastPointerY - lastPt.y);
@@ -744,8 +1186,15 @@ export class CanvasEngine {
   }
 
   // --- Deshacer / Rehacer ---
-  pushAction(action) {
+  _pushToUndo(action) {
     this.undoStack.push(action);
+    if (this.undoStack.length > this.maxUndoSteps) {
+      this.undoStack.shift();
+    }
+  }
+
+  pushAction(action) {
+    this._pushToUndo(action);
     this.redoStack = [];
   }
 
@@ -812,7 +1261,7 @@ export class CanvasEngine {
 
     if (action.type === 'add_stroke') {
       this.strokes.push(action.stroke);
-      this.undoStack.push(action);
+      this._pushToUndo(action);
     } else if (action.type === 'delete_multiple_elements') {
       if (action.strokes) {
         const idsToDelete = new Set(action.strokes.map(s => s.stroke.id));
@@ -826,26 +1275,26 @@ export class CanvasEngine {
         const idsToDelete = new Set(action.shapes.map(sh => sh.shape.id));
         this.shapes = this.shapes.filter(sh => !idsToDelete.has(sh.id));
       }
-      this.undoStack.push(action);
+      this._pushToUndo(action);
     } else if (action.type === 'delete_multiple_strokes') {
       const idsToDelete = new Set(action.strokes.map(s => s.stroke.id));
       this.strokes = this.strokes.filter(s => !idsToDelete.has(s.id));
-      this.undoStack.push(action);
+      this._pushToUndo(action);
     } else if (action.type === 'add_shape') {
       this.shapes.push(action.shape);
-      this.undoStack.push(action);
+      this._pushToUndo(action);
     } else if (action.type === 'add_text') {
       this.texts.push(action.text);
-      this.undoStack.push(action);
+      this._pushToUndo(action);
     } else if (action.type === 'add_image') {
       this.images.push(action.image);
-      this.undoStack.push(action);
+      this._pushToUndo(action);
     } else if (action.type === 'replace_strokes_with_text') {
       // Rehacer reemplazo HTR: eliminar trazos y colocar texto
       const idsToDelete = new Set(action.deletedStrokes.map(s => s.stroke.id));
       this.strokes = this.strokes.filter(s => !idsToDelete.has(s.id));
       this.texts.push(action.text);
-      this.undoStack.push(action);
+      this._pushToUndo(action);
     }
 
     this.render();
@@ -893,7 +1342,7 @@ export class CanvasEngine {
     ctx.save();
     ctx.globalCompositeOperation = 'multiply';
     for (const stroke of this.strokes) {
-      if (stroke.isHighlighter) {
+      if (stroke.isHighlighter && (!stroke.roughBox || this.isElementVisible(stroke.roughBox, stroke.width + 30))) {
         this.drawStroke(ctx, stroke);
       }
     }
@@ -906,14 +1355,22 @@ export class CanvasEngine {
     ctx.save();
     ctx.globalCompositeOperation = 'source-over';
 
-    // Renderizar figuras
+    // Renderizar figuras con culling
     for (const shape of this.shapes) {
-      this.drawShape(ctx, shape);
+      const shapeBox = {
+        minX: Math.min(shape.x, shape.x + shape.width),
+        minY: Math.min(shape.y, shape.y + shape.height),
+        maxX: Math.max(shape.x, shape.x + shape.width),
+        maxY: Math.max(shape.y, shape.y + shape.height)
+      };
+      if (this.isElementVisible(shapeBox, (shape.strokeWidth || 2) + 30)) {
+        this.drawShape(ctx, shape);
+      }
     }
 
-    // Renderizar trazos de tinta
+    // Renderizar trazos de tinta con culling
     for (const stroke of this.strokes) {
-      if (!stroke.isHighlighter) {
+      if (!stroke.isHighlighter && (!stroke.roughBox || this.isElementVisible(stroke.roughBox, stroke.width + 30))) {
         this.drawStroke(ctx, stroke);
       }
     }
@@ -922,10 +1379,13 @@ export class CanvasEngine {
     }
     ctx.restore();
 
-    // 5. Capa 4: Cajas de Texto
+    // 5. Capa 4: Cajas de Texto con culling
     ctx.save();
     for (const textObj of this.texts) {
-      this.drawText(ctx, textObj);
+      const textBox = this.getTextBoundingBox(textObj);
+      if (this.isElementVisible(textBox, 30)) {
+        this.drawText(ctx, textObj);
+      }
     }
     ctx.restore();
 
@@ -962,7 +1422,25 @@ export class CanvasEngine {
     }
 
     const pattern = this.backgroundPattern || (this.format === 'a4' ? 'ruled' : 'dots');
-    const isDarkPaper = bgColor === '#1e293b' || bgColor === '#0f172a';
+    this.drawPatternBackground(ctx, width, height, pattern, bgColor);
+    ctx.restore();
+  }
+
+  drawPatternBackground(ctx, width, height, pattern, bgColor) {
+    const isDarkPaper = (function(hex) {
+      if (!hex || hex === 'transparent') return false;
+      if (hex.startsWith('#')) {
+        let c = hex.substring(1);
+        if (c.length === 3) c = c.split('').map(x => x + x).join('');
+        const num = parseInt(c, 16);
+        if (isNaN(num)) return false;
+        const r = (num >> 16) & 255;
+        const g = (num >> 8) & 255;
+        const b = num & 255;
+        return (r * 299 + g * 587 + b * 114) / 1000 < 128;
+      }
+      return false;
+    })(bgColor);
 
     if (pattern === 'ruled') {
       // Pauta rayada horizontal continua con offset subpixel nítido
@@ -1017,14 +1495,130 @@ export class CanvasEngine {
           ctx.fill();
         }
       }
+
+    } else if (pattern === 'music') {
+      // Partitura musical: pentagramas de 5 líneas con llaves/líneas de compás
+      const staffLineGap = 8;
+      const staffSpacing = 48;
+      const staffHeight = staffLineGap * 4; // 32px
+      const topMargin = 60;
+      const marginX = 48;
+      const staffStroke = isDarkPaper ? 'rgba(255, 255, 255, 0.25)' : '#94a3b8';
+
+      for (let staffY = topMargin; staffY + staffHeight < height - 40; staffY += (staffHeight + staffSpacing)) {
+        // Línea vertical de cierre a la izquierda y derecha
+        ctx.strokeStyle = staffStroke;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(marginX + 0.5, staffY + 0.5);
+        ctx.lineTo(marginX + 0.5, staffY + staffHeight + 0.5);
+        ctx.moveTo(width - marginX + 0.5, staffY + 0.5);
+        ctx.lineTo(width - marginX + 0.5, staffY + staffHeight + 0.5);
+        ctx.stroke();
+
+        // 5 líneas horizontales del pentagrama
+        ctx.lineWidth = 1;
+        for (let line = 0; line < 5; line++) {
+          const y = staffY + line * staffLineGap;
+          ctx.beginPath();
+          ctx.moveTo(marginX, y + 0.5);
+          ctx.lineTo(width - marginX, y + 0.5);
+          ctx.stroke();
+        }
+      }
+
+    } else if (pattern === 'millimeter') {
+      // Papel milimetrado técnico de precisión (jerarquía de 1mm, 5mm y 10mm)
+      const fineStep = 4;
+      const medStep = 20;
+      const majorStep = 40;
+
+      for (let x = 0; x <= width; x += fineStep) {
+        ctx.beginPath();
+        if (x % majorStep === 0) {
+          ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.28)' : '#94a3b8';
+          ctx.lineWidth = 1.2;
+        } else if (x % medStep === 0) {
+          ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.16)' : '#cbd5e1';
+          ctx.lineWidth = 0.8;
+        } else {
+          ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.06)' : '#f1f5f9';
+          ctx.lineWidth = 0.5;
+        }
+        ctx.moveTo(x + 0.5, 0);
+        ctx.lineTo(x + 0.5, height);
+        ctx.stroke();
+      }
+
+      for (let y = 0; y <= height; y += fineStep) {
+        ctx.beginPath();
+        if (y % majorStep === 0) {
+          ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.28)' : '#94a3b8';
+          ctx.lineWidth = 1.2;
+        } else if (y % medStep === 0) {
+          ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.16)' : '#cbd5e1';
+          ctx.lineWidth = 0.8;
+        } else {
+          ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.06)' : '#f1f5f9';
+          ctx.lineWidth = 0.5;
+        }
+        ctx.moveTo(0, y + 0.5);
+        ctx.lineTo(width, y + 0.5);
+        ctx.stroke();
+      }
+
+    } else if (pattern === 'cornell') {
+      // Método Cornell: encabezado, columna de ideas (cue), cuerpo de apuntes y resumen
+      const cueX = Math.round(width * 0.28);
+      const headerY = 70;
+      const summaryY = height - 140;
+      const lineGap = 28;
+
+      // Líneas regladas para notas y apuntes en el cuerpo
+      ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.16)' : '#e2e8f0';
+      ctx.lineWidth = 1;
+      for (let y = headerY + lineGap; y < summaryY; y += lineGap) {
+        ctx.beginPath();
+        ctx.moveTo(cueX, y + 0.5);
+        ctx.lineTo(width, y + 0.5);
+        ctx.stroke();
+      }
+
+      // Líneas divisorias principales (Header, Columna izquierda, Resumen)
+      ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.35)' : '#94a3b8';
+      ctx.lineWidth = 1.5;
+
+      // Cabecera superior
+      ctx.beginPath();
+      ctx.moveTo(0, headerY + 0.5);
+      ctx.lineTo(width, headerY + 0.5);
+      ctx.stroke();
+
+      // Columna vertical de palabras clave
+      ctx.beginPath();
+      ctx.moveTo(cueX + 0.5, headerY);
+      ctx.lineTo(cueX + 0.5, summaryY);
+      ctx.stroke();
+
+      // Divisoria horizontal de resumen inferior
+      ctx.beginPath();
+      ctx.moveTo(0, summaryY + 0.5);
+      ctx.lineTo(width, summaryY + 0.5);
+      ctx.stroke();
     }
-    // pattern === 'blank': liso sin marcas
-    ctx.restore();
   }
 
   renderImages(ctx) {
     for (const imgItem of this.images) {
       if (imgItem._element && imgItem._element.complete) {
+        const imgBox = {
+          minX: imgItem.x,
+          minY: imgItem.y,
+          maxX: imgItem.x + imgItem.width,
+          maxY: imgItem.y + imgItem.height
+        };
+        if (!this.isElementVisible(imgBox, 30)) continue;
+
         ctx.save();
         ctx.translate(imgItem.x + imgItem.width / 2, imgItem.y + imgItem.height / 2);
         if (imgItem.rotation) ctx.rotate(imgItem.rotation);
@@ -1161,19 +1755,54 @@ export class CanvasEngine {
       return;
     }
 
-    // Curvas Bézier continuas suavizadas
+    // Curvas Bézier cúbicas continuas con interpolación matemática Splines Catmull-Rom
     ctx.beginPath();
     ctx.moveTo(pts[0].x, pts[0].y);
 
-    for (let i = 1; i < pts.length - 1; i++) {
-      const midX = (pts[i].x + pts[i + 1].x) / 2;
-      const midY = (pts[i].y + pts[i + 1].y) / 2;
-      ctx.quadraticCurveTo(pts[i].x, pts[i].y, midX, midY);
+    const n = pts.length;
+    for (let i = 0; i < n - 1; i++) {
+      const p0 = i > 0 ? pts[i - 1] : { x: 2 * pts[0].x - pts[1].x, y: 2 * pts[0].y - pts[1].y };
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = (i + 2 < n) ? pts[i + 2] : { x: 2 * p2.x - p1.x, y: 2 * p2.y - p1.y };
+
+      // Conversión canónica Catmull-Rom (tensión = 0.5) a Bézier cúbica
+      const cp1x = p1.x + (p2.x - p0.x) / 6;
+      const cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6;
+      const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+      ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
     }
 
-    ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
     ctx.stroke();
     ctx.restore();
+  }
+
+  // Helper para cálculo matemático de Splines Catmull-Rom a Bézier cúbica
+  computeCatmullRomBezier(pts) {
+    if (!pts || pts.length < 2) return [];
+    const segments = [];
+    const n = pts.length;
+    for (let i = 0; i < n - 1; i++) {
+      const p0 = i > 0 ? pts[i - 1] : { x: 2 * pts[0].x - pts[1].x, y: 2 * pts[0].y - pts[1].y };
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = (i + 2 < n) ? pts[i + 2] : { x: 2 * p2.x - p1.x, y: 2 * p2.y - p1.y };
+
+      const cp1x = p1.x + (p2.x - p0.x) / 6;
+      const cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6;
+      const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+      segments.push({
+        p1,
+        cp1: { x: cp1x, y: cp1y },
+        cp2: { x: cp2x, y: cp2y },
+        p2
+      });
+    }
+    return segments;
   }
 
   // Cálculo del Bounding Box exacto para exportación recortada en Pizarras
@@ -1335,52 +1964,7 @@ export class CanvasEngine {
         }
       } else {
         const pattern = pageData.backgroundPattern || (this.format === 'a4' ? 'ruled' : 'dots');
-        const isDarkPaper = bgColor === '#1e293b' || bgColor === '#0f172a';
-
-        if (pattern === 'ruled') {
-          ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.2)' : '#cbd5e1';
-          ctx.lineWidth = 1;
-          const lineGap = 32;
-          const topMargin = 75;
-          for (let y = topMargin; y < logicalH; y += lineGap) {
-            ctx.beginPath();
-            ctx.moveTo(0, y + 0.5);
-            ctx.lineTo(logicalW, y + 0.5);
-            ctx.stroke();
-          }
-          ctx.strokeStyle = isDarkPaper ? 'rgba(248, 113, 113, 0.45)' : '#fca5a5';
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.moveTo(68.5, 0);
-          ctx.lineTo(68.5, logicalH);
-          ctx.stroke();
-        } else if (pattern === 'grid') {
-          ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.15)' : '#e2e8f0';
-          ctx.lineWidth = 1;
-          const gap = 20;
-          for (let x = 0; x <= logicalW; x += gap) {
-            ctx.beginPath();
-            ctx.moveTo(x + 0.5, 0);
-            ctx.lineTo(x + 0.5, logicalH);
-            ctx.stroke();
-          }
-          for (let y = 0; y <= logicalH; y += gap) {
-            ctx.beginPath();
-            ctx.moveTo(0, y + 0.5);
-            ctx.lineTo(logicalW, y + 0.5);
-            ctx.stroke();
-          }
-        } else if (pattern === 'dots') {
-          ctx.fillStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.25)' : '#94a3b8';
-          const gap = 24;
-          for (let x = gap; x < logicalW; x += gap) {
-            for (let y = 0; y < logicalH; y += gap) {
-              ctx.beginPath();
-              ctx.arc(x, y, 1.25, 0, Math.PI * 2);
-              ctx.fill();
-            }
-          }
-        }
+        this.drawPatternBackground(ctx, logicalW, logicalH, pattern, bgColor);
       }
     }
 

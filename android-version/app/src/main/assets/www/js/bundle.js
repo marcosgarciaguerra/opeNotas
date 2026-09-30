@@ -65,6 +65,9 @@ const Icons = {
   patternRuled: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="8" y1="4" x2="8" y2="20" stroke="#f87171"/></svg>`,
   patternGrid: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="9" y1="4" x2="9" y2="20"/><line x1="15" y1="4" x2="15" y2="20"/><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/></svg>`,
   patternDots: `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><circle cx="8" cy="8" r="1.5"/><circle cx="16" cy="8" r="1.5"/><circle cx="8" cy="16" r="1.5"/><circle cx="16" cy="16" r="1.5"/><circle cx="12" cy="12" r="1.5"/></svg>`,
+  patternMusic: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="11" x2="20" y2="11"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="4" y1="17" x2="20" y2="17"/></svg>`,
+  patternMillimeter: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1"><rect x="4" y="4" width="16" height="16" rx="2" stroke-width="1.8"/><line x1="8" y1="4" x2="8" y2="20"/><line x1="12" y1="4" x2="12" y2="20" stroke-width="1.8"/><line x1="16" y1="4" x2="16" y2="20"/><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="12" x2="20" y2="12" stroke-width="1.8"/><line x1="4" y1="16" x2="20" y2="16"/></svg>`,
+  patternCornell: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="9" y1="4" x2="9" y2="17"/><line x1="4" y1="17" x2="20" y2="17"/><line x1="9" y1="8" x2="20" y2="8"/><line x1="9" y1="12" x2="20" y2="12"/></svg>`,
 
   // Palm Rejection y Entrada
   stylus: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14 2 8 8-12 12H2v-8L14 2z"/><path d="m18 6-4-4"/><circle cx="17" cy="7" r="1"/></svg>`,
@@ -166,6 +169,50 @@ class PaletteManager {
 
     this.savePalette(palette);
     return palette;
+  }
+
+  static setSlotColor(index, hexColor) {
+    if (index < 0 || index >= 10 || !hexColor) return;
+    const normalized = hexColor.trim().toLowerCase();
+    if (!/^#[0-9a-fA-F]{6}$/.test(normalized)) return;
+
+    let palette = this.getPalette();
+    palette[index] = normalized;
+    this.savePalette(palette);
+    try {
+      localStorage.setItem('opeNotas_last_custom_color', normalized);
+      localStorage.setItem('opeNotas_custom_color_v1', normalized);
+    } catch (_) {}
+    return palette;
+  }
+
+  static resetDefaultPalette() {
+    const defaultCopy = [...this.DEFAULT_PALETTE];
+    this.savePalette(defaultCopy);
+    return defaultCopy;
+  }
+
+  static saveCustomColor(hexColor, targetSlot = null) {
+    if (!hexColor || typeof hexColor !== 'string') return;
+    const normalized = hexColor.trim().toLowerCase();
+    if (!/^#[0-9a-fA-F]{6}$/.test(normalized)) return;
+    try {
+      localStorage.setItem('opeNotas_custom_color_v1', normalized);
+      localStorage.setItem('opeNotas_last_custom_color', normalized);
+    } catch (_) {}
+
+    if (targetSlot !== null && targetSlot >= 0 && targetSlot < 10) {
+      return this.setSlotColor(targetSlot, normalized);
+    }
+    return this.addColor(normalized);
+  }
+
+  static getCustomColor() {
+    try {
+      return localStorage.getItem('opeNotas_custom_color_v1') || localStorage.getItem('opeNotas_last_custom_color') || '#2563eb';
+    } catch (_) {
+      return '#2563eb';
+    }
   }
 
   static getQuickColors() {
@@ -325,7 +372,12 @@ class SettingsManager {
   static getEffectiveTheme() {
     const theme = this.settings?.theme || 'light';
     if (theme === 'system') {
-      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+      if (typeof window !== 'undefined' && window.Android && typeof window.Android.isSystemDarkMode === 'function') {
+        try {
+          return window.Android.isSystemDarkMode() ? 'dark' : 'light';
+        } catch (_) {}
+      }
+      return (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
         ? 'dark'
         : 'light';
     }
@@ -349,13 +401,34 @@ class SettingsManager {
   }
 
   static listenSystemThemeChange() {
-    if (window.matchMedia) {
-      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if (typeof window !== 'undefined') {
+      // Notificación nativa desde Android MainActivity.java
+      window.onAndroidNightModeChanged = (isDark) => {
         if (this.settings?.theme === 'system') {
           this.applyCurrentTheme();
           this.applyDarkPaper();
+          this.notifyChange(this.settings);
         }
-      });
+      };
+
+      // Notificación estándar Web prefers-color-scheme
+      if (window.matchMedia) {
+        try {
+          const mql = window.matchMedia('(prefers-color-scheme: dark)');
+          const onChange = () => {
+            if (this.settings?.theme === 'system') {
+              this.applyCurrentTheme();
+              this.applyDarkPaper();
+              this.notifyChange(this.settings);
+            }
+          };
+          if (mql.addEventListener) {
+            mql.addEventListener('change', onChange);
+          } else if (mql.addListener) {
+            mql.addListener(onChange);
+          }
+        } catch (_) {}
+      }
     }
   }
 
@@ -2065,24 +2138,41 @@ class Ruler {
     }, { passive: false });
   }
 
+  canvasToScreen(canvasX, canvasY) {
+    if (!this.engine || !this.engine.canvas) return { x: canvasX, y: canvasY };
+    const mainCanvas = this.engine.canvas;
+    const canvasRect = mainCanvas.getBoundingClientRect();
+    if (canvasRect.width === 0 || canvasRect.height === 0) return { x: canvasX, y: canvasY };
+    const logicalWidth = this.engine.logicalWidth || 794;
+    const logicalHeight = this.engine.logicalHeight || 1123;
+    return {
+      x: canvasRect.left + canvasX * (canvasRect.width / logicalWidth),
+      y: canvasRect.top + canvasY * (canvasRect.height / logicalHeight)
+    };
+  }
+
+  screenToCanvas(screenX, screenY) {
+    if (!this.engine || !this.engine.canvas) return { x: screenX, y: screenY };
+    const mainCanvas = this.engine.canvas;
+    const canvasRect = mainCanvas.getBoundingClientRect();
+    if (canvasRect.width === 0 || canvasRect.height === 0) return { x: screenX, y: screenY };
+    const logicalWidth = this.engine.logicalWidth || 794;
+    const logicalHeight = this.engine.logicalHeight || 1123;
+    return {
+      x: (screenX - canvasRect.left) * (logicalWidth / canvasRect.width),
+      y: (screenY - canvasRect.top) * (logicalHeight / canvasRect.height)
+    };
+  }
+
   // Proyección y restricción física para dibujar líneas perfectamente rectas sin atravesar la regla
   snapPoint(canvasX, canvasY, options = {}) {
     if (!this.active || !this.element || !this.engine || !this.engine.canvas) {
       return { snapped: false, x: canvasX, y: canvasY, edge: null };
     }
 
-    const mainCanvas = this.engine.canvas;
-    const canvasRect = mainCanvas.getBoundingClientRect();
-    if (canvasRect.width === 0 || canvasRect.height === 0) {
-      return { snapped: false, x: canvasX, y: canvasY, edge: null };
-    }
-
-    const logicalWidth = this.engine.logicalWidth || 794;
-    const logicalHeight = this.engine.logicalHeight || 1123;
-
-    // Convertir de coordenadas lógicas de canvas a píxeles de pantalla
-    const screenX = canvasRect.left + canvasX * (canvasRect.width / logicalWidth);
-    const screenY = canvasRect.top + canvasY * (canvasRect.height / logicalHeight);
+    const screenPos = this.canvasToScreen(canvasX, canvasY);
+    const screenX = screenPos.x;
+    const screenY = screenPos.y;
 
     const rulerRect = this.element.getBoundingClientRect();
     const cx = rulerRect.left + rulerRect.width / 2;
@@ -2112,22 +2202,24 @@ class Ruler {
       const targetN = -halfThickness;
       const sx = cx + clampedU * cosA - targetN * sinA;
       const sy = cy + clampedU * sinA + targetN * cosA;
+      const cPos = this.screenToCanvas(sx, sy);
       return {
         snapped: true,
         edge: 'top',
-        x: (sx - canvasRect.left) * (logicalWidth / canvasRect.width),
-        y: (sy - canvasRect.top) * (logicalHeight / canvasRect.height)
+        x: cPos.x,
+        y: cPos.y
       };
     } else if (lockedEdge === 'bottom') {
       const clampedU = Math.max(-halfL, Math.min(halfL, u_dist));
       const targetN = halfThickness;
       const sx = cx + clampedU * cosA - targetN * sinA;
       const sy = cy + clampedU * sinA + targetN * cosA;
+      const cPos = this.screenToCanvas(sx, sy);
       return {
         snapped: true,
         edge: 'bottom',
-        x: (sx - canvasRect.left) * (logicalWidth / canvasRect.width),
-        y: (sy - canvasRect.top) * (logicalHeight / canvasRect.height)
+        x: cPos.x,
+        y: cPos.y
       };
     }
 
@@ -2144,12 +2236,13 @@ class Ruler {
 
       const sx = cx + clampedU * cosA - targetN * sinA;
       const sy = cy + clampedU * sinA + targetN * cosA;
+      const cPos = this.screenToCanvas(sx, sy);
 
       return {
         snapped: true,
         edge: edge,
-        x: (sx - canvasRect.left) * (logicalWidth / canvasRect.width),
-        y: (sy - canvasRect.top) * (logicalHeight / canvasRect.height)
+        x: cPos.x,
+        y: cPos.y
       };
     }
 
@@ -2161,12 +2254,13 @@ class Ruler {
       const clampedU = Math.max(-halfL, Math.min(halfL, u_dist));
       const sx = cx + clampedU * cosA - targetN * sinA;
       const sy = cy + clampedU * sinA + targetN * cosA;
+      const cPos = this.screenToCanvas(sx, sy);
       return {
         snapped: true,
         edge: isTop ? 'top' : 'bottom',
         blockedInside: true,
-        x: (sx - canvasRect.left) * (logicalWidth / canvasRect.width),
-        y: (sy - canvasRect.top) * (logicalHeight / canvasRect.height)
+        x: cPos.x,
+        y: cPos.y
       };
     }
 
@@ -2499,7 +2593,11 @@ class HandwritingPredictor {
 class CanvasEngine {
   constructor(canvasElement, options = {}) {
     this.canvas = canvasElement;
-    this.ctx = this.canvas.getContext('2d');
+    try {
+      this.ctx = this.canvas ? (this.canvas.getContext('2d', { desynchronized: true, alpha: true }) || this.canvas.getContext('2d')) : null;
+    } catch (_) {
+      this.ctx = this.canvas ? this.canvas.getContext('2d') : null;
+    }
 
     this.format = options.format || 'a4'; // 'a4' o 'board'
     this.backgroundPattern = this.format === 'a4' ? 'ruled' : 'dots'; // 'blank' | 'ruled' | 'grid' | 'dots'
@@ -2519,6 +2617,9 @@ class CanvasEngine {
 
     this.undoStack = [];
     this.redoStack = [];
+    this.maxUndoSteps = options.maxUndoSteps || 60;
+    this.viewport = options.viewport || null;
+    this.enableCulling = options.enableCulling !== undefined ? options.enableCulling : true;
 
     // Estado del puntero y herramienta activa
     this.tool = 'pen'; // 'pen' | 'pencil' | 'marker' | 'brush' | 'highlighter' | 'eraser' | 'lasso' | 'hand' | 'shape' | 'text' | 'image'
@@ -2550,6 +2651,10 @@ class CanvasEngine {
     // Callbacks
     this.onStrokeEnd = options.onStrokeEnd || null;
 
+    this._holdTimer = null;
+    this._shapeConverted = false;
+    this._prevToolBeforeStylusButton = null;
+
     this._pointerDownHandler = null;
     this._pointerMoveHandler = null;
     if (typeof window !== 'undefined') {
@@ -2558,6 +2663,7 @@ class CanvasEngine {
     }
 
     this.attachCanvas(this.canvas);
+    this.initTouchGestures();
     this.initDimensions();
   }
 
@@ -2575,6 +2681,72 @@ class CanvasEngine {
       canvas.style.width = `${this.logicalWidth}px`;
       canvas.style.height = `${this.logicalHeight}px`;
     }
+  }
+
+  // Respuesta háptica táctil sensorial (Nativa en Android o Web Vibration API)
+  triggerHaptic(duration = 15) {
+    if (typeof window !== 'undefined') {
+      if (window.Android && typeof window.Android.triggerHapticFeedback === 'function') {
+        try { window.Android.triggerHapticFeedback(); } catch (_) {}
+      } else if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+        try { navigator.vibrate(duration); } catch (_) {}
+      }
+    }
+  }
+
+  // Gestos táctiles universales de 2 y 3 dedos (Undo / Redo rápido)
+  initTouchGestures() {
+    if (typeof window === 'undefined' || !this.canvas || typeof this.canvas.addEventListener !== 'function') return;
+
+    let touchStartTime = 0;
+    let gestureFingerCount = 0;
+    let initialTouchPositions = [];
+
+    const onTouchStart = (e) => {
+      const count = e.touches.length;
+      if (count === 2 || count === 3) {
+        touchStartTime = Date.now();
+        gestureFingerCount = count;
+        initialTouchPositions = Array.from(e.touches).map(t => ({ x: t.clientX, y: t.clientY }));
+      } else {
+        gestureFingerCount = 0;
+      }
+    };
+
+    const onTouchMove = (e) => {
+      if (gestureFingerCount === 2 || gestureFingerCount === 3) {
+        for (let i = 0; i < e.touches.length && i < initialTouchPositions.length; i++) {
+          const dist = Math.hypot(
+            e.touches[i].clientX - initialTouchPositions[i].x,
+            e.touches[i].clientY - initialTouchPositions[i].y
+          );
+          if (dist > 18) {
+            gestureFingerCount = 0; // Se convirtió en paneo o pinch zoom
+            break;
+          }
+        }
+      }
+    };
+
+    const onTouchEnd = (e) => {
+      if (gestureFingerCount === 2 || gestureFingerCount === 3) {
+        const dt = Date.now() - touchStartTime;
+        if (dt > 35 && dt < 450 && e.touches.length === 0) {
+          if (gestureFingerCount === 2) {
+            this.undo();
+            this.triggerHaptic(20);
+          } else if (gestureFingerCount === 3) {
+            this.redo();
+            this.triggerHaptic(20);
+          }
+        }
+        gestureFingerCount = 0;
+      }
+    };
+
+    this.canvas.addEventListener('touchstart', onTouchStart, { passive: true });
+    this.canvas.addEventListener('touchmove', onTouchMove, { passive: true });
+    this.canvas.addEventListener('touchend', onTouchEnd, { passive: true });
   }
 
   initEraserIndicator() {
@@ -2629,7 +2801,11 @@ class CanvasEngine {
     this.canvas = canvasElement;
     if (this.canvas) {
       this.setupHiDPI(this.canvas);
-      this.ctx = this.canvas.getContext('2d');
+      try {
+        this.ctx = this.canvas.getContext('2d', { desynchronized: true, alpha: true }) || this.canvas.getContext('2d');
+      } catch (_) {
+        this.ctx = this.canvas.getContext('2d');
+      }
 
       this._pointerDownHandler = (e) => {
         if (this.tool === 'eraser') this.updateEraserIndicator(e);
@@ -2721,6 +2897,30 @@ class CanvasEngine {
     if (this.laserPointer) {
       this.laserPointer.setActive(this.tool === 'laser');
     }
+  }
+
+  setViewport(viewport) {
+    this.viewport = viewport;
+  }
+
+  getVisibleRect() {
+    if (this.viewport && typeof this.viewport.getVisibleRect === 'function') {
+      return this.viewport.getVisibleRect();
+    }
+    return null;
+  }
+
+  isElementVisible(box, margin = 40) {
+    if (!this.enableCulling) return true;
+    if (this.format === 'a4') return true;
+    const vr = this.getVisibleRect();
+    if (!vr || !box) return true;
+    return !(
+      box.maxX + margin < vr.minX ||
+      box.minX - margin > vr.maxX ||
+      box.maxY + margin < vr.minY ||
+      box.minY - margin > vr.maxY
+    );
   }
 
   setColor(color) {
@@ -2839,17 +3039,294 @@ class CanvasEngine {
     return this.strokes;
   }
 
-  // Conversión precisa de coordenadas de puntero al espacio del canvas
+  // Conversión precisa de coordenadas de puntero al espacio del canvas con soporte de Stylus (presión e inclinación)
   getCanvasCoordinates(e) {
     const rect = this.canvas.getBoundingClientRect();
-    if (!rect.width || !rect.height) return { x: 0, y: 0, pressure: 0.5 };
+    if (!rect.width || !rect.height) return { x: 0, y: 0, pressure: 0.5, tiltX: 0, tiltY: 0, pointerType: 'mouse' };
     const scaleX = this.logicalWidth / rect.width;
     const scaleY = this.logicalHeight / rect.height;
     return {
       x: (e.clientX - rect.left) * scaleX,
       y: (e.clientY - rect.top) * scaleY,
-      pressure: e.pressure > 0 ? e.pressure : 0.5
+      pressure: (e.pressure !== undefined && e.pressure > 0) ? e.pressure : 0.5,
+      tiltX: e.tiltX || 0,
+      tiltY: e.tiltY || 0,
+      pointerType: e.pointerType || 'mouse'
     };
+  }
+
+  // Soporte para botón físico del Stylus / S-Pen (alternar temporalmente a borrador)
+  handleStylusButton(e) {
+    if (e.pointerType === 'pen') {
+      if (e.buttons === 2 || e.button === 2 || e.button === 5) {
+        if (this.tool !== 'eraser') {
+          this._prevToolBeforeStylusButton = this.tool;
+          this.setTool('eraser');
+          this.triggerHaptic(15);
+        }
+      }
+    }
+  }
+
+  // Detección y conversión de trazos manuales en formas geométricas perfectas (Dibujar y Mantener)
+  tryConvertToSmartShape() {
+    if (!this.currentStroke || !this.currentStroke.points || this.currentStroke.points.length < 8) return false;
+    const pts = this.currentStroke.points;
+    const p0 = pts[0];
+    const pEnd = pts[pts.length - 1];
+    const rb = this.currentStroke.roughBox;
+    const w = rb.maxX - rb.minX;
+    const h = rb.maxY - rb.minY;
+    const diag = Math.hypot(w, h);
+
+    if (diag < 20) return false;
+
+    // Distancia directa y longitud del recorrido
+    const directDist = Math.hypot(pEnd.x - p0.x, pEnd.y - p0.y);
+    let totalPathLen = 0;
+    for (let i = 1; i < pts.length; i++) {
+      totalPathLen += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+    }
+    if (totalPathLen === 0) return false;
+
+    const isClosed = directDist < Math.max(35, diag * 0.28);
+
+    // 1. Detección de Línea Recta (alta linealidad y trazo no cerrado)
+    if (!isClosed && directDist / totalPathLen > 0.86) {
+      let maxDev = 0;
+      for (const p of pts) {
+        const dev = Math.sqrt(this.distToSegmentSquared(p, p0, pEnd));
+        if (dev > maxDev) maxDev = dev;
+      }
+      if (maxDev < Math.max(16, directDist * 0.12)) {
+        this.currentStroke.isStraight = true;
+        this.currentStroke.points = [{ ...p0 }, { ...pEnd }];
+        this._shapeConverted = true;
+        this.triggerHaptic(25);
+        this.render();
+        return true;
+      }
+    }
+
+    // 2. Detección de Círculo, Cuadrado, Rectángulo o Triángulo (formas cerradas)
+    if (isClosed && pts.length >= 12) {
+      const cx = (rb.minX + rb.maxX) / 2;
+      const cy = (rb.minY + rb.maxY) / 2;
+      const rx = w / 2;
+      const ry = h / 2;
+
+      // Desviación de ajuste elíptico / circular
+      let ellipseDevSum = 0;
+      for (const p of pts) {
+        const dx = (p.x - cx) / (rx || 1);
+        const dy = (p.y - cy) / (ry || 1);
+        ellipseDevSum += Math.abs(Math.hypot(dx, dy) - 1);
+      }
+      const meanEllipseDev = ellipseDevSum / pts.length;
+
+      if (meanEllipseDev < 0.22) {
+        const isCircle = Math.abs(w - h) / Math.max(w, h) < 0.20;
+        const radius = isCircle ? (w + h) / 4 : null;
+        const shape = {
+          id: 'smart_shape_' + Date.now(),
+          type: 'circle',
+          x: isCircle ? cx - radius : rb.minX,
+          y: isCircle ? cy - radius : rb.minY,
+          width: isCircle ? radius * 2 : w,
+          height: isCircle ? radius * 2 : h,
+          strokeColor: this.currentStroke.color,
+          strokeWidth: this.currentStroke.width,
+          fillColor: 'transparent'
+        };
+        this.currentStroke = null;
+        this._shapeConverted = true;
+        this.addShape(shape);
+        this.triggerHaptic(30);
+        return true;
+      }
+
+      // Desviación rectangular (puntos cerca de los 4 bordes exteriores)
+      let nearEdgeCount = 0;
+      const edgeTol = Math.max(10, Math.min(w, h) * 0.20);
+      for (const p of pts) {
+        if (
+          Math.abs(p.x - rb.minX) < edgeTol ||
+          Math.abs(p.x - rb.maxX) < edgeTol ||
+          Math.abs(p.y - rb.minY) < edgeTol ||
+          Math.abs(p.y - rb.maxY) < edgeTol
+        ) {
+          nearEdgeCount++;
+        }
+      }
+
+      if (nearEdgeCount / pts.length > 0.74) {
+        const isSquare = Math.abs(w - h) / Math.max(w, h) < 0.18;
+        const side = isSquare ? (w + h) / 2 : null;
+        const shape = {
+          id: 'smart_shape_' + Date.now(),
+          type: isSquare ? 'square' : 'rectangle',
+          x: rb.minX,
+          y: rb.minY,
+          width: isSquare ? side : w,
+          height: isSquare ? side : h,
+          strokeColor: this.currentStroke.color,
+          strokeWidth: this.currentStroke.width,
+          fillColor: 'transparent'
+        };
+        this.currentStroke = null;
+        this._shapeConverted = true;
+        this.addShape(shape);
+        this.triggerHaptic(30);
+        return true;
+      }
+
+      // Triángulo (puntos superiores concentrados hacia un vértice)
+      const topPts = pts.filter(p => p.y < rb.minY + h * 0.35);
+      const bottomPts = pts.filter(p => p.y > rb.maxY - h * 0.35);
+      if (topPts.length > 0 && bottomPts.length > 0) {
+        const topCenter = topPts.reduce((acc, p) => acc + p.x, 0) / topPts.length;
+        if (Math.abs(topCenter - cx) < w * 0.25) {
+          const shape = {
+            id: 'smart_shape_' + Date.now(),
+            type: 'triangle',
+            x: rb.minX,
+            y: rb.minY,
+            width: w,
+            height: h,
+            strokeColor: this.currentStroke.color,
+            strokeWidth: this.currentStroke.width,
+            fillColor: 'transparent'
+          };
+          this.currentStroke = null;
+          this._shapeConverted = true;
+          this.addShape(shape);
+          this.triggerHaptic(30);
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  // Detección del gesto de tachar para borrar (Scratch-out zigzag)
+  detectScratchOut(stroke) {
+    if (!stroke || !stroke.points || stroke.points.length < 16) return false;
+    const pts = stroke.points;
+    const rb = stroke.roughBox;
+    const w = rb.maxX - rb.minX;
+    const h = rb.maxY - rb.minY;
+    const diag = Math.hypot(w, h);
+    if (diag < 20 || diag > 350) return false;
+
+    let totalLen = 0;
+    let reversals = 0;
+    let prevDir = null;
+
+    for (let i = 1; i < pts.length; i++) {
+      const dx = pts[i].x - pts[i - 1].x;
+      const dy = pts[i].y - pts[i - 1].y;
+      totalLen += Math.hypot(dx, dy);
+
+      const mainDelta = w >= h ? dx : dy;
+      if (Math.abs(mainDelta) > 5) {
+        const curDir = mainDelta > 0 ? 1 : -1;
+        if (prevDir !== null && curDir !== prevDir) {
+          reversals++;
+        }
+        prevDir = curDir;
+      }
+    }
+
+    return reversals >= 6 && totalLen > diag * 3.0;
+  }
+
+  handleScratchOutErase(stroke) {
+    const rb = stroke.roughBox;
+    const margin = 12;
+    const targetBox = {
+      minX: rb.minX - margin,
+      minY: rb.minY - margin,
+      maxX: rb.maxX + margin,
+      maxY: rb.maxY + margin
+    };
+
+    const deletedStrokes = [];
+    const remainingStrokes = [];
+    for (let i = 0; i < this.strokes.length; i++) {
+      const s = this.strokes[i];
+      if (s.id === stroke.id) continue;
+      const sBox = s.roughBox || { minX: s.points[0].x, minY: s.points[0].y, maxX: s.points[0].x, maxY: s.points[0].y };
+      const overlaps = !(
+        sBox.maxX < targetBox.minX ||
+        sBox.minX > targetBox.maxX ||
+        sBox.maxY < targetBox.minY ||
+        sBox.minY > targetBox.maxY
+      );
+      if (overlaps) {
+        deletedStrokes.push({ stroke: s, index: i });
+      } else {
+        remainingStrokes.push(s);
+      }
+    }
+
+    const deletedShapes = [];
+    const remainingShapes = [];
+    for (let i = 0; i < this.shapes.length; i++) {
+      const sh = this.shapes[i];
+      const shBox = {
+        minX: Math.min(sh.x, sh.x + sh.width),
+        minY: Math.min(sh.y, sh.y + sh.height),
+        maxX: Math.max(sh.x, sh.x + sh.width),
+        maxY: Math.max(sh.y, sh.y + sh.height)
+      };
+      const overlaps = !(
+        shBox.maxX < targetBox.minX ||
+        shBox.minX > targetBox.maxX ||
+        shBox.maxY < targetBox.minY ||
+        shBox.minY > targetBox.maxY
+      );
+      if (overlaps) {
+        deletedShapes.push({ shape: sh, index: i });
+      } else {
+        remainingShapes.push(sh);
+      }
+    }
+
+    const deletedTexts = [];
+    const remainingTexts = [];
+    for (let i = 0; i < this.texts.length; i++) {
+      const tx = this.texts[i];
+      const txBox = this.getTextBoundingBox(tx);
+      const overlaps = !(
+        txBox.maxX < targetBox.minX ||
+        txBox.minX > targetBox.maxX ||
+        txBox.maxY < targetBox.minY ||
+        txBox.minY > targetBox.maxY
+      );
+      if (overlaps) {
+        deletedTexts.push({ text: tx, index: i });
+      } else {
+        remainingTexts.push(tx);
+      }
+    }
+
+    if (deletedStrokes.length > 0 || deletedShapes.length > 0 || deletedTexts.length > 0) {
+      this.pushAction({
+        type: 'delete_multiple_elements',
+        strokes: deletedStrokes,
+        shapes: deletedShapes,
+        texts: deletedTexts
+      });
+      this.strokes = remainingStrokes;
+      this.shapes = remainingShapes;
+      this.texts = remainingTexts;
+      this.triggerHaptic(35);
+      this.render();
+      if (this.onStrokeEnd) this.onStrokeEnd();
+      return true;
+    }
+    return false;
   }
 
   onPointerDown(e) {
@@ -2877,6 +3354,13 @@ class CanvasEngine {
 
     this.canvas.setPointerCapture(e.pointerId);
 
+    this._shapeConverted = false;
+    if (this._holdTimer) {
+      clearTimeout(this._holdTimer);
+      this._holdTimer = null;
+    }
+    this.handleStylusButton(e);
+
     let pt = this.getCanvasCoordinates(e);
 
     // Snapping y bloqueo con Regla si está activa
@@ -2901,25 +3385,28 @@ class CanvasEngine {
       return;
     }
 
-    // Inicializar nuevo trazo vectorial
+    // Inicializar nuevo trazo vectorial con modulación por presión e inclinación (tilt)
     const isHighlighter = this.tool === 'highlighter';
     const isPencil = this.tool === 'pencil';
     const isBrush = this.tool === 'brush';
     const isMarker = this.tool === 'marker';
+
+    const tiltMag = Math.hypot(pt.tiltX || 0, pt.tiltY || 0);
+    const tiltMultiplier = tiltMag > 15 ? (1 + (tiltMag / 90) * 0.75) : 1.0;
     
     // Modulación de grosor por presión si procede
     let initialWidth = this.strokeWidth;
     if (isHighlighter) {
       initialWidth = Math.max(16, this.strokeWidth * 3.2);
     } else if (isPencil) {
-      initialWidth = Math.max(1.5, this.strokeWidth * (0.6 + pt.pressure * 0.7));
+      initialWidth = Math.max(1.5, this.strokeWidth * (0.6 + pt.pressure * 0.7) * tiltMultiplier);
     } else if (isBrush) {
-      initialWidth = Math.max(1.5, this.strokeWidth * (0.4 + pt.pressure * 1.2));
+      initialWidth = Math.max(1.5, this.strokeWidth * (0.4 + pt.pressure * 1.2) * tiltMultiplier);
     } else {
       initialWidth = Math.max(1, this.strokeWidth * (0.7 + pt.pressure * 0.6));
     }
 
-    this._stabilizedPoint = { x: pt.x, y: pt.y, pressure: pt.pressure };
+    this._stabilizedPoint = { x: pt.x, y: pt.y, pressure: pt.pressure, tiltX: pt.tiltX, tiltY: pt.tiltY };
 
     this.currentStroke = {
       id: 'stroke_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
@@ -2967,17 +3454,17 @@ class CanvasEngine {
     let targetPt;
     const stab = this.strokeStabilization !== undefined ? this.strokeStabilization : 0.5;
     if (isSnapped) {
-      targetPt = { x: pt.x, y: pt.y, pressure: pt.pressure };
+      targetPt = { x: pt.x, y: pt.y, pressure: pt.pressure, tiltX: pt.tiltX, tiltY: pt.tiltY };
       this._stabilizedPoint = targetPt;
     } else if (stab > 0.02 && this._stabilizedPoint) {
       const alpha = Math.max(0.10, 1 - (stab * 0.84));
       const smoothX = this._stabilizedPoint.x + (pt.x - this._stabilizedPoint.x) * alpha;
       const smoothY = this._stabilizedPoint.y + (pt.y - this._stabilizedPoint.y) * alpha;
       const smoothPressure = this._stabilizedPoint.pressure + (pt.pressure - this._stabilizedPoint.pressure) * alpha;
-      this._stabilizedPoint = { x: smoothX, y: smoothY, pressure: smoothPressure };
-      targetPt = { x: smoothX, y: smoothY, pressure: smoothPressure };
+      this._stabilizedPoint = { x: smoothX, y: smoothY, pressure: smoothPressure, tiltX: pt.tiltX, tiltY: pt.tiltY };
+      targetPt = { x: smoothX, y: smoothY, pressure: smoothPressure, tiltX: pt.tiltX, tiltY: pt.tiltY };
     } else {
-      this._stabilizedPoint = { x: pt.x, y: pt.y, pressure: pt.pressure };
+      this._stabilizedPoint = { x: pt.x, y: pt.y, pressure: pt.pressure, tiltX: pt.tiltX, tiltY: pt.tiltY };
       targetPt = pt;
     }
 
@@ -2990,6 +3477,26 @@ class CanvasEngine {
 
     this.lastPointerX = pt.x;
     this.lastPointerY = pt.y;
+
+    // Detección de trazo quieto al final para convertir a Smart Shape (Hold to snap)
+    if (!isSnapped && !this._shapeConverted && this.currentStroke && this.currentStroke.points.length >= 8 && (!this.ruler || !this.ruler.active)) {
+      const moveDist = Math.hypot(pt.x - (this.lastPointerX || pt.x), pt.y - (this.lastPointerY || pt.y));
+      if (moveDist < 4) {
+        if (!this._holdTimer) {
+          this._holdTimer = setTimeout(() => {
+            if (this.isDrawing && this.currentStroke && !this._shapeConverted) {
+              this.tryConvertToSmartShape();
+            }
+          }, 500);
+        }
+      } else {
+        if (this._holdTimer) {
+          clearTimeout(this._holdTimer);
+          this._holdTimer = null;
+        }
+      }
+    }
+
     this.render();
   }
 
@@ -2998,8 +3505,37 @@ class CanvasEngine {
     this.isDrawing = false;
     this._rulerLockedEdge = null;
 
+    if (this._holdTimer) {
+      clearTimeout(this._holdTimer);
+      this._holdTimer = null;
+    }
+
+    if (this._prevToolBeforeStylusButton) {
+      this.setTool(this._prevToolBeforeStylusButton);
+      this._prevToolBeforeStylusButton = null;
+    }
+
+    if (this._shapeConverted) {
+      this._shapeConverted = false;
+      this.currentStroke = null;
+      this._stabilizedPoint = null;
+      this.render();
+      if (this.onStrokeEnd) this.onStrokeEnd();
+      return;
+    }
+
     if (this.currentStroke) {
-      if (this.currentStroke.points.length > 0) {
+      // Gesto de Tachar para Borrar (Scratch-out to erase)
+      if (this.tool !== 'eraser' && this.detectScratchOut(this.currentStroke)) {
+        const erased = this.handleScratchOutErase(this.currentStroke);
+        if (erased) {
+          this.currentStroke = null;
+          this._stabilizedPoint = null;
+          return;
+        }
+      }
+
+      if (this.currentStroke && this.currentStroke.points && this.currentStroke.points.length > 0) {
         if (this.strokeStabilization > 0.05 && this.lastPointerX && this.lastPointerY) {
           const lastPt = this.currentStroke.points[this.currentStroke.points.length - 1];
           const dist = Math.hypot(this.lastPointerX - lastPt.x, this.lastPointerY - lastPt.y);
@@ -3239,8 +3775,15 @@ class CanvasEngine {
   }
 
   // --- Deshacer / Rehacer ---
-  pushAction(action) {
+  _pushToUndo(action) {
     this.undoStack.push(action);
+    if (this.undoStack.length > this.maxUndoSteps) {
+      this.undoStack.shift();
+    }
+  }
+
+  pushAction(action) {
+    this._pushToUndo(action);
     this.redoStack = [];
   }
 
@@ -3307,7 +3850,7 @@ class CanvasEngine {
 
     if (action.type === 'add_stroke') {
       this.strokes.push(action.stroke);
-      this.undoStack.push(action);
+      this._pushToUndo(action);
     } else if (action.type === 'delete_multiple_elements') {
       if (action.strokes) {
         const idsToDelete = new Set(action.strokes.map(s => s.stroke.id));
@@ -3321,26 +3864,26 @@ class CanvasEngine {
         const idsToDelete = new Set(action.shapes.map(sh => sh.shape.id));
         this.shapes = this.shapes.filter(sh => !idsToDelete.has(sh.id));
       }
-      this.undoStack.push(action);
+      this._pushToUndo(action);
     } else if (action.type === 'delete_multiple_strokes') {
       const idsToDelete = new Set(action.strokes.map(s => s.stroke.id));
       this.strokes = this.strokes.filter(s => !idsToDelete.has(s.id));
-      this.undoStack.push(action);
+      this._pushToUndo(action);
     } else if (action.type === 'add_shape') {
       this.shapes.push(action.shape);
-      this.undoStack.push(action);
+      this._pushToUndo(action);
     } else if (action.type === 'add_text') {
       this.texts.push(action.text);
-      this.undoStack.push(action);
+      this._pushToUndo(action);
     } else if (action.type === 'add_image') {
       this.images.push(action.image);
-      this.undoStack.push(action);
+      this._pushToUndo(action);
     } else if (action.type === 'replace_strokes_with_text') {
       // Rehacer reemplazo HTR: eliminar trazos y colocar texto
       const idsToDelete = new Set(action.deletedStrokes.map(s => s.stroke.id));
       this.strokes = this.strokes.filter(s => !idsToDelete.has(s.id));
       this.texts.push(action.text);
-      this.undoStack.push(action);
+      this._pushToUndo(action);
     }
 
     this.render();
@@ -3388,7 +3931,7 @@ class CanvasEngine {
     ctx.save();
     ctx.globalCompositeOperation = 'multiply';
     for (const stroke of this.strokes) {
-      if (stroke.isHighlighter) {
+      if (stroke.isHighlighter && (!stroke.roughBox || this.isElementVisible(stroke.roughBox, stroke.width + 30))) {
         this.drawStroke(ctx, stroke);
       }
     }
@@ -3401,14 +3944,22 @@ class CanvasEngine {
     ctx.save();
     ctx.globalCompositeOperation = 'source-over';
 
-    // Renderizar figuras
+    // Renderizar figuras con culling
     for (const shape of this.shapes) {
-      this.drawShape(ctx, shape);
+      const shapeBox = {
+        minX: Math.min(shape.x, shape.x + shape.width),
+        minY: Math.min(shape.y, shape.y + shape.height),
+        maxX: Math.max(shape.x, shape.x + shape.width),
+        maxY: Math.max(shape.y, shape.y + shape.height)
+      };
+      if (this.isElementVisible(shapeBox, (shape.strokeWidth || 2) + 30)) {
+        this.drawShape(ctx, shape);
+      }
     }
 
-    // Renderizar trazos de tinta
+    // Renderizar trazos de tinta con culling
     for (const stroke of this.strokes) {
-      if (!stroke.isHighlighter) {
+      if (!stroke.isHighlighter && (!stroke.roughBox || this.isElementVisible(stroke.roughBox, stroke.width + 30))) {
         this.drawStroke(ctx, stroke);
       }
     }
@@ -3417,10 +3968,13 @@ class CanvasEngine {
     }
     ctx.restore();
 
-    // 5. Capa 4: Cajas de Texto
+    // 5. Capa 4: Cajas de Texto con culling
     ctx.save();
     for (const textObj of this.texts) {
-      this.drawText(ctx, textObj);
+      const textBox = this.getTextBoundingBox(textObj);
+      if (this.isElementVisible(textBox, 30)) {
+        this.drawText(ctx, textObj);
+      }
     }
     ctx.restore();
 
@@ -3457,7 +4011,25 @@ class CanvasEngine {
     }
 
     const pattern = this.backgroundPattern || (this.format === 'a4' ? 'ruled' : 'dots');
-    const isDarkPaper = bgColor === '#1e293b' || bgColor === '#0f172a';
+    this.drawPatternBackground(ctx, width, height, pattern, bgColor);
+    ctx.restore();
+  }
+
+  drawPatternBackground(ctx, width, height, pattern, bgColor) {
+    const isDarkPaper = (function(hex) {
+      if (!hex || hex === 'transparent') return false;
+      if (hex.startsWith('#')) {
+        let c = hex.substring(1);
+        if (c.length === 3) c = c.split('').map(x => x + x).join('');
+        const num = parseInt(c, 16);
+        if (isNaN(num)) return false;
+        const r = (num >> 16) & 255;
+        const g = (num >> 8) & 255;
+        const b = num & 255;
+        return (r * 299 + g * 587 + b * 114) / 1000 < 128;
+      }
+      return false;
+    })(bgColor);
 
     if (pattern === 'ruled') {
       // Pauta rayada horizontal continua con offset subpixel nítido
@@ -3512,14 +4084,130 @@ class CanvasEngine {
           ctx.fill();
         }
       }
+
+    } else if (pattern === 'music') {
+      // Partitura musical: pentagramas de 5 líneas con llaves/líneas de compás
+      const staffLineGap = 8;
+      const staffSpacing = 48;
+      const staffHeight = staffLineGap * 4; // 32px
+      const topMargin = 60;
+      const marginX = 48;
+      const staffStroke = isDarkPaper ? 'rgba(255, 255, 255, 0.25)' : '#94a3b8';
+
+      for (let staffY = topMargin; staffY + staffHeight < height - 40; staffY += (staffHeight + staffSpacing)) {
+        // Línea vertical de cierre a la izquierda y derecha
+        ctx.strokeStyle = staffStroke;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(marginX + 0.5, staffY + 0.5);
+        ctx.lineTo(marginX + 0.5, staffY + staffHeight + 0.5);
+        ctx.moveTo(width - marginX + 0.5, staffY + 0.5);
+        ctx.lineTo(width - marginX + 0.5, staffY + staffHeight + 0.5);
+        ctx.stroke();
+
+        // 5 líneas horizontales del pentagrama
+        ctx.lineWidth = 1;
+        for (let line = 0; line < 5; line++) {
+          const y = staffY + line * staffLineGap;
+          ctx.beginPath();
+          ctx.moveTo(marginX, y + 0.5);
+          ctx.lineTo(width - marginX, y + 0.5);
+          ctx.stroke();
+        }
+      }
+
+    } else if (pattern === 'millimeter') {
+      // Papel milimetrado técnico de precisión (jerarquía de 1mm, 5mm y 10mm)
+      const fineStep = 4;
+      const medStep = 20;
+      const majorStep = 40;
+
+      for (let x = 0; x <= width; x += fineStep) {
+        ctx.beginPath();
+        if (x % majorStep === 0) {
+          ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.28)' : '#94a3b8';
+          ctx.lineWidth = 1.2;
+        } else if (x % medStep === 0) {
+          ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.16)' : '#cbd5e1';
+          ctx.lineWidth = 0.8;
+        } else {
+          ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.06)' : '#f1f5f9';
+          ctx.lineWidth = 0.5;
+        }
+        ctx.moveTo(x + 0.5, 0);
+        ctx.lineTo(x + 0.5, height);
+        ctx.stroke();
+      }
+
+      for (let y = 0; y <= height; y += fineStep) {
+        ctx.beginPath();
+        if (y % majorStep === 0) {
+          ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.28)' : '#94a3b8';
+          ctx.lineWidth = 1.2;
+        } else if (y % medStep === 0) {
+          ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.16)' : '#cbd5e1';
+          ctx.lineWidth = 0.8;
+        } else {
+          ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.06)' : '#f1f5f9';
+          ctx.lineWidth = 0.5;
+        }
+        ctx.moveTo(0, y + 0.5);
+        ctx.lineTo(width, y + 0.5);
+        ctx.stroke();
+      }
+
+    } else if (pattern === 'cornell') {
+      // Método Cornell: encabezado, columna de ideas (cue), cuerpo de apuntes y resumen
+      const cueX = Math.round(width * 0.28);
+      const headerY = 70;
+      const summaryY = height - 140;
+      const lineGap = 28;
+
+      // Líneas regladas para notas y apuntes en el cuerpo
+      ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.16)' : '#e2e8f0';
+      ctx.lineWidth = 1;
+      for (let y = headerY + lineGap; y < summaryY; y += lineGap) {
+        ctx.beginPath();
+        ctx.moveTo(cueX, y + 0.5);
+        ctx.lineTo(width, y + 0.5);
+        ctx.stroke();
+      }
+
+      // Líneas divisorias principales (Header, Columna izquierda, Resumen)
+      ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.35)' : '#94a3b8';
+      ctx.lineWidth = 1.5;
+
+      // Cabecera superior
+      ctx.beginPath();
+      ctx.moveTo(0, headerY + 0.5);
+      ctx.lineTo(width, headerY + 0.5);
+      ctx.stroke();
+
+      // Columna vertical de palabras clave
+      ctx.beginPath();
+      ctx.moveTo(cueX + 0.5, headerY);
+      ctx.lineTo(cueX + 0.5, summaryY);
+      ctx.stroke();
+
+      // Divisoria horizontal de resumen inferior
+      ctx.beginPath();
+      ctx.moveTo(0, summaryY + 0.5);
+      ctx.lineTo(width, summaryY + 0.5);
+      ctx.stroke();
     }
-    // pattern === 'blank': liso sin marcas
-    ctx.restore();
   }
 
   renderImages(ctx) {
     for (const imgItem of this.images) {
       if (imgItem._element && imgItem._element.complete) {
+        const imgBox = {
+          minX: imgItem.x,
+          minY: imgItem.y,
+          maxX: imgItem.x + imgItem.width,
+          maxY: imgItem.y + imgItem.height
+        };
+        if (!this.isElementVisible(imgBox, 30)) continue;
+
         ctx.save();
         ctx.translate(imgItem.x + imgItem.width / 2, imgItem.y + imgItem.height / 2);
         if (imgItem.rotation) ctx.rotate(imgItem.rotation);
@@ -3656,19 +4344,54 @@ class CanvasEngine {
       return;
     }
 
-    // Curvas Bézier continuas suavizadas
+    // Curvas Bézier cúbicas continuas con interpolación matemática Splines Catmull-Rom
     ctx.beginPath();
     ctx.moveTo(pts[0].x, pts[0].y);
 
-    for (let i = 1; i < pts.length - 1; i++) {
-      const midX = (pts[i].x + pts[i + 1].x) / 2;
-      const midY = (pts[i].y + pts[i + 1].y) / 2;
-      ctx.quadraticCurveTo(pts[i].x, pts[i].y, midX, midY);
+    const n = pts.length;
+    for (let i = 0; i < n - 1; i++) {
+      const p0 = i > 0 ? pts[i - 1] : { x: 2 * pts[0].x - pts[1].x, y: 2 * pts[0].y - pts[1].y };
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = (i + 2 < n) ? pts[i + 2] : { x: 2 * p2.x - p1.x, y: 2 * p2.y - p1.y };
+
+      // Conversión canónica Catmull-Rom (tensión = 0.5) a Bézier cúbica
+      const cp1x = p1.x + (p2.x - p0.x) / 6;
+      const cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6;
+      const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+      ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
     }
 
-    ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
     ctx.stroke();
     ctx.restore();
+  }
+
+  // Helper para cálculo matemático de Splines Catmull-Rom a Bézier cúbica
+  computeCatmullRomBezier(pts) {
+    if (!pts || pts.length < 2) return [];
+    const segments = [];
+    const n = pts.length;
+    for (let i = 0; i < n - 1; i++) {
+      const p0 = i > 0 ? pts[i - 1] : { x: 2 * pts[0].x - pts[1].x, y: 2 * pts[0].y - pts[1].y };
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = (i + 2 < n) ? pts[i + 2] : { x: 2 * p2.x - p1.x, y: 2 * p2.y - p1.y };
+
+      const cp1x = p1.x + (p2.x - p0.x) / 6;
+      const cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6;
+      const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+      segments.push({
+        p1,
+        cp1: { x: cp1x, y: cp1y },
+        cp2: { x: cp2x, y: cp2y },
+        p2
+      });
+    }
+    return segments;
   }
 
   // Cálculo del Bounding Box exacto para exportación recortada en Pizarras
@@ -3830,52 +4553,7 @@ class CanvasEngine {
         }
       } else {
         const pattern = pageData.backgroundPattern || (this.format === 'a4' ? 'ruled' : 'dots');
-        const isDarkPaper = bgColor === '#1e293b' || bgColor === '#0f172a';
-
-        if (pattern === 'ruled') {
-          ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.2)' : '#cbd5e1';
-          ctx.lineWidth = 1;
-          const lineGap = 32;
-          const topMargin = 75;
-          for (let y = topMargin; y < logicalH; y += lineGap) {
-            ctx.beginPath();
-            ctx.moveTo(0, y + 0.5);
-            ctx.lineTo(logicalW, y + 0.5);
-            ctx.stroke();
-          }
-          ctx.strokeStyle = isDarkPaper ? 'rgba(248, 113, 113, 0.45)' : '#fca5a5';
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.moveTo(68.5, 0);
-          ctx.lineTo(68.5, logicalH);
-          ctx.stroke();
-        } else if (pattern === 'grid') {
-          ctx.strokeStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.15)' : '#e2e8f0';
-          ctx.lineWidth = 1;
-          const gap = 20;
-          for (let x = 0; x <= logicalW; x += gap) {
-            ctx.beginPath();
-            ctx.moveTo(x + 0.5, 0);
-            ctx.lineTo(x + 0.5, logicalH);
-            ctx.stroke();
-          }
-          for (let y = 0; y <= logicalH; y += gap) {
-            ctx.beginPath();
-            ctx.moveTo(0, y + 0.5);
-            ctx.lineTo(logicalW, y + 0.5);
-            ctx.stroke();
-          }
-        } else if (pattern === 'dots') {
-          ctx.fillStyle = isDarkPaper ? 'rgba(255, 255, 255, 0.25)' : '#94a3b8';
-          const gap = 24;
-          for (let x = gap; x < logicalW; x += gap) {
-            for (let y = 0; y < logicalH; y += gap) {
-              ctx.beginPath();
-              ctx.arc(x, y, 1.25, 0, Math.PI * 2);
-              ctx.fill();
-            }
-          }
-        }
+        this.drawPatternBackground(ctx, logicalW, logicalH, pattern, bgColor);
       }
     }
 
@@ -4928,6 +5606,7 @@ class Toolbar {
     this.onExport = options.onExport || (() => {});
     this.onOpenCover = options.onOpenCover || (() => {});
     this.onPatternChange = options.onPatternChange || (() => {});
+    this.onPaperColorChange = options.onPaperColorChange || (() => {});
     this.onPrevPage = options.onPrevPage || (() => {});
     this.onNextPage = options.onNextPage || (() => {});
     this.onAddPage = options.onAddPage || (() => {});
@@ -4955,6 +5634,7 @@ class Toolbar {
     this.totalContentPages = 1;
 
     this._unsubscribePalette = null;
+    this.isEditingPalette = false;
 
     this.init();
   }
@@ -5136,6 +5816,16 @@ class Toolbar {
         <!-- Botón Añadir Página (+) -->
         <button class="tool-btn-compact ${isNotebook ? '' : 'hidden'}" id="btnAddPageIcon" title="Añadir nueva página">
           ${Icons.plus}
+        </button>
+
+        <!-- Botón Modo Zen / Pantalla Completa -->
+        <button class="tool-btn-compact" id="btnZenMode" title="Modo Zen (Pantalla Completa)">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <polyline points="9 21 3 21 3 15"></polyline>
+            <line x1="21" y1="3" x2="14" y2="10"></line>
+            <line x1="3" y1="21" x2="10" y2="14"></line>
+          </svg>
         </button>
 
         <!-- Botón de Configuración (⚙) -->
@@ -5322,9 +6012,17 @@ class Toolbar {
     document.body.appendChild(this.popover);
   }
 
-  renderQuickColors() {
-    // Los colores rápidos del dock han sido reemplazados por colores independientes por útil
+  renderQuickColorsHtml() {
+    return '';
   }
+
+  renderQuickWidthsHtml() {
+    return '';
+  }
+
+  bindQuickFavoritesEvents() {}
+
+  updateQuickFavorites() {}
 
   bindDockToolEvents() {
     this.dockTools.forEach(slotId => {
@@ -5419,6 +6117,16 @@ class Toolbar {
         e.stopPropagation();
         this.closeMenu();
         this.onAddPage();
+      });
+    }
+
+    // Modo Zen / Pantalla Completa
+    const btnZenMode = this.container?.querySelector('#btnZenMode');
+    if (btnZenMode) {
+      btnZenMode.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.closeMenu();
+        this.toggleZenMode();
       });
     }
 
@@ -5605,16 +6313,44 @@ class Toolbar {
         </button>
       </div>
 
-      <!-- Paleta de 10 colores con selector personalizado persistente -->
-      <div class="color-palette-10">
-        ${palette.map(c => `
-          <button type="button" class="color-swatch ${c.toLowerCase() === currentColor.toLowerCase() ? 'active' : ''}" data-color="${c}" style="background-color: ${c}"></button>
-        `).join('')}
-        <label class="color-picker-label" title="Añadir color personalizado">
-          <input type="color" id="popoverColorPicker" value="${currentColor}" />
-          <span class="picker-icon">${Icons.edit}</span>
-        </label>
+      <!-- Cabecera de la Paleta con botón Modo de Edición -->
+      <div class="palette-header-row">
+        <span class="label-text" style="font-size: 0.78rem; font-weight: 600; color: ${this.isEditingPalette ? 'var(--primary)' : 'var(--text-secondary)'};">
+          ${this.isEditingPalette ? 'Editar Muestras de Color' : 'Paleta de Colores'}
+        </span>
+        <div style="display: flex; gap: 4px; align-items: center;">
+          ${this.isEditingPalette ? `
+            <button type="button" class="mini-text-action-btn danger" id="btnResetPalette" title="Restablecer los 10 colores originales">Restablecer</button>
+          ` : ''}
+          <button type="button" class="mini-text-action-btn ${this.isEditingPalette ? 'primary' : ''}" id="btnTogglePaletteEdit" title="${this.isEditingPalette ? 'Terminar edición' : 'Modificar muestras de color'}">
+            ${this.isEditingPalette ? 'Listo' : `${Icons.edit}<span>Editar</span>`}
+          </button>
+        </div>
       </div>
+
+      ${this.isEditingPalette ? `
+        <div class="palette-edit-notice">
+          Toca cualquier casilla para cambiar su color:
+        </div>
+        <div class="color-palette-10 edit-mode">
+          ${palette.map((c, idx) => `
+            <label class="color-swatch in-edit-mode" style="background-color: ${c};" title="Cambiar color de la casilla ${idx + 1}">
+              <input type="color" class="slot-color-picker" data-slot-index="${idx}" value="${c}" />
+              <span class="edit-swatch-badge">${Icons.edit}</span>
+            </label>
+          `).join('')}
+        </div>
+      ` : `
+        <div class="color-palette-10">
+          ${palette.map((c, idx) => `
+            <button type="button" class="color-swatch ${c.toLowerCase() === currentColor.toLowerCase() ? 'active' : ''}" data-color="${c}" data-slot-index="${idx}" style="background-color: ${c}" title="Color ${c}"></button>
+          `).join('')}
+          <label class="color-picker-label" title="Añadir color personalizado">
+            <input type="color" id="popoverColorPicker" value="${/^#[0-9a-fA-F]{6}$/.test(currentColor) ? currentColor : (typeof PaletteManager !== 'undefined' && PaletteManager.getCustomColor ? PaletteManager.getCustomColor() : '#2563eb')}" />
+            <span class="picker-icon">${Icons.edit}</span>
+          </label>
+        </div>
+      `}
 
       <div class="popover-divider"></div>
 
@@ -5705,14 +6441,61 @@ class Toolbar {
       this.closeMenu();
     });
 
-    // Paleta de 10 colores
-    this.popover.querySelectorAll('.color-swatch').forEach(sw => {
+    // Alternar Modo Edición de Paleta
+    this.popover.querySelector('#btnTogglePaletteEdit')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.isEditingPalette = !this.isEditingPalette;
+      this.renderStrokeSettingsMenu(toolKey);
+    });
+
+    // Restablecer paleta original
+    this.popover.querySelector('#btnResetPalette')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      PaletteManager.resetDefaultPalette();
+      this.renderStrokeSettingsMenu(toolKey);
+    });
+
+    // En Modo Edición: cambiar color de una casilla específica
+    this.popover.querySelectorAll('.slot-color-picker').forEach(slotInput => {
+      const handleSlotChange = (e) => {
+        const slotIdx = Number(e.target.dataset.slotIndex);
+        const newColor = e.target.value;
+        PaletteManager.setSlotColor(slotIdx, newColor);
+        const s = this.getToolSettings(toolKey);
+        if (s) {
+          s.color = newColor;
+          this.saveToolSettings();
+        }
+        if (this.activeTool === toolKey) {
+          this.engine.setColor(newColor);
+        }
+        this.updatePenDotsColor();
+        this.updateActiveButton();
+        this.renderStrokeSettingsMenu(toolKey);
+      };
+
+      slotInput.addEventListener('input', (e) => {
+        e.stopPropagation();
+        const slotIdx = Number(e.target.dataset.slotIndex);
+        const newColor = e.target.value;
+        PaletteManager.setSlotColor(slotIdx, newColor);
+      });
+      slotInput.addEventListener('change', (e) => {
+        e.stopPropagation();
+        handleSlotChange(e);
+      });
+    });
+
+    // Paleta de 10 colores en modo normal
+    this.popover.querySelectorAll('.color-swatch:not(.in-edit-mode)').forEach(sw => {
       sw.addEventListener('click', (e) => {
         e.stopPropagation();
         const color = sw.dataset.color;
         const s = this.getToolSettings(toolKey);
-        s.color = color;
-        this.saveToolSettings();
+        if (s) {
+          s.color = color;
+          this.saveToolSettings();
+        }
         if (this.activeTool === toolKey) {
           this.engine.setColor(color);
         }
@@ -5725,18 +6508,30 @@ class Toolbar {
     // Selector de color personalizado nativo
     const picker = this.popover.querySelector('#popoverColorPicker');
     if (picker) {
-      picker.addEventListener('input', (e) => {
-        const color = e.target.value;
+      const applyCustomColor = (color, shouldRerender = false) => {
         PaletteManager.saveCustomColor(color);
         const s = this.getToolSettings(toolKey);
-        s.color = color;
-        this.saveToolSettings();
+        if (s) {
+          s.color = color;
+          this.saveToolSettings();
+        }
         if (this.activeTool === toolKey) {
           this.engine.setColor(color);
         }
         this.updatePenDotsColor();
         this.updateActiveButton();
-        updatePreviewCircle();
+        if (shouldRerender) {
+          this.renderStrokeSettingsMenu(toolKey);
+        } else {
+          updatePreviewCircle();
+        }
+      };
+
+      picker.addEventListener('input', (e) => {
+        applyCustomColor(e.target.value, false);
+      });
+      picker.addEventListener('change', (e) => {
+        applyCustomColor(e.target.value, true);
       });
     }
 
@@ -6055,19 +6850,44 @@ class Toolbar {
 
       <div class="popover-divider"></div>
 
-      <!-- Color de Trazo -->
-      <div class="popover-row">
-        <span class="label-text">Color de Trazo</span>
+      <!-- Cabecera de Color de Trazo con botón Modo de Edición -->
+      <div class="palette-header-row">
+        <span class="label-text" style="font-size: 0.78rem; font-weight: 600; color: ${this.isEditingPalette ? 'var(--primary)' : 'var(--text-secondary)'};">
+          ${this.isEditingPalette ? 'Editar Muestras de Color' : 'Color de Trazo'}
+        </span>
+        <div style="display: flex; gap: 4px; align-items: center;">
+          ${this.isEditingPalette ? `
+            <button type="button" class="mini-text-action-btn danger" id="btnResetShapePalette" title="Restablecer los 10 colores originales">Restablecer</button>
+          ` : ''}
+          <button type="button" class="mini-text-action-btn ${this.isEditingPalette ? 'primary' : ''}" id="btnToggleShapePaletteEdit" title="${this.isEditingPalette ? 'Terminar edición' : 'Modificar muestras de color'}">
+            ${this.isEditingPalette ? 'Listo' : `${Icons.edit}<span>Editar</span>`}
+          </button>
+        </div>
       </div>
-      <div class="color-palette-10">
-        ${palette.map(c => `
-          <button type="button" class="color-swatch ${c.toLowerCase() === currentColor.toLowerCase() ? 'active' : ''}" data-shape-color="${c}" style="background-color: ${c}"></button>
-        `).join('')}
-        <label class="color-picker-label" title="Color personalizado">
-          <input type="color" id="popoverShapeColorPicker" value="${currentColor}" />
-          <span class="picker-icon">${Icons.edit}</span>
-        </label>
-      </div>
+
+      ${this.isEditingPalette ? `
+        <div class="palette-edit-notice">
+          Toca cualquier casilla para cambiar su color:
+        </div>
+        <div class="color-palette-10 edit-mode">
+          ${palette.map((c, idx) => `
+            <label class="color-swatch in-edit-mode" style="background-color: ${c};" title="Cambiar color de la casilla ${idx + 1}">
+              <input type="color" class="slot-shape-color-picker" data-slot-index="${idx}" value="${c}" />
+              <span class="edit-swatch-badge">${Icons.edit}</span>
+            </label>
+          `).join('')}
+        </div>
+      ` : `
+        <div class="color-palette-10">
+          ${palette.map((c, idx) => `
+            <button type="button" class="color-swatch ${c.toLowerCase() === currentColor.toLowerCase() ? 'active' : ''}" data-shape-color="${c}" data-slot-index="${idx}" style="background-color: ${c}"></button>
+          `).join('')}
+          <label class="color-picker-label" title="Color personalizado">
+            <input type="color" id="popoverShapeColorPicker" value="${/^#[0-9a-fA-F]{6}$/.test(currentColor) ? currentColor : (typeof PaletteManager !== 'undefined' && PaletteManager.getCustomColor ? PaletteManager.getCustomColor() : '#2563eb')}" />
+            <span class="picker-icon">${Icons.edit}</span>
+          </label>
+        </div>
+      `}
 
       <div class="popover-divider"></div>
 
@@ -6108,7 +6928,46 @@ class Toolbar {
       });
     });
 
-    // Colores
+    // Alternar Modo Edición de Paleta en figuras
+    this.popover.querySelector('#btnToggleShapePaletteEdit')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.isEditingPalette = !this.isEditingPalette;
+      this.renderShapeMenu();
+    });
+
+    this.popover.querySelector('#btnResetShapePalette')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      PaletteManager.resetDefaultPalette();
+      this.renderShapeMenu();
+    });
+
+    this.popover.querySelectorAll('.slot-shape-color-picker').forEach(slotInput => {
+      const handleShapeSlotChange = (e) => {
+        const slotIdx = Number(e.target.dataset.slotIndex);
+        const newColor = e.target.value;
+        PaletteManager.setSlotColor(slotIdx, newColor);
+        if (this.shapeTool) {
+          this.shapeTool.setStrokeColor(newColor);
+          if (this.shapeTool.fillColor && this.shapeTool.fillColor !== 'transparent') {
+            this.shapeTool.setFillColor(newColor + '26');
+          }
+        }
+        this.renderShapeMenu();
+      };
+
+      slotInput.addEventListener('input', (e) => {
+        e.stopPropagation();
+        const slotIdx = Number(e.target.dataset.slotIndex);
+        const newColor = e.target.value;
+        PaletteManager.setSlotColor(slotIdx, newColor);
+      });
+      slotInput.addEventListener('change', (e) => {
+        e.stopPropagation();
+        handleShapeSlotChange(e);
+      });
+    });
+
+    // Colores de figura en modo normal
     this.popover.querySelectorAll('[data-shape-color]').forEach(sw => {
       sw.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -6125,8 +6984,7 @@ class Toolbar {
 
     const picker = this.popover.querySelector('#popoverShapeColorPicker');
     if (picker) {
-      picker.addEventListener('input', (e) => {
-        const color = e.target.value;
+      const applyShapeColor = (color) => {
         PaletteManager.saveCustomColor(color);
         if (this.shapeTool) {
           this.shapeTool.setStrokeColor(color);
@@ -6135,6 +6993,12 @@ class Toolbar {
           }
         }
         this.renderShapeMenu();
+      };
+      picker.addEventListener('input', (e) => {
+        applyShapeColor(e.target.value);
+      });
+      picker.addEventListener('change', (e) => {
+        applyShapeColor(e.target.value);
       });
     }
 
@@ -6498,17 +7362,28 @@ class Toolbar {
     });
   }
 
-  // Popover Páginas y Fondo
   renderPagesMenu() {
     const isNotebook = this.engine.format === 'a4';
     const isCover = this.currentPageIndex === -1;
     const currentPattern = this.engine.backgroundPattern;
+    const currentPaperColor = (this.engine.paperColor || '#ffffff').toLowerCase();
 
     const patterns = [
       { id: 'blank', name: 'Liso', icon: Icons.patternBlank },
       { id: 'ruled', name: 'Rayado', icon: Icons.patternRuled },
       { id: 'grid', name: 'Cuadrícula', icon: Icons.patternGrid },
-      { id: 'dots', name: 'Puntos', icon: Icons.patternDots }
+      { id: 'dots', name: 'Puntos', icon: Icons.patternDots },
+      { id: 'music', name: 'Partitura', icon: Icons.patternMusic },
+      { id: 'millimeter', name: 'Milimetrado', icon: Icons.patternMillimeter },
+      { id: 'cornell', name: 'Cornell', icon: Icons.patternCornell }
+    ];
+
+    const paperColors = [
+      { color: '#ffffff', name: 'Blanco', border: '#cbd5e1' },
+      { color: '#fffbf0', name: 'Marfil', border: '#fde68a' },
+      { color: '#f5eedc', name: 'Sepia', border: '#d6c7a1' },
+      { color: '#1e293b', name: 'Pizarra', border: '#475569' },
+      { color: '#000000', name: 'OLED', border: '#334155' }
     ];
 
     this.popover.innerHTML = `
@@ -6560,6 +7435,18 @@ class Toolbar {
           </button>
         `).join('')}
       </div>
+
+      <div class="popover-divider"></div>
+
+      <div class="mini-menu-title">Tono de Papel</div>
+      <div class="paper-color-grid">
+        ${paperColors.map(c => `
+          <button type="button" class="paper-color-btn ${currentPaperColor === c.color.toLowerCase() ? 'active' : ''}" data-paper-color="${c.color}" title="${c.name}">
+            <span class="paper-color-circle" style="background-color: ${c.color}; border: 1.5px solid ${c.border};"></span>
+            <span class="paper-color-name">${c.name}</span>
+          </button>
+        `).join('')}
+      </div>
     `;
 
     this.popover.querySelector('#btnMenuCover')?.addEventListener('click', () => {
@@ -6593,6 +7480,15 @@ class Toolbar {
         const pat = btn.dataset.pattern;
         this.engine.setBackgroundPattern(pat);
         this.onPatternChange(pat);
+        this.renderPagesMenu();
+      });
+    });
+
+    this.popover.querySelectorAll('[data-paper-color]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const color = btn.dataset.paperColor;
+        this.engine.setPaperColor(color);
+        this.onPaperColorChange(color);
         this.renderPagesMenu();
       });
     });
@@ -6860,6 +7756,33 @@ class Toolbar {
       }, 1500);
     }
   }
+
+  toggleZenMode(forceState = null) {
+    const editor = document.getElementById('editorView') || document.body;
+    const isZen = forceState !== null ? forceState : !editor.classList.contains('zen-mode');
+    editor.classList.toggle('zen-mode', isZen);
+
+    let exitPill = document.getElementById('btnExitZenMode');
+    if (!exitPill) {
+      exitPill = document.createElement('button');
+      exitPill.id = 'btnExitZenMode';
+      exitPill.className = 'zen-exit-pill';
+      exitPill.setAttribute('type', 'button');
+      exitPill.innerHTML = `
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 14 10 14 10 20"></polyline><polyline points="20 10 14 10 14 4"></polyline><line x1="14" y1="10" x2="21" y2="3"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+        <span>Salir de Zen</span>
+      `;
+      exitPill.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleZenMode(false);
+      });
+      document.body.appendChild(exitPill);
+    }
+    exitPill.classList.toggle('hidden', !isZen);
+    if (this.engine && typeof this.engine.triggerHaptic === 'function') {
+      this.engine.triggerHaptic(15);
+    }
+  }
 }
 
 
@@ -6871,6 +7794,9 @@ class ViewportController {
     this.wrapper = wrapperEl;
     this.canvas = canvasEngine.canvas;
     this.engine = canvasEngine;
+    if (canvasEngine) {
+      canvasEngine.viewport = this;
+    }
 
     // Estado del Viewport
     this.zoom = 1.0;
@@ -7327,6 +8253,20 @@ class ViewportController {
     }
 
     this.onZoomChange(this.zoom);
+  }
+
+  getVisibleRect() {
+    if (!this.workspace) return null;
+    const wsWidth = this.workspace.clientWidth || window.innerWidth || 800;
+    const wsHeight = this.workspace.clientHeight || (window.innerHeight - 60) || 600;
+    const z = this.zoom || 1.0;
+
+    return {
+      minX: -this.panX / z,
+      minY: -this.panY / z,
+      maxX: (wsWidth - this.panX) / z,
+      maxY: (wsHeight - this.panY) / z
+    };
   }
 }
 
@@ -7999,6 +8939,7 @@ class DashboardView {
     this.currentNav = 'all'; // 'all' | 'recent' | 'favorites' | 'folder_{id}' | 'trash'
     this.currentFilter = 'all'; // 'all' | 'notebook' | 'whiteboard'
     this.currentViewMode = 'grid'; // 'grid' | 'list'
+    this.currentSort = 'date-desc'; // 'date-desc' | 'date-asc' | 'name-asc' | 'name-desc' | 'pages-desc'
     this.searchQuery = '';
 
     this.documents = [];
@@ -8180,6 +9121,19 @@ class DashboardView {
                 <button class="pill active" data-filter="all">Todos</button>
                 <button class="pill" data-filter="notebook">Cuadernos</button>
                 <button class="pill" data-filter="whiteboard">Pizarras</button>
+              </div>
+
+              <div class="header-divider"></div>
+
+              <!-- Selector de Ordenación (Fecha, Nombre, Páginas) -->
+              <div class="sort-selector-dropdown">
+                <select id="sortSelect" class="sort-select" title="Criterio de ordenación">
+                  <option value="date-desc" ${this.currentSort === 'date-desc' ? 'selected' : ''}>Recientes</option>
+                  <option value="date-asc" ${this.currentSort === 'date-asc' ? 'selected' : ''}>Antiguos</option>
+                  <option value="name-asc" ${this.currentSort === 'name-asc' ? 'selected' : ''}>Nombre (A - Z)</option>
+                  <option value="name-desc" ${this.currentSort === 'name-desc' ? 'selected' : ''}>Nombre (Z - A)</option>
+                  <option value="pages-desc" ${this.currentSort === 'pages-desc' ? 'selected' : ''}>Más páginas</option>
+                </select>
               </div>
 
               <div class="header-divider"></div>
@@ -8417,10 +9371,20 @@ class DashboardView {
       this.renderDocuments();
     });
 
-    // Buscador
+    // Selector de Ordenación
+    const sortSelect = this.container.querySelector('#sortSelect');
+    if (sortSelect) {
+      sortSelect.addEventListener('change', (e) => {
+        this.currentSort = e.target.value;
+        this.renderDocuments();
+      });
+    }
+
+    // Buscador instantáneo
     const searchInput = this.container.querySelector('#searchInput');
     searchInput.addEventListener('input', (e) => {
       this.searchQuery = e.target.value.trim().toLowerCase();
+      this.updateSectionHeader();
       this.renderDocuments();
     });
 
@@ -8696,6 +9660,12 @@ class DashboardView {
     const actionContainer = this.container.querySelector('#sectionActionContainer');
     actionContainer.innerHTML = '';
 
+    if (this.searchQuery) {
+      heading.textContent = 'Resultados de búsqueda';
+      subtext.textContent = `Buscando "${this.searchQuery}" en títulos y contenido`;
+      return;
+    }
+
     if (this.currentNav === 'all') {
       heading.textContent = 'Todos los archivos';
       subtext.textContent = 'Todos los cuadernos y pizarras disponibles';
@@ -8826,9 +9796,49 @@ class DashboardView {
       list = list.filter(d => d.type === this.currentFilter);
     }
 
-    // Filtro por buscador de texto
+    // Filtro por buscador de texto (en títulos, subtítulo de portada y textos de páginas)
     if (this.searchQuery) {
-      list = list.filter(d => d.title.toLowerCase().includes(this.searchQuery));
+      const q = this.searchQuery;
+      list = list.filter(d => {
+        if (d.title && d.title.toLowerCase().includes(q)) return true;
+        if (d.cover && d.cover.subtitle && d.cover.subtitle.toLowerCase().includes(q)) return true;
+        if (Array.isArray(d.pages)) {
+          for (const page of d.pages) {
+            if (Array.isArray(page.texts)) {
+              for (const t of page.texts) {
+                if (t.text && t.text.toLowerCase().includes(q)) return true;
+              }
+            }
+          }
+        }
+        return false;
+      });
+    }
+
+    // Ordenación según criterio seleccionado
+    if (this.currentNav === 'recent' && this.currentSort === 'date-desc') {
+      list.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
+    } else {
+      switch (this.currentSort) {
+        case 'date-desc':
+          list.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
+          break;
+        case 'date-asc':
+          list.sort((a, b) => (a.updatedAt || a.createdAt || 0) - (b.updatedAt || b.createdAt || 0));
+          break;
+        case 'name-asc':
+          list.sort((a, b) => (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base' }));
+          break;
+        case 'name-desc':
+          list.sort((a, b) => (b.title || '').localeCompare(a.title || '', undefined, { sensitivity: 'base' }));
+          break;
+        case 'pages-desc':
+          list.sort((a, b) => ((b.pages ? b.pages.length : 1) - (a.pages ? a.pages.length : 1)));
+          break;
+        default:
+          list.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
+          break;
+      }
     }
 
     return list;
@@ -8899,6 +9909,7 @@ class DashboardView {
           <div class="list-header-row">
             <div class="col-name">Nombre</div>
             <div class="col-type">Tipo</div>
+            <div class="col-pages">Páginas</div>
             <div class="col-date">Modificado</div>
             <div class="col-actions"></div>
           </div>
@@ -8990,6 +10001,7 @@ class DashboardView {
     const typeLabel = isNotebook ? 'Cuaderno' : 'Pizarra';
     const typeBadgeClass = isNotebook ? 'badge-notebook' : 'badge-board';
     const cardDesignClass = isNotebook ? 'card-notebook' : 'card-whiteboard';
+    const pageCount = isNotebook && doc.pages ? doc.pages.length : 1;
     const formattedDate = new Date(doc.updatedAt || doc.createdAt).toLocaleDateString('es-ES', {
       day: 'numeric',
       month: 'short',
@@ -9019,6 +10031,7 @@ class DashboardView {
             ${isNotebook ? Icons.notebook : Icons.whiteboard}
             ${typeLabel}
           </span>
+          ${isNotebook ? `<span class="card-page-count-badge">${pageCount} pág${pageCount === 1 ? '' : 's'}</span>` : ''}
           <button class="btn-fav-star ${doc.isFavorite ? 'active' : ''}" title="Marcar favorito">
             ${doc.isFavorite ? Icons.starFilled : Icons.star}
           </button>
@@ -9039,29 +10052,48 @@ class DashboardView {
 
   renderListRowHtml(doc) {
     const isNotebook = doc.type === 'notebook';
+    const pageCount = isNotebook && doc.pages ? doc.pages.length : 1;
     const formattedDate = new Date(doc.updatedAt || doc.createdAt).toLocaleDateString('es-ES', {
       day: 'numeric',
       month: 'short',
+      year: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
     });
 
+    let thumbHtml = '';
+    if (isNotebook && doc.cover) {
+      const thumb = doc.thumbnail || CoverDesigner.generateCoverThumbnail(doc.cover);
+      thumbHtml = `<img src="${thumb}" class="list-thumb-img" alt="Miniatura" />`;
+    } else if (doc.thumbnail) {
+      thumbHtml = `<img src="${doc.thumbnail}" class="list-thumb-img" alt="Miniatura" />`;
+    } else {
+      thumbHtml = `<div class="list-empty-thumb">${isNotebook ? Icons.notebook : Icons.whiteboard}</div>`;
+    }
+
+    const subtitle = (isNotebook && doc.cover && doc.cover.subtitle) ? `<span class="list-subtitle">${this.escapeHtml(doc.cover.subtitle)}</span>` : '';
+
     return `
       <div class="doc-list-row" data-doc-id="${doc.id}">
         <div class="col-name">
-          <span class="row-icon ${isNotebook ? 'notebook-color' : 'board-color'}">
-            ${isNotebook ? Icons.notebook : Icons.whiteboard}
-          </span>
-          <span class="row-title">${this.escapeHtml(doc.title)}</span>
-          ${doc.isFavorite ? `<span class="row-fav">${Icons.starFilled}</span>` : ''}
+          ${thumbHtml}
+          <div class="list-title-group">
+            <span class="row-title" title="${this.escapeHtml(doc.title)}">${this.escapeHtml(doc.title)}</span>
+            ${subtitle}
+          </div>
         </div>
         <div class="col-type">
           <span class="card-type-badge ${isNotebook ? 'badge-notebook' : 'badge-board'}">
+            ${isNotebook ? Icons.notebook : Icons.whiteboard}
             ${isNotebook ? 'Cuaderno' : 'Pizarra'}
           </span>
         </div>
+        <div class="col-pages">${isNotebook ? `${pageCount} pág${pageCount === 1 ? '' : 's'}` : 'Lienzo'}</div>
         <div class="col-date">${formattedDate}</div>
         <div class="col-actions">
+          <button class="btn-fav-star ${doc.isFavorite ? 'active' : ''}" title="Marcar favorito">
+            ${doc.isFavorite ? Icons.starFilled : Icons.star}
+          </button>
           <button class="card-menu-btn" title="Opciones">
             ${Icons.moreVertical}
           </button>
@@ -9979,6 +11011,11 @@ class App {
           this.changePagePattern(this.currentPageIndex, pattern);
         }
       },
+      onPaperColorChange: (color) => {
+        if (this.currentDoc && this.currentDoc.pages) {
+          this.changePaperColor(color);
+        }
+      },
       onPrevPage: () => this.goToPrevPage(),
       onNextPage: () => this.goToNextPage(),
       onAddPage: () => this.addNewPage(),
@@ -10137,6 +11174,12 @@ class App {
           <div class="page-top-bar">
             <span class="page-top-pill">Página ${pageNum} de ${totalPages}</span>
             <div class="page-top-actions">
+              <button type="button" class="page-top-btn btn-move-up-page" data-page-idx="${idx}" title="Mover página arriba" ${idx === 0 ? 'disabled style="opacity:0.35; cursor:not-allowed;"' : ''}>
+                ▲
+              </button>
+              <button type="button" class="page-top-btn btn-move-down-page" data-page-idx="${idx}" title="Mover página abajo" ${idx === this.currentDoc.pages.length - 1 ? 'disabled style="opacity:0.35; cursor:not-allowed;"' : ''}>
+                ▼
+              </button>
               <button type="button" class="page-top-btn btn-pattern-page" data-page-idx="${idx}" title="Cambiar pauta de todo el cuaderno">
                 Pauta: ${this.getPatternLabel(this.currentDoc.defaultPattern || p.backgroundPattern)}
               </button>
@@ -10210,6 +11253,26 @@ class App {
     });
 
     // Eventos en botones de cabecera de página
+    this.canvasWrapper.querySelectorAll('.btn-move-up-page').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const pIdx = Number(btn.dataset.pageIdx);
+        if (pIdx > 0) {
+          this.movePage(pIdx, pIdx - 1);
+        }
+      });
+    });
+
+    this.canvasWrapper.querySelectorAll('.btn-move-down-page').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const pIdx = Number(btn.dataset.pageIdx);
+        if (this.currentDoc && this.currentDoc.pages && pIdx < this.currentDoc.pages.length - 1) {
+          this.movePage(pIdx, pIdx + 1);
+        }
+      });
+    });
+
     this.canvasWrapper.querySelectorAll('.btn-pattern-page').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -10297,6 +11360,9 @@ class App {
       case 'grid': return 'Cuadrícula 5mm';
       case 'ruled': return 'Rayado';
       case 'dots': return 'Puntos';
+      case 'music': return 'Partitura';
+      case 'millimeter': return 'Milimetrado';
+      case 'cornell': return 'Cornell';
       case 'blank': return 'Liso';
       default: return 'Rayado';
     }
@@ -10582,6 +11648,38 @@ class App {
     }
   }
 
+  movePage(fromIndex, toIndex) {
+    if (!this.currentDoc || !this.currentDoc.pages) return;
+    if (fromIndex < 0 || fromIndex >= this.currentDoc.pages.length) return;
+    if (toIndex < 0 || toIndex >= this.currentDoc.pages.length) return;
+    if (fromIndex === toIndex) return;
+
+    if (this.currentPageIndex === fromIndex) {
+      this.currentDoc.pages[this.currentPageIndex] = this.canvasEngine.getPageData();
+    }
+
+    const [moved] = this.currentDoc.pages.splice(fromIndex, 1);
+    this.currentDoc.pages.splice(toIndex, 0, moved);
+
+    if (this.currentPageIndex === fromIndex) {
+      this.currentPageIndex = toIndex;
+    } else if (this.currentPageIndex > fromIndex && this.currentPageIndex <= toIndex) {
+      this.currentPageIndex--;
+    } else if (this.currentPageIndex < fromIndex && this.currentPageIndex >= toIndex) {
+      this.currentPageIndex++;
+    }
+
+    if (this.currentDoc.type === 'notebook') {
+      this.renderNotebookStream();
+      this.scrollToPage(this.currentPageIndex);
+    } else {
+      this.switchPage(this.currentPageIndex, true);
+    }
+
+    this.toolbar.updatePageCounter(this.currentPageIndex, this.currentDoc.pages.length);
+    this.scheduleAutoSave();
+  }
+
   promptChangePagePattern(idx, triggerBtn) {
     const patterns = [
       { id: 'grid', name: 'Cuadrícula 5mm' },
@@ -10621,6 +11719,30 @@ class App {
         const pBtn = this.canvasWrapper.querySelector(`.btn-pattern-page[data-page-idx="${i}"]`);
         if (pBtn) {
           pBtn.textContent = `Pauta: ${this.getPatternLabel(pattern)}`;
+        }
+      });
+    }
+
+    this.scheduleAutoSave();
+  }
+
+  changePaperColor(color) {
+    if (!this.currentDoc) return;
+
+    this.currentDoc.defaultPaperColor = color;
+    if (this.currentDoc.pages) {
+      this.currentDoc.pages.forEach(p => {
+        p.paperColor = color;
+      });
+    }
+
+    this.canvasEngine.setPaperColor(color);
+
+    if (this.currentDoc.pages) {
+      this.currentDoc.pages.forEach((pData, i) => {
+        const cEl = this.canvasWrapper.querySelector(`#pageCanvas_${i}`);
+        if (cEl) {
+          this.canvasEngine.renderPageToCanvas(cEl, pData);
         }
       });
     }
